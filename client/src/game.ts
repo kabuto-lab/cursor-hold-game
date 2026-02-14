@@ -180,9 +180,15 @@ export class Game {
       
       // Show game screen
       this.showGameScreen(roomId);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create room:', error);
-      alert('Failed to create room. Please try again.');
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        reason: error.reason,
+        stack: error.stack
+      });
+      alert(`Failed to create room: ${error.message || 'Connection timeout or server issue'}. Please try again.`);
     }
   }
 
@@ -197,16 +203,22 @@ export class Game {
       this.room = await this.client.joinById('holding_room', roomId);
       this.currentPlayerId = this.room.sessionId;
       this.setupRoomHandlers();
-      
+
       // Prompt for player name
       this.playerName = prompt('Enter your name:', `Player${this.currentPlayerId.substring(0, 4)}`) || `Player${this.currentPlayerId.substring(0, 4)}`;
       this.room.send('setPlayerName', { name: this.playerName });
-      
+
       // Show game screen
       this.showGameScreen(roomId);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to join room:', error);
-      alert('Failed to join room. The room may not exist or be full.');
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        reason: error.reason,
+        stack: error.stack
+      });
+      alert(`Failed to join room: ${error.message || 'Connection timeout or server issue'}. The room may not exist or be full.`);
     }
   }
 
@@ -817,11 +829,17 @@ export class Game {
       // Reconnect to the same room
       this.room = await this.client.joinById('holding_room', roomId);
       this.setupRoomHandlers();
-      
+
       // Update UI
       this.updateConnectionStatus('connected');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Reconnection failed:', error);
+      console.error('Reconnection error details:', {
+        message: error.message,
+        code: error.code,
+        reason: error.reason,
+        stack: error.stack
+      });
       setTimeout(() => this.reconnectToRoom(), 5000); // Retry after 5 seconds
     }
   }
