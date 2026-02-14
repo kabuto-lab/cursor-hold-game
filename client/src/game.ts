@@ -170,14 +170,14 @@ export class Game {
     try {
       // Generate a random room ID
       const roomId = this.generateRoomId();
-      this.room = await this.client.joinOrCreate('holding_room', { roomId: roomId });
+      this.room = await this.client.create('holding_room', { roomId: roomId });
       this.currentPlayerId = this.room.sessionId;
       this.setupRoomHandlers();
-      
+
       // Prompt for player name
       this.playerName = prompt('Enter your name:', `Player${this.currentPlayerId.substring(0, 4)}`) || `Player${this.currentPlayerId.substring(0, 4)}`;
       this.room.send('setPlayerName', { name: this.playerName });
-      
+
       // Show game screen
       this.showGameScreen(roomId);
     } catch (error: any) {
