@@ -167,6 +167,12 @@ export class Game {
   }
 
   private async createRoom(): Promise<void> {
+    // Ensure client is initialized
+    if (!this.client) {
+      alert('Client not initialized. Please refresh the page.');
+      return;
+    }
+
     try {
       // Generate a random room ID
       const roomId = this.generateRoomId();
@@ -196,6 +202,12 @@ export class Game {
     const roomId = this.roomIdInput.value.trim();
     if (!roomId) {
       alert('Please enter a room ID');
+      return;
+    }
+
+    // Ensure client is initialized
+    if (!this.client) {
+      alert('Client not initialized. Please refresh the page.');
       return;
     }
 
@@ -809,10 +821,16 @@ export class Game {
 
   private async reconnectToRoom(): Promise<void> {
     if (!this.currentRoomIdEl) return;
-    
+
     const roomId = this.currentRoomIdEl.textContent;
     if (!roomId) return;
-    
+
+    // Ensure client is initialized
+    if (!this.client) {
+      console.error('Client not initialized for reconnection.');
+      return;
+    }
+
     try {
       // Reconnect to the same room
       this.room = await this.client.joinById('holding_room', roomId);
