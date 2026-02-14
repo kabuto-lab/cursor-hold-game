@@ -1,0 +1,31 @@
+{
+  "name": "holding-hands-game",
+  "version": "1.0.0",
+  "description": "A 2-player collaborative game where players can 'hold hands' virtually",
+  "scripts": {
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "start": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "test": "npm run test --workspaces"
+  },
+  "keywords": [
+    "game",
+    "multiplayer",
+    "collaborative",
+    "pixijs",
+    "colyseus",
+    "typescript",
+    "vite"
+  ],
+  "author": "Qwen Game Developer",
+  "license": "MIT",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

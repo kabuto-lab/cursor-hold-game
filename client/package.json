@@ -1,0 +1,28 @@
+{
+  "name": "@holding-hands/client",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "pixi.js": "^8.0.0",
+    "colyseus.js": "^0.15.0",
+    "@pixi/filter-pixelate": "^5.1.1",
+    "@pixi/filter-crt": "^5.1.1",
+    "@pixi/filter-bloom": "^5.1.1",
+    "@pixi/filter-noise": "^5.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.2",
+    "vite": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "vitest": "^1.0.0",
+    "@vitest/ui": "^1.0.0",
+    "@types/jest": "^29.5.0"
+  }
+}
