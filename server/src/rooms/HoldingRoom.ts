@@ -1,5 +1,5 @@
 import { Room, Client } from 'colyseus';
-import { RoomState, PlayerSchema } from './schema';
+import { RoomState, PlayerSchema, DraggableObjectSchema } from './schema';
 
 export class HoldingRoom extends Room<RoomState> {
   private holdTimeout: NodeJS.Timeout | null = null;
@@ -8,6 +8,15 @@ export class HoldingRoom extends Room<RoomState> {
     this.setState(new RoomState());
     this.state.roomId = options.roomId || this.roomId;
     this.state.maxPlayers = 2;
+
+    // Add a default draggable circle object
+    const circleObject = new DraggableObjectSchema();
+    circleObject.id = 'circle1';
+    circleObject.x = 400;
+    circleObject.y = 300;
+    circleObject.radius = 30;
+    circleObject.color = 0xff69b4; // Hot pink color
+    this.state.objects.set(circleObject.id, circleObject);
 
     // Handle incoming messages using the modern messages object
     this.onMessage('updatePosition', (client, data) => {
@@ -83,6 +92,60 @@ export class HoldingRoom extends Room<RoomState> {
         player1Id: client.sessionId,
         player2Id: otherPlayerId
       });
+    });
+
+    // Handle draggable object messages
+    this.onMessage('startDraggingObject', (client, data) => {
+      const obj = this.state.objects.get(data.objectId);
+      if (obj) {
+        obj.isBeingDragged = true;
+        obj.draggedBy = client.sessionId;
+        
+        // Broadcast to all clients that an object is being dragged
+        this.broadcast('objectDragStarted', {
+          objectId: data.objectId,
+          playerId: client.sessionId
+        });
+      }
+    });
+
+    this.onMessage('updateObjectPosition', (client, data) => {
+      const obj = this.state.objects.get(data.objectId);
+      if (obj && obj.isBeingDragged && obj.draggedBy === client.sessionId) {
+        // Validate position updates to prevent cheating
+        if (
+          typeof data.x === 'number' &&
+          typeof data.y === 'number' &&
+          data.x >= 0 &&
+          data.x <= 10000 && // Reasonable bounds
+          data.y >= 0 &&
+          data.y <= 10000
+        ) {
+          obj.x = data.x;
+          obj.y = data.y;
+          
+          // Broadcast the position update to all clients
+          this.broadcast('objectPositionUpdated', {
+            objectId: data.objectId,
+            x: data.x,
+            y: data.y
+          });
+        }
+      }
+    });
+
+    this.onMessage('stopDraggingObject', (client, data) => {
+      const obj = this.state.objects.get(data.objectId);
+      if (obj && obj.draggedBy === client.sessionId) {
+        obj.isBeingDragged = false;
+        obj.draggedBy = '';
+        
+        // Broadcast to all clients that dragging has stopped
+        this.broadcast('objectDragStopped', {
+          objectId: data.objectId,
+          playerId: client.sessionId
+        });
+      }
     });
   }
 

@@ -1,6 +1,6 @@
 import * as PIXI from 'pixi.js';
 import { Client } from 'colyseus.js';
-import { PlayerSchema } from './types/schema';
+import { PlayerSchema, DraggableObjectSchema } from './types/schema';
 import { PixelateFilter } from '@pixi/filter-pixelate';
 import { NoiseFilter } from '@pixi/filter-noise';
 import { BloomFilter } from '@pixi/filter-bloom';
@@ -12,6 +12,7 @@ export class Game {
   private cursors: Map<string, PIXI.Sprite> = new Map();
   private cursorLabels: Map<string, PIXI.Text> = new Map();
   private links: PIXI.Graphics[] = [];
+  private objects: Map<string, PIXI.Graphics> = new Map();
   private currentPlayerId: string = '';
   // private gameState: RoomState | null = null;  // TODO: Use this for game state management - commented out for now to avoid unused error
   private playerName: string = '';
@@ -243,6 +244,15 @@ export class Game {
       this.removePlayer(key);
     };
 
+    // Handle draggable objects state changes
+    this.room.state.objects.onAdd = (obj: DraggableObjectSchema, key: string) => {
+      this.addObject(key, obj);
+    };
+
+    this.room.state.objects.onRemove = (_obj: DraggableObjectSchema, key: string) => {
+      this.removeObject(key);
+    };
+
     // Listen for state changes
     // this.room.state.onChange(() => {
     //   this.gameState = this.room.state;
@@ -268,6 +278,19 @@ export class Game {
       this.updatePlayerName(data.playerId, data.name);
     });
 
+    // Listen for object drag events
+    this.room.onMessage('objectDragStarted', (data: { objectId: string; playerId: string }) => {
+      this.handleObjectDragStarted(data.objectId, data.playerId);
+    });
+
+    this.room.onMessage('objectPositionUpdated', (data: { objectId: string; x: number; y: number }) => {
+      this.updateObjectPosition(data.objectId, { x: data.x, y: data.y });
+    });
+
+    this.room.onMessage('objectDragStopped', (data: { objectId: string; playerId: string }) => {
+      this.handleObjectDragStopped(data.objectId, data.playerId);
+    });
+
     // Handle room connection events
     this.room.onLeave((code: number) => {
       console.log('Left room with code:', code);
@@ -278,7 +301,7 @@ export class Game {
       console.error('Room error:', err);
       this.showError('Connection error occurred. Please refresh the page.');
     });
-    
+
     // Handle reconnection attempts - Note: Modern Colyseus doesn't use .on() for these
     // These events are handled internally by the client, so we'll remove them
     // Reconnection status is handled by connection events
@@ -337,6 +360,134 @@ export class Game {
       }
       return true;
     });
+  }
+
+  private addObject(objectId: string, obj: DraggableObjectSchema): void {
+    // Create a circle graphic for the draggable object
+    const circle = new PIXI.Graphics();
+    
+    // Draw the circle with the specified color and radius
+    circle.beginFill(obj.color);
+    circle.drawCircle(0, 0, obj.radius);
+    circle.endFill();
+    
+    // Add a border to make it more visible
+    circle.lineStyle(2, 0x000000); // Black border
+    circle.drawCircle(0, 0, obj.radius);
+    
+    // Position the circle
+    circle.x = obj.x;
+    circle.y = obj.y;
+    
+    // Enable interactivity
+    circle.eventMode = 'static';
+    circle.cursor = 'pointer';
+    
+    // Store reference to the object ID for event handling
+    (circle as any).objectId = objectId;
+    
+    // Add drag event handlers
+    circle.on('pointerdown', (event: PIXI.FederatedPointerEvent) => this.startDraggingObject(event, objectId));
+    circle.on('globalpointermove', (_event: PIXI.FederatedPointerEvent) => this.draggingObject(_event, objectId));
+    circle.on('pointerup', (_event: PIXI.FederatedPointerEvent) => this.stopDraggingObject(_event, objectId));
+    circle.on('pointerupoutside', (_event: PIXI.FederatedPointerEvent) => this.stopDraggingObject(_event, objectId));
+    
+    // Add to stage and store in our map
+    this.app.stage.addChild(circle);
+    this.objects.set(objectId, circle);
+  }
+
+  private removeObject(objectId: string): void {
+    const object = this.objects.get(objectId);
+    if (object) {
+      this.app.stage.removeChild(object);
+      this.objects.delete(objectId);
+    }
+  }
+
+  private startDraggingObject(_event: PIXI.FederatedPointerEvent, objectId: string): void {
+    if (!this.room) return;
+    
+    // Send message to server to start dragging
+    this.room.send('startDraggingObject', { objectId });
+  }
+
+  private draggingObject(_event: PIXI.FederatedPointerEvent, objectId: string): void {
+    if (!this.room) return;
+    
+    const object = this.objects.get(objectId);
+    if (!object) return;
+    
+    // Get global position and convert to local stage coordinates
+    const pos = _event.global;
+    
+    // Update object position
+    object.x = pos.x;
+    object.y = pos.y;
+    
+    // Send position update to server
+    this.room.send('updateObjectPosition', { 
+      objectId, 
+      x: pos.x, 
+      y: pos.y 
+    });
+  }
+
+  private stopDraggingObject(_event: PIXI.FederatedPointerEvent, objectId: string): void {
+    if (!this.room) return;
+    
+    // Send message to server to stop dragging
+    this.room.send('stopDraggingObject', { objectId });
+  }
+
+  private updateObjectPosition(objectId: string, position: { x: number; y: number }): void {
+    const object = this.objects.get(objectId);
+    if (object) {
+      // Update the object's position with smooth interpolation
+      object.x = position.x;
+      object.y = position.y;
+    }
+  }
+
+  private handleObjectDragStarted(objectId: string, _playerId: string): void {
+    const object = this.objects.get(objectId);
+    if (object) {
+      // Visually indicate that the object is being dragged by another player
+      // For example, change the border color
+      object.clear();
+      
+      // Redraw the circle with the specified color and radius
+      const objData = this.room.state.objects.get(objectId);
+      if (objData) {
+        object.beginFill(objData.color);
+        object.drawCircle(0, 0, objData.radius);
+        object.endFill();
+        
+        // Add a different colored border to indicate it's being dragged
+        object.lineStyle(3, 0xffff00); // Yellow border when being dragged
+        object.drawCircle(0, 0, objData.radius);
+      }
+    }
+  }
+
+  private handleObjectDragStopped(objectId: string, _playerId: string): void {
+    const object = this.objects.get(objectId);
+    if (object) {
+      // Reset the visual indication that the object is being dragged
+      const objData = this.room.state.objects.get(objectId);
+      if (objData) {
+        object.clear();
+        
+        // Redraw the circle with the specified color and radius
+        object.beginFill(objData.color);
+        object.drawCircle(0, 0, objData.radius);
+        object.endFill();
+        
+        // Add a black border
+        object.lineStyle(2, 0x000000); // Black border
+        object.drawCircle(0, 0, objData.radius);
+      }
+    }
   }
 
   private createCursorSprite(color: number): PIXI.Sprite {

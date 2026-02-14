@@ -10,8 +10,19 @@ export class PlayerSchema extends Schema {
   @type('string') holdingHandsWith: string = ''; // ID of player this player is holding hands with
 }
 
+export class DraggableObjectSchema extends Schema {
+  @type('string') id!: string;
+  @type('number') x: number = 400; // Center of screen
+  @type('number') y: number = 300;
+  @type('number') radius: number = 30;
+  @type('number') color: number = 0xff69b4; // Hot pink color
+  @type('boolean') isBeingDragged: boolean = false;
+  @type('string') draggedBy: string = ''; // ID of player dragging the object
+}
+
 export class RoomState extends Schema {
   @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
+  @type({ map: DraggableObjectSchema }) objects = new MapSchema<DraggableObjectSchema>();
   @type('string') roomId: string = '';
   @type('number') maxPlayers: number = 2;
 }

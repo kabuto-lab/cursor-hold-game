@@ -9,8 +9,19 @@ export interface PlayerSchema {
   holdingHandsWith: string;
 }
 
+export interface DraggableObjectSchema {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  color: number;
+  isBeingDragged: boolean;
+  draggedBy: string;
+}
+
 export interface RoomState {
   players: Map<string, PlayerSchema>;
+  objects: Map<string, DraggableObjectSchema>;
   roomId: string;
   maxPlayers: number;
 }
