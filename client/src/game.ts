@@ -96,23 +96,22 @@ export class Game {
 
   private createStarryBackground(): void {
     // Create a container for stars
-    const starContainer = new PIXI.ParticleContainer();
+    const starContainer = new PIXI.Container();
     
     // Generate random stars
     for (let i = 0; i < 200; i++) {
-      const star = new PIXI.Graphics();
       const size = Math.random() * 2;
-      star.beginFill(0xFFFFFF);
-      star.drawCircle(0, 0, size);
-      star.endFill();
-      
+      const star = new PIXI.Graphics()
+        .circle(0, 0, size)
+        .fill({ color: 0xFFFFFF });
+
       // Random position
       star.x = Math.random() * this.app.screen.width;
       star.y = Math.random() * this.app.screen.height;
-      
+
       // Random twinkle effect
       (star as any).alpha = 0.3 + Math.random() * 0.7;
-      
+
       starContainer.addChild(star);
     }
     
@@ -326,21 +325,21 @@ export class Game {
     const graphics = new PIXI.Graphics();
     
     // Draw an 8-bit style hand/cursor
-    graphics.beginFill(color);
-    // Draw a pixelated hand shape
-    graphics.drawRect(-8, -8, 16, 16); // Main body
-    graphics.endFill();
-    
+    graphics.rect(-8, -8, 16, 16); // Main body
+    graphics.fill({ color: color });
+
     // Add details to make it look more like a hand
-    graphics.lineStyle(1, 0x000000); // Black outline
-    graphics.drawRect(-8, -8, 16, 16);
-    
+    graphics.lineStyle(1, 0x000000); // Black outline (width, color)
+    graphics.rect(-8, -8, 16, 16);
+    graphics.stroke();
+
     // Add finger-like pixels
-    graphics.beginFill(color);
-    graphics.drawRect(-6, -10, 4, 4); // Thumb
-    graphics.drawRect(-2, -11, 4, 5); // Index finger
-    graphics.drawRect(2, -10, 4, 4);  // Middle finger
-    graphics.endFill();
+    graphics.rect(-6, -10, 4, 4); // Thumb
+    graphics.fill({ color: color });
+    graphics.rect(-2, -11, 4, 5); // Index finger
+    graphics.fill({ color: color });
+    graphics.rect(2, -10, 4, 4);  // Middle finger
+    graphics.fill({ color: color });
     
     // Convert to texture and create sprite
     const texture = this.app.renderer.generateTexture(graphics);
@@ -485,15 +484,14 @@ export class Game {
   }
 
   private createHeartParticles(): void {
-    const heartContainer = new PIXI.ParticleContainer();
+    const heartContainer = new PIXI.Container();
     
     // Create heart-shaped particles
     for (let i = 0; i < 50; i++) {
       const heart = new PIXI.Graphics();
-      heart.beginFill(0xFF00FF); // Pink/purple color
       
       // Draw a simple heart shape
-      heart.drawPolygon([
+      const points = [
         0, -5,
         -3, -8,
         -6, -10,
@@ -503,9 +501,9 @@ export class Game {
         6, -10,
         3, -8,
         0, -5
-      ]);
-      
-      heart.endFill();
+      ];
+      heart.poly(points);
+      heart.fill({ color: 0xFF00FF }); // Pink/purple color
       
       // Random position near the center
       heart.x = this.app.screen.width / 2 + (Math.random() - 0.5) * 200;
@@ -668,9 +666,8 @@ export class Game {
               link.lineTo(endX, endY);
             } else {
               // Draw a small circle to represent a chain link
-              link.beginFill(0x00ff00);
-              link.drawCircle(startX, startY, 2);
-              link.endFill();
+              link.circle(startX, startY, 2);
+              link.fill({ color: 0x00ff00 });
             }
           }
         }
