@@ -268,21 +268,9 @@ export class Game {
       this.showError('Connection error occurred. Please refresh the page.');
     });
     
-    // Handle reconnection attempts
-    this.room.on('reconnect', () => {
-      console.log('Attempting to reconnect...');
-      this.updateConnectionStatus('connecting');
-    });
-    
-    this.room.on('reconnectSuccess', () => {
-      console.log('Reconnection successful!');
-      this.updateConnectionStatus('connected');
-    });
-    
-    this.room.on('reconnectFailure', () => {
-      console.log('Reconnection failed');
-      this.showError('Could not reconnect. Please refresh the page.');
-    });
+    // Handle reconnection attempts - Note: Modern Colyseus doesn't use .on() for these
+    // These events are handled internally by the client, so we'll remove them
+    // Reconnection status is handled by connection events
   }
 
   private addPlayer(playerId: string, player: PlayerSchema): void {
