@@ -84,8 +84,16 @@ export class Game {
     // Create a starry background
     this.createStarryBackground();
 
-    // Initialize the Colyseus client
-    this.client = new Client(`ws://${window.location.hostname}:2567`);
+    // Initialize the Colyseus client with secure connection
+    let serverUrl;
+    if (window.location.protocol === 'https:') {
+      // Production: use WSS for secure connection
+      serverUrl = 'wss://cursor-hold-game-server.onrender.com';
+    } else {
+      // Development: use WS for local connection
+      serverUrl = `ws://${window.location.hostname}:2567`;
+    }
+    this.client = new Client(serverUrl);
 
     // Set up keyboard controls for accessibility
     this.setupKeyboardControls();
