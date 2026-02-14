@@ -212,7 +212,7 @@ export class Game {
     }
 
     try {
-      this.room = await this.client.joinById('holding_room', roomId);
+      this.room = await this.client.joinById(roomId);
       this.currentPlayerId = this.room.sessionId;
       this.setupRoomHandlers();
 
@@ -833,7 +833,7 @@ export class Game {
 
     try {
       // Reconnect to the same room
-      this.room = await this.client.joinById('holding_room', roomId);
+      this.room = await this.client.joinById(roomId);
       this.setupRoomHandlers();
 
       // Update UI
