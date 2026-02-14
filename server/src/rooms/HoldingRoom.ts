@@ -139,11 +139,28 @@ export class HoldingRoom extends Room<RoomState> {
       if (obj && obj.draggedBy === client.sessionId) {
         obj.isBeingDragged = false;
         obj.draggedBy = '';
-        
+
         // Broadcast to all clients that dragging has stopped
         this.broadcast('objectDragStopped', {
           objectId: data.objectId,
           playerId: client.sessionId
+        });
+      }
+    });
+
+    // Handle chat messages
+    this.onMessage('chatMessage', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player && typeof data.message === 'string' && data.message.trim().length > 0) {
+        // Limit message length
+        const message = data.message.trim().substring(0, 200);
+        
+        // Broadcast the chat message to all players in the room
+        this.broadcast('chatMessage', {
+          playerId: client.sessionId,
+          playerName: player.name,
+          message: message,
+          timestamp: Date.now()
         });
       }
     });

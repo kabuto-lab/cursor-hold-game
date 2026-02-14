@@ -16,6 +16,11 @@ export class Game {
   private currentPlayerId: string = '';
   // private gameState: RoomState | null = null;  // TODO: Use this for game state management - commented out for now to avoid unused error
   private playerName: string = '';
+  
+  // Chat elements
+  private chatMessagesDiv!: HTMLElement;
+  private chatInput!: HTMLInputElement;
+  private chatSendBtn!: HTMLButtonElement;
 
   // UI elements
   private landingScreen!: HTMLElement;
@@ -42,6 +47,11 @@ export class Game {
     this.otherPlayerNameEl = document.getElementById('otherPlayerName')!;
     this.currentRoomIdEl = document.getElementById('currentRoomId')!;
 
+    // Initialize chat elements
+    this.chatMessagesDiv = document.getElementById('chat-messages')!;
+    this.chatInput = document.getElementById('chat-input')! as HTMLInputElement;
+    this.chatSendBtn = document.getElementById('chat-send-btn')! as HTMLButtonElement;
+
     // Set up event listeners
     this.setupEventListeners();
   }
@@ -50,6 +60,14 @@ export class Game {
     this.createRoomBtn.addEventListener('click', () => this.createRoom());
     this.joinRoomBtn.addEventListener('click', () => this.joinRoom());
     this.leaveRoomBtn.addEventListener('click', () => this.leaveRoom());
+    
+    // Chat event listeners
+    this.chatSendBtn.addEventListener('click', () => this.sendMessage());
+    this.chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        this.sendMessage();
+      }
+    });
   }
 
   async init(): Promise<void> {
@@ -238,10 +256,12 @@ export class Game {
     // Handle room state changes
     this.room.state.players.onAdd = (_player: PlayerSchema, key: string) => {
       this.addPlayer(key, _player);
+      this.updatePlayerCount();
     };
 
     this.room.state.players.onRemove = (_player: PlayerSchema, key: string) => {
       this.removePlayer(key);
+      this.updatePlayerCount();
     };
 
     // Handle draggable objects state changes
@@ -289,6 +309,11 @@ export class Game {
 
     this.room.onMessage('objectDragStopped', (data: { objectId: string; playerId: string }) => {
       this.handleObjectDragStopped(data.objectId, data.playerId);
+    });
+
+    // Listen for chat messages
+    this.room.onMessage('chatMessage', (data: { playerId: string; playerName: string; message: string; timestamp: number }) => {
+      this.displayChatMessage(data.playerName, data.message, data.timestamp);
     });
 
     // Handle room connection events
@@ -488,6 +513,41 @@ export class Game {
         object.drawCircle(0, 0, objData.radius);
       }
     }
+  }
+
+  private updatePlayerCount(): void {
+    const playerCount = this.room ? this.room.state.players.size : 0;
+    const playerCountElement = document.getElementById('playerCount');
+    if (playerCountElement) {
+      playerCountElement.textContent = `${playerCount}/2`;
+    }
+  }
+
+  private sendMessage(): void {
+    const message = this.chatInput.value.trim();
+    if (message && this.room) {
+      // Send the message to the server
+      this.room.send('chatMessage', { message });
+      
+      // Clear the input field
+      this.chatInput.value = '';
+    }
+  }
+
+  private displayChatMessage(senderName: string, message: string, timestamp: number): void {
+    // Create a new message element
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('chat-message');
+    
+    // Format the message with sender name and timestamp
+    const timeString = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    messageElement.innerHTML = `<strong>[${timeString}] ${senderName}:</strong> ${message}`;
+    
+    // Add to the chat messages container
+    this.chatMessagesDiv.appendChild(messageElement);
+    
+    // Scroll to the bottom of the chat
+    this.chatMessagesDiv.scrollTop = this.chatMessagesDiv.scrollHeight;
   }
 
   private createCursorSprite(color: number): PIXI.Sprite {
@@ -862,9 +922,12 @@ export class Game {
   private showGameScreen(roomId: string): void {
     this.landingScreen.classList.add('hidden');
     this.gameScreen.classList.remove('hidden');
-    
+
     this.currentRoomIdEl.textContent = roomId;
-    
+
+    // Update player count when showing game screen
+    this.updatePlayerCount();
+
     // Set up mouse/touch controls
     this.setupMouseControls();
   }

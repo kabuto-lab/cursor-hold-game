@@ -111,6 +111,54 @@
       border-radius: 0;
       font-size: 0.9rem;
     }
+    
+    #chat-container {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      max-width: 600px;
+      background-color: rgba(15, 15, 35, 0.8);
+      border: 2px solid #00ffff;
+      border-radius: 0;
+      padding: 10px;
+      z-index: 100;
+    }
+    
+    #chat-messages {
+      height: 100px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      color: #00ff00;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+    }
+    
+    #chat-input-container {
+      display: flex;
+    }
+    
+    #chat-input {
+      flex-grow: 1;
+      background-color: #0f0f23;
+      color: #00ff00;
+      border: 1px solid #00ffff;
+      padding: 5px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+    }
+    
+    #chat-send-btn {
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 5px 10px;
+      margin-left: 5px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+    }
 
     .connection-status {
       display: inline-block;
@@ -163,13 +211,23 @@
       <div id="hud">
         <div id="playerInfo">
           <span class="connection-status connected" id="connectionStatus"></span>
-          <span id="playerName">Player 1</span> | 
+          <span id="playerName">Player 1</span> |
           <span id="otherPlayerName">Player 2</span>
         </div>
         <div id="roomInfo">Room: <span id="currentRoomId"></span></div>
+        <div id="playerCounter">Players: <span id="playerCount">0</span>/2</div>
         <button id="leaveRoomBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem;">LEAVE ROOM</button>
       </div>
       <div id="canvasContainer"></div>
+      
+      <!-- Chat Container -->
+      <div id="chat-container">
+        <div id="chat-messages"></div>
+        <div id="chat-input-container">
+          <input type="text" id="chat-input" placeholder="Type your message...">
+          <button id="chat-send-btn">Send</button>
+        </div>
+      </div>
     </div>
   </div>
   <script type="module" src="/src/main.ts"></script>
