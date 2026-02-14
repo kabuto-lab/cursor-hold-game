@@ -174,9 +174,8 @@ export class Game {
     }
 
     try {
-      // Generate a random room ID
-      const roomId = this.generateRoomId();
-      this.room = await this.client.create('holding_room', { roomId: roomId });
+      // Create room without specifying custom ID - let Colyseus assign one
+      this.room = await this.client.create('holding_room', {});
       this.currentPlayerId = this.room.sessionId;
       this.setupRoomHandlers();
 
@@ -184,8 +183,8 @@ export class Game {
       this.playerName = prompt('Enter your name:', `Player${this.currentPlayerId.substring(0, 4)}`) || `Player${this.currentPlayerId.substring(0, 4)}`;
       this.room.send('setPlayerName', { name: this.playerName });
 
-      // Show game screen
-      this.showGameScreen(roomId);
+      // Show game screen - use the actual room ID assigned by Colyseus
+      this.showGameScreen(this.room.id);
     } catch (error: any) {
       console.error('Failed to create room:', error);
       console.error('Error details:', {
@@ -220,8 +219,8 @@ export class Game {
       this.playerName = prompt('Enter your name:', `Player${this.currentPlayerId.substring(0, 4)}`) || `Player${this.currentPlayerId.substring(0, 4)}`;
       this.room.send('setPlayerName', { name: this.playerName });
 
-      // Show game screen
-      this.showGameScreen(roomId);
+      // Show game screen - use the actual room ID from the room object
+      this.showGameScreen(this.room.id);
     } catch (error: any) {
       console.error('Failed to join room:', error);
       console.error('Error details:', {
@@ -755,7 +754,8 @@ export class Game {
     });
   }
 
-  private generateRoomId(): string {
+  // Keeping this function for tests and potential future use
+  public generateRoomId(): string {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
   }
 

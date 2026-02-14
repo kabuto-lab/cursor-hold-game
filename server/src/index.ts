@@ -18,8 +18,13 @@ const gameServer = new Server({
   server
 });
 
+// Maintain a mapping of custom room IDs to actual room IDs
+const customRoomIdMap = new Map<string, string>();
+
 // Register rooms
-gameServer.define('holding_room', HoldingRoom);
+gameServer.define('holding_room', HoldingRoom, {
+  // Add default options if needed
+});
 
 // Define a health check endpoint
 app.get('/health', (req, res) => {
