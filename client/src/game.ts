@@ -6,7 +6,7 @@ import { NoiseFilter } from '@pixi/filter-noise';
 import { BloomFilter } from '@pixi/filter-bloom';
 
 export class Game {
-  private app: PIXI.Application;
+  private app!: PIXI.Application;
   private client!: Client;
   private room: any;
   private cursors: Map<string, PIXI.Sprite> = new Map();
@@ -29,26 +29,6 @@ export class Game {
   private currentRoomIdEl!: HTMLElement;
 
   constructor() {
-    this.app = new PIXI.Application({
-      backgroundColor: 0x0f0f23, // Dark blue background
-      antialias: false, // For crisp pixel art
-      autoDensity: true,
-      width: window.innerWidth,
-      height: window.innerHeight
-    });
-    
-    // Add retro filters to the stage
-    const pixelateFilter = new PixelateFilter();
-    pixelateFilter.size = new PIXI.Point(4, 4); // Set size using Point
-
-    const noiseFilter = new NoiseFilter(); // Create without arguments
-    noiseFilter.noise = 0.1; // Set noise level
-    noiseFilter.seed = Math.random(); // Set seed
-
-    const bloomFilter = new BloomFilter(); // Create without arguments
-    
-    this.app.stage.filters = [pixelateFilter, noiseFilter, bloomFilter] as any;
-    
     // Initialize UI elements
     this.landingScreen = document.getElementById('landingScreen')!;
     this.gameScreen = document.getElementById('gameScreen')!;
@@ -60,7 +40,7 @@ export class Game {
     this.playerNameEl = document.getElementById('playerName')!;
     this.otherPlayerNameEl = document.getElementById('otherPlayerName')!;
     this.currentRoomIdEl = document.getElementById('currentRoomId')!;
-    
+
     // Set up event listeners
     this.setupEventListeners();
   }
@@ -72,10 +52,33 @@ export class Game {
   }
 
   async init(): Promise<void> {
-    // Add the PixiJS application to the canvas container
+    // Initialize the PixiJS application
+    this.app = new PIXI.Application();
+    await this.app.init({
+      backgroundColor: 0x0f0f23, // Dark blue background
+      antialias: false, // For crisp pixel art
+      autoDensity: true,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      resolution: window.devicePixelRatio || 1,
+    });
+
+    // Add retro filters to the stage
+    const pixelateFilter = new PixelateFilter();
+    pixelateFilter.size = new PIXI.Point(4, 4); // Set size using Point
+
+    const noiseFilter = new NoiseFilter(); // Create without arguments
+    noiseFilter.noise = 0.1; // Set noise level
+    noiseFilter.seed = Math.random(); // Set seed
+
+    const bloomFilter = new BloomFilter(); // Create without arguments
+
+    this.app.stage.filters = [pixelateFilter, noiseFilter, bloomFilter] as any;
+
+    // Add the PixiJS application canvas to the canvas container
     const canvasContainer = document.getElementById('canvasContainer');
     if (canvasContainer) {
-      canvasContainer.appendChild(this.app.view as unknown as HTMLElement);
+      canvasContainer.appendChild(this.app.canvas);
     }
 
     // Create a starry background
