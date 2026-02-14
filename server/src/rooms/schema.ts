@@ -1,7 +1,7 @@
 import { Schema, type, MapSchema } from '@colyseus/schema';
 
 export class PlayerSchema extends Schema {
-  @type('string') id: string;
+  @type('string') id!: string;
   @type('string') name: string = '';
   @type('number') x: number = 0;
   @type('number') y: number = 0;

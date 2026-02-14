@@ -9,34 +9,17 @@ export class HoldingRoom extends Room<RoomState> {
     this.state.roomId = options.roomId || this.roomId;
     this.state.maxPlayers = 2;
 
-    // Set up automatic room cleanup when empty
-    this.on('afterNextPatch', () => {
-      if (this.clients.length === 0) {
-        if (this.holdTimeout) clearTimeout(this.holdTimeout);
-        this.holdTimeout = setTimeout(() => {
-          if (this.clients.length === 0) {
-            this.disconnect();
-          }
-        }, 5 * 60 * 1000); // 5 minutes
-      } else {
-        if (this.holdTimeout) {
-          clearTimeout(this.holdTimeout);
-          this.holdTimeout = null;
-        }
-      }
-    });
-
-    // Handle incoming messages
+    // Handle incoming messages using the modern messages object
     this.onMessage('updatePosition', (client, data) => {
       const player = this.state.players.get(client.sessionId);
       if (player) {
         // Validate position updates to prevent cheating
         if (
-          typeof data.x === 'number' && 
+          typeof data.x === 'number' &&
           typeof data.y === 'number' &&
-          data.x >= 0 && 
+          data.x >= 0 &&
           data.x <= 10000 && // Reasonable bounds
-          data.y >= 0 && 
+          data.y >= 0 &&
           data.y <= 10000
         ) {
           player.x = data.x;
@@ -60,9 +43,9 @@ export class HoldingRoom extends Room<RoomState> {
     this.onMessage('requestHoldHands', (client, data) => {
       const requestingPlayer = this.state.players.get(client.sessionId);
       const targetPlayer = this.state.players.get(data.targetPlayerId);
-      
+
       if (!requestingPlayer || !targetPlayer) return;
-      
+
       // Check if both players are in the same room
       if (this.state.players.has(client.sessionId) && this.state.players.has(data.targetPlayerId)) {
         // Start holding hands
@@ -70,7 +53,7 @@ export class HoldingRoom extends Room<RoomState> {
         requestingPlayer.holdingHandsWith = data.targetPlayerId;
         targetPlayer.isHoldingHands = true;
         targetPlayer.holdingHandsWith = client.sessionId;
-        
+
         // Broadcast to all clients that these players are now holding hands
         this.broadcast('holdHands', {
           player1Id: client.sessionId,
@@ -82,24 +65,43 @@ export class HoldingRoom extends Room<RoomState> {
     this.onMessage('releaseHands', (client) => {
       const releasingPlayer = this.state.players.get(client.sessionId);
       if (!releasingPlayer || !releasingPlayer.isHoldingHands) return;
-      
+
       const otherPlayerId = releasingPlayer.holdingHandsWith;
       const otherPlayer = this.state.players.get(otherPlayerId);
-      
+
       // Release hold for both players
       releasingPlayer.isHoldingHands = false;
       releasingPlayer.holdingHandsWith = '';
-      
+
       if (otherPlayer) {
         otherPlayer.isHoldingHands = false;
         otherPlayer.holdingHandsWith = '';
       }
-      
+
       // Broadcast to all clients that the hold has been released
       this.broadcast('releaseHands', {
         player1Id: client.sessionId,
         player2Id: otherPlayerId
       });
+    });
+  }
+
+  onActivate() {
+    // Set up automatic room cleanup when empty
+    this.setSimulationInterval((deltaTime) => {
+      if (this.clients.length === 0) {
+        if (this.holdTimeout) clearTimeout(this.holdTimeout);
+        this.holdTimeout = setTimeout(() => {
+          if (this.clients.length === 0) {
+            this.disconnect();
+          }
+        }, 5 * 60 * 1000); // 5 minutes
+      } else {
+        if (this.holdTimeout) {
+          clearTimeout(this.holdTimeout);
+          this.holdTimeout = null;
+        }
+      }
     });
   }
 
