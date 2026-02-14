@@ -1,4 +1,3 @@
-import * as PIXI from 'pixi.js';
 import { Game } from './game';
 
 // Initialize the game when the page loads

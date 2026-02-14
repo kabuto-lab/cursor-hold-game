@@ -1,38 +1,32 @@
 import * as PIXI from 'pixi.js';
 import { Client } from 'colyseus.js';
-import { PlayerSchema, RoomState } from '../types/schema';
+import { PlayerSchema } from './types/schema';
 import { PixelateFilter } from '@pixi/filter-pixelate';
 import { NoiseFilter } from '@pixi/filter-noise';
 import { BloomFilter } from '@pixi/filter-bloom';
 
-interface CursorPosition {
-  x: number;
-  y: number;
-}
-
 export class Game {
   private app: PIXI.Application;
-  private client: Client;
+  private client!: Client;
   private room: any;
   private cursors: Map<string, PIXI.Sprite> = new Map();
   private cursorLabels: Map<string, PIXI.Text> = new Map();
   private links: PIXI.Graphics[] = [];
   private currentPlayerId: string = '';
-  private gameState: RoomState | null = null;
+  // private gameState: RoomState | null = null;  // TODO: Use this for game state management - commented out for now to avoid unused error
   private playerName: string = '';
-  
+
   // UI elements
-  private landingScreen: HTMLElement;
-  private gameScreen: HTMLElement;
-  private createRoomBtn: HTMLButtonElement;
-  private joinRoomBtn: HTMLButtonElement;
-  private roomIdInput: HTMLInputElement;
-  private leaveRoomBtn: HTMLButtonElement;
-  private connectionStatus: HTMLElement;
-  private playerNameEl: HTMLElement;
-  private otherPlayerNameEl: HTMLElement;
-  private currentRoomIdEl: HTMLElement;
-  private roomLinkEl: HTMLElement;
+  private landingScreen!: HTMLElement;
+  private gameScreen!: HTMLElement;
+  private createRoomBtn!: HTMLButtonElement;
+  private joinRoomBtn!: HTMLButtonElement;
+  private roomIdInput!: HTMLInputElement;
+  private leaveRoomBtn!: HTMLButtonElement;
+  private connectionStatus!: HTMLElement;
+  private playerNameEl!: HTMLElement;
+  private otherPlayerNameEl!: HTMLElement;
+  private currentRoomIdEl!: HTMLElement;
 
   constructor() {
     this.app = new PIXI.Application({
@@ -45,19 +39,15 @@ export class Game {
     
     // Add retro filters to the stage
     const pixelateFilter = new PixelateFilter();
-    pixelateFilter.size = { x: 4, y: 4 }; // Pixelate effect
+    pixelateFilter.size = new PIXI.Point(4, 4); // Set size using Point
+
+    const noiseFilter = new NoiseFilter(); // Create without arguments
+    noiseFilter.noise = 0.1; // Set noise level
+    noiseFilter.seed = Math.random(); // Set seed
+
+    const bloomFilter = new BloomFilter(); // Create without arguments
     
-    const noiseFilter = new NoiseFilter();
-    noiseFilter.noise = 0.1; // Subtle noise for CRT effect
-    
-    const bloomFilter = new BloomFilter({
-      threshold: 0.5,
-      blur: 10,
-      brightness: 1,
-      quality: 5
-    });
-    
-    this.app.stage.filters = [pixelateFilter, noiseFilter, bloomFilter];
+    this.app.stage.filters = [pixelateFilter, noiseFilter, bloomFilter] as any;
     
     // Initialize UI elements
     this.landingScreen = document.getElementById('landingScreen')!;
@@ -103,13 +93,7 @@ export class Game {
 
   private createStarryBackground(): void {
     // Create a container for stars
-    const starContainer = new PIXI.ParticleContainer(1000, {
-      scale: true,
-      position: true,
-      rotation: true,
-      uvs: true,
-      alpha: true,
-    });
+    const starContainer = new PIXI.ParticleContainer();
     
     // Generate random stars
     for (let i = 0; i < 200; i++) {
@@ -176,7 +160,7 @@ export class Game {
     try {
       // Generate a random room ID
       const roomId = this.generateRoomId();
-      this.room = await this.client.joinOrCreate('holding_room', { roomId });
+      this.room = await this.client.joinOrCreate('holding_room', { roomId: roomId });
       this.currentPlayerId = this.room.sessionId;
       this.setupRoomHandlers();
       
@@ -200,7 +184,7 @@ export class Game {
     }
 
     try {
-      this.room = await this.client.joinById('holding_room', { roomId });
+      this.room = await this.client.joinById('holding_room', roomId);
       this.currentPlayerId = this.room.sessionId;
       this.setupRoomHandlers();
       
@@ -218,45 +202,46 @@ export class Game {
 
   private setupRoomHandlers(): void {
     // Handle room state changes
-    this.room.state.players.onAdd = (player: PlayerSchema, key: string) => {
-      this.addPlayer(key, player);
+    this.room.state.players.onAdd = (_player: PlayerSchema, key: string) => {
+      this.addPlayer(key, _player);
     };
 
-    this.room.state.players.onRemove = (player: PlayerSchema, key: string) => {
+    this.room.state.players.onRemove = (_player: PlayerSchema, key: string) => {
       this.removePlayer(key);
     };
 
     // Listen for state changes
-    this.room.state.onChange(() => {
-      this.gameState = this.room.state;
-    });
+    // this.room.state.onChange(() => {
+    //   this.gameState = this.room.state;
+    // });
 
     // Listen for position updates
-    this.room.onMessage('updatePosition', (data) => {
-      this.updateCursorPosition(data.playerId, data.position);
+    this.room.onMessage('updatePosition', (data: { playerId: string; x: number; y: number }) => {
+      // Update the cursor position for the player who sent the update
+      this.updateCursorPosition(data.playerId, { x: data.x, y: data.y });
     });
 
     // Listen for hold hands events
-    this.room.onMessage('holdHands', (data) => {
+    this.room.onMessage('holdHands', (data: { player1Id: string; player2Id: string }) => {
       this.startHoldingHands(data.player1Id, data.player2Id);
     });
 
-    this.room.onMessage('releaseHands', (data) => {
+    this.room.onMessage('releaseHands', (data: { player1Id: string; player2Id: string }) => {
       this.stopHoldingHands(data.player1Id, data.player2Id);
     });
 
     // Listen for player name updates
-    this.room.onMessage('playerNameUpdated', (data) => {
+    this.room.onMessage('playerNameUpdated', (data: { playerId: string; name: string }) => {
       this.updatePlayerName(data.playerId, data.name);
     });
 
     // Handle room connection events
-    this.room.onLeave((code) => {
+    this.room.onLeave((code: number) => {
       console.log('Left room with code:', code);
       this.handleDisconnection(code);
     });
 
-    this.room.onError((err) => {
+    this.room.onError((err: any) => {
       console.error('Room error:', err);
       this.showError('Connection error occurred. Please refresh the page.');
     });
@@ -325,7 +310,7 @@ export class Game {
 
     // Remove any links associated with this player
     this.links = this.links.filter(link => {
-      if (link.userData.player1 === playerId || link.userData.player2 === playerId) {
+      if (link.userData && (link.userData.player1 === playerId || link.userData.player2 === playerId)) {
         this.app.stage.removeChild(link);
         return false;
       }
@@ -402,9 +387,10 @@ export class Game {
     if (!this.room) return;
     
     // Check if already holding hands
-    const isAlreadyHolding = Array.from(this.links).some(link => 
-      link.userData.player1 === this.currentPlayerId && link.userData.player2 === targetPlayerId ||
-      link.userData.player1 === targetPlayerId && link.userData.player2 === this.currentPlayerId
+    const isAlreadyHolding = Array.from(this.links).some(link =>
+      link.userData && 
+      ((link.userData.player1 === this.currentPlayerId && link.userData.player2 === targetPlayerId) ||
+      (link.userData.player1 === targetPlayerId && link.userData.player2 === this.currentPlayerId))
     );
     
     if (isAlreadyHolding) {
@@ -432,7 +418,7 @@ export class Game {
     
     // Create a link between the two players
     const link = new PIXI.Graphics();
-    link.userData = { player1: player1Id, player2: player2Id };
+    (link as any).userData = { player1: player1Id, player2: player2Id };
     this.app.stage.addChild(link);
     this.links.push(link);
     
@@ -496,13 +482,7 @@ export class Game {
   }
 
   private createHeartParticles(): void {
-    const heartContainer = new PIXI.ParticleContainer(100, {
-      scale: true,
-      position: true,
-      rotation: true,
-      uvs: true,
-      alpha: true,
-    });
+    const heartContainer = new PIXI.ParticleContainer();
     
     // Create heart-shaped particles
     for (let i = 0; i < 50; i++) {
@@ -614,9 +594,10 @@ export class Game {
 
   private stopHoldingHands(player1Id: string, player2Id: string): void {
     // Find and remove the link between these players
-    const linkIndex = this.links.findIndex(link => 
-      link.userData.player1 === player1Id && link.userData.player2 === player2Id ||
-      link.userData.player1 === player2Id && link.userData.player2 === player1Id
+    const linkIndex = this.links.findIndex(link =>
+      link.userData && 
+      ((link.userData.player1 === player1Id && link.userData.player2 === player2Id) ||
+      (link.userData.player1 === player2Id && link.userData.player2 === player1Id))
     );
     
     if (linkIndex !== -1) {
@@ -640,39 +621,43 @@ export class Game {
 
   private updateLinks(): void {
     this.links.forEach(link => {
+      if (!link.userData) return; // Skip if userData is not set
+      
       const player1Id = link.userData.player1;
       const player2Id = link.userData.player2;
-      
+
+      if (!player1Id || !player2Id) return; // Skip if player IDs are not set
+
       const cursor1 = this.cursors.get(player1Id);
       const cursor2 = this.cursors.get(player2Id);
-      
+
       if (cursor1 && cursor2) {
         link.clear();
-        
+
         // Draw a chain-like link between cursors with 8-bit style
         link.lineStyle(2, 0x00ff00);
-        
+
         // Calculate distance between cursors
         const dx = cursor2.x - cursor1.x;
         const dy = cursor2.y - cursor1.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
+
         // Draw a pixelated chain effect
         const chainSegmentLength = 10;
-        const numSegments = Math.floor(distance / chainSegmentLength);
-        
+        const numSegments = distance > 0 ? Math.floor(distance / chainSegmentLength) : 0;
+
         if (numSegments > 0) {
           // Calculate direction vector
           const dirX = dx / distance;
           const dirY = dy / distance;
-          
+
           // Draw chain segments
           for (let i = 0; i < numSegments; i++) {
             const startX = cursor1.x + dirX * i * chainSegmentLength;
             const startY = cursor1.y + dirY * i * chainSegmentLength;
             const endX = cursor1.x + dirX * (i + 1) * chainSegmentLength;
             const endY = cursor1.y + dirY * (i + 1) * chainSegmentLength;
-            
+
             // Alternate between filled and empty segments for chain effect
             if (i % 2 === 0) {
               link.lineStyle(2, 0x00ff00);
@@ -686,8 +671,10 @@ export class Game {
             }
           }
         }
-        
+
         // Draw a line from last segment to the second cursor
+        const dirX = distance > 0 ? dx / distance : 0; // Recalculate if needed for the final line
+        const dirY = distance > 0 ? dy / distance : 0;
         const lastX = cursor1.x + dirX * numSegments * chainSegmentLength;
         const lastY = cursor1.y + dirY * numSegments * chainSegmentLength;
         link.lineStyle(2, 0x00ff00);
@@ -715,33 +702,33 @@ export class Game {
   private setupMouseControls(): void {
     // Handle mouse movement
     this.app.stage.eventMode = 'static';
-    this.app.stage.on('pointermove', (event) => {
+    this.app.stage.on('pointermove', (event: PIXI.FederatedPointerEvent) => {
       if (!this.room || !this.currentPlayerId) return;
-      
+
       const pos = event.global;
       const cursor = this.cursors.get(this.currentPlayerId);
-      
+
       if (cursor) {
         // Wrap around screen edges
         let newX = pos.x;
         let newY = pos.y;
-        
+
         if (pos.x < 0) newX = this.app.screen.width;
         else if (pos.x > this.app.screen.width) newX = 0;
-        
+
         if (pos.y < 0) newY = this.app.screen.height;
         else if (pos.y > this.app.screen.height) newY = 0;
-        
+
         cursor.x = newX;
         cursor.y = newY;
-        
+
         // Update label position
         const label = this.cursorLabels.get(this.currentPlayerId);
         if (label) {
           label.x = newX;
           label.y = newY;
         }
-        
+
         // Send position update to server
         this.room.send('updatePosition', { x: newX, y: newY });
       }
@@ -820,7 +807,7 @@ export class Game {
     
     try {
       // Reconnect to the same room
-      this.room = await this.client.joinById('holding_room', { roomId });
+      this.room = await this.client.joinById('holding_room', roomId);
       this.setupRoomHandlers();
       
       // Update UI
