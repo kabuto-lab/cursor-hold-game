@@ -1708,7 +1708,7 @@ export class Game {
     // battleGrid in HTML starts at 33% from left and takes 33% width, full height
     const width = 20;
     const height = 32;
-    
+
     // Calculate cell size to match the battleGrid CSS sizing
     // battleGrid has background-size: calc(100% / 20) calc(100% / 32) for 20x32 grid
     const gridWidth = this.app.screen.width * 0.33; // 33% of screen width
@@ -1716,8 +1716,8 @@ export class Game {
     const cellSizeX = gridWidth / width;
     const cellSizeY = gridHeight / height;
     // Use minimum to ensure it fits
-    const cellSize = Math.min(cellSizeX, cellSizeY);
-    
+    // const cellSize = Math.min(cellSizeX, cellSizeY); // Not used in this function
+
     // Position to match the battleGrid in HTML (starts at 33% from left, full height)
     this.battleVisualization.x = this.app.screen.width * 0.33; // Start from 33% from left
     this.battleVisualization.y = 0; // Align to top
