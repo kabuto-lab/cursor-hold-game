@@ -242,7 +242,7 @@ export class Game {
   
   // Virus battle simulation
   private virusBattle: VirusBattleAlgebra | null = null;
-  private battleVisualization: PIXI.Graphics | null = null;
+  private battleVisualization: PIXI.Graphics = new PIXI.Graphics();
   private battleRunning: boolean = false;
   private battleTicker: PIXI.Ticker | null = null;
   
@@ -256,7 +256,7 @@ export class Game {
   private aggressionVisualizer: AggressionVisualizer | null = null;
   
   // Battle container for easy positioning
-  private battleContainer: PIXI.Container | null = null;
+  private battleContainer: PIXI.Container = new PIXI.Container();
 
   async init(): Promise<void> {
     // Initialize the PixiJS application
@@ -1697,12 +1697,8 @@ export class Game {
 
   private createBattleVisualization(): void {
     // Remove any existing battle visualization
-    if (this.battleVisualization) {
-      if (this.battleLayer) {
-        this.battleLayer.removeChild(this.battleVisualization);
-      } else {
-        this.app.stage.removeChild(this.battleVisualization);
-      }
+    if (this.battleVisualization.parent) {
+      this.battleVisualization.parent.removeChild(this.battleVisualization);
     }
     
     // Create a battle layer if it doesn't exist
@@ -1712,13 +1708,8 @@ export class Game {
       this.app.stage.addChild(this.battleLayer);
     }
     
-    // Create a battle container for easy positioning
-    if (!this.battleContainer) {
-      this.battleContainer = new PIXI.Container();
-    }
-    
-    // Create a new graphics object for the battle visualization
-    this.battleVisualization = new PIXI.Graphics();
+    // Clear any children from battle container
+    this.battleContainer.removeChildren();
     
     // Add visualization to container
     this.battleContainer.addChild(this.battleVisualization);
@@ -1777,8 +1768,6 @@ export class Game {
   }
 
   private renderBattleGrid(battleGrid: number[]): void {
-    if (!this.battleVisualization) return;
-    
     // Clear the previous visualization
     this.battleVisualization.clear();
 
