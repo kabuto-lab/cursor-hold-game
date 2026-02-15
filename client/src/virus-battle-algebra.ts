@@ -473,11 +473,9 @@ class VirusBattleAlgebra {
           const recoveryAmount = cell.ownerParams.resilience / 5.0;
           const maxHealth = 20 + (cell.ownerParams.defense * 2) + (cell.ownerParams.resilience * 3);
           cell.health = Math.min(maxHealth, cell.health + recoveryAmount);
-          
+
           // Увеличение уровня заражения для живых клеток
-          if (cell.state !== CellState.EMPTY) {
-            cell.infectionLevel = Math.min(1.0, cell.infectionLevel + 0.05);
-          }
+          cell.infectionLevel = Math.min(1.0, cell.infectionLevel + 0.05);
         }
       }
     }
@@ -561,7 +559,7 @@ class VirusBattleAlgebra {
 }
 
 // Экспортируем класс для использования в основном проекте
-export { VirusBattleAlgebra, CellState, VirusParams, Cell };
+export { VirusBattleAlgebra, CellState, type VirusParams, type Cell };
 
 // Экспорт по умолчанию
 export default VirusBattleAlgebra;

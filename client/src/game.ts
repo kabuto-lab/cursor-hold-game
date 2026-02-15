@@ -1587,48 +1587,8 @@ export class Game {
     this.readyBtn.disabled = false;
   }
 
-  private startVirusBattle(message: string): void {
-    console.log(message);
-    
-    // Show a message to the players
-    this.showMessage('VIRUS BATTLE STARTED!');
-    
-    // Disable parameter adjustments during battle
-    this.disableParameterAdjustments();
-    
-    // Initialize the virus battle simulation
-    this.virusBattle = new VirusBattleAlgebra(20, 32); // 20x32 grid as specified
-    
-    // Set player parameters based on distributed points
-    this.virusBattle.setPlayerParams('A', this.paramValues);
-    this.virusBattle.setPlayerParams('B', this.opponentParamValues || this.getDefaultOpponentParams());
-    
-    // Place initial viruses
-    this.virusBattle.placeInitialViruses();
-    
-    // Create visualization
-    this.createBattleVisualization();
-    
-    // Start the battle simulation
-    this.battleRunning = true;
-    
-    // Create a ticker for the battle simulation
-    this.battleTicker = new PIXI.Ticker();
-    this.battleTicker.add(() => {
-      if (this.battleRunning && this.virusBattle) {
-        const winner = this.virusBattle.simulateTick();
-        if (winner) {
-          this.endVirusBattle(`Player ${winner} wins the virus battle!`);
-          this.battleTicker?.destroy();
-          this.battleTicker = null;
-        } else {
-          this.updateBattleVisualization();
-        }
-      }
-    });
-    
-    this.battleTicker.start();
-  }
+  // Property to store opponent's parameters
+  private opponentParamValues: { [key: string]: number } | null = null;
 
   private getDefaultOpponentParams(): { [key: string]: number } {
     // Default parameters for opponent if not received
@@ -1708,11 +1668,64 @@ export class Game {
     }
   }
 
-  private handleVirusTick(tick: number, message: string): void {
+  private handleVirusTick(_tick: number, message: string): void {
     console.log(`Virus tick: ${message}`);
     
     // In the future, this would update the battle visualization
     // based on the current state of the battle
+  }
+
+  private updateVirusParameters(playerId: string, params: { [key: string]: number }): void {
+    // Update the virus parameters for the specified player
+    console.log(`Virus parameters updated for player ${playerId}:`, params);
+    
+    // Store opponent's parameters if it's not our own
+    if (playerId !== this.currentPlayerId) {
+      this.opponentParamValues = params;
+    }
+  }
+
+  private startVirusBattle(message: string): void {
+    console.log(message);
+    
+    // Show a message to the players
+    this.showMessage('VIRUS BATTLE STARTED!');
+    
+    // Disable parameter adjustments during battle
+    this.disableParameterAdjustments();
+    
+    // Initialize the virus battle simulation
+    this.virusBattle = new VirusBattleAlgebra(20, 32); // 20x32 grid as specified
+    
+    // Set player parameters based on distributed points
+    this.virusBattle.setPlayerParams('A', this.paramValues);
+    this.virusBattle.setPlayerParams('B', this.opponentParamValues || this.getDefaultOpponentParams());
+    
+    // Place initial viruses
+    this.virusBattle.placeInitialViruses();
+    
+    // Create visualization
+    this.createBattleVisualization();
+    
+    // Start the battle simulation
+    this.battleRunning = true;
+    
+    // Create a ticker for the battle simulation
+    this.battleTicker = new PIXI.Ticker();
+    this.battleTicker.add(() => {
+      if (this.battleRunning && this.virusBattle) {
+        const winner = this.virusBattle.simulateTick();
+        if (winner) {
+          this.endVirusBattle(`Player ${winner} wins the virus battle!`);
+          this.battleTicker?.destroy();
+          this.battleTicker = null;
+        } else {
+          this.updateBattleVisualization();
+        }
+      }
+    });
+    
+    this.battleTicker.start();
   }
 
   private endVirusBattle(message: string): void {
@@ -1732,19 +1745,6 @@ export class Game {
     
     // Re-enable parameter adjustments after battle
     this.enableParameterAdjustments();
-  }
-
-  // Property to store opponent's parameters
-  private opponentParamValues: { [key: string]: number } | null = null;
-
-  private updateVirusParameters(playerId: string, params: { [key: string]: number }): void {
-    // Update the virus parameters for the specified player
-    console.log(`Virus parameters updated for player ${playerId}:`, params);
-    
-    // Store opponent's parameters if it's not our own
-    if (playerId !== this.currentPlayerId) {
-      this.opponentParamValues = params;
-    }
   }
 
   private copyRoomIdToClipboard(): void {
