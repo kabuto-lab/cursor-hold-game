@@ -1707,12 +1707,11 @@ export class Game {
     // Create a new graphics object for the battle visualization
     this.battleVisualization = new PIXI.Graphics();
     
-    // Position battle zone at the start of the second third of the screen (640px wide)
+    // Position battle zone at the start of the second third of the screen
     // Second third starts at ~33% of screen width
     this.battleVisualization.x = this.app.screen.width * 0.33; // Start from 33% from left (second third)
-    // Center vertically to accommodate the fixed grid height
-    const gridHeight = (640 / 20) * 32; // Calculate height based on 640px width
-    this.battleVisualization.y = (this.app.screen.height - gridHeight) / 2; // Center vertically
+    // The y position will be adjusted in renderBattleGrid to center vertically
+    this.battleVisualization.y = 0; // Initially at top, will be adjusted in renderBattleGrid
     
     // Add to the battle layer (not directly to stage to avoid mouse conflicts)
     this.battleLayer.addChild(this.battleVisualization);
@@ -1777,13 +1776,21 @@ export class Game {
     const width = 20;
     const height = 32;
     
-    // Calculate cell size based on fixed width of 640px
-    const gridWidth = 640; // Fixed width of 640px
-    const gridHeight = (640 / width) * height; // Maintain aspect ratio
+    // Calculate cell size based on available space in the battle zone
+    // The battle zone is positioned at 33% from left with 33% width
+    const gridWidth = this.app.screen.width * 0.33; // 33% of screen width
+    const gridHeight = this.app.screen.height; // Full height
     const cellSizeX = gridWidth / width;
     const cellSizeY = gridHeight / height;
     // Use minimum to ensure it fits
     const cellSize = Math.min(cellSizeX, cellSizeY);
+    
+    // Calculate actual grid dimensions based on cell size
+    const actualGridWidth = cellSize * width;
+    const actualGridHeight = cellSize * height;
+    
+    // Center the grid vertically in the battle zone
+    this.battleVisualization.y = (this.app.screen.height - actualGridHeight) / 2;
     
     // Initialize aggression visualizer if not already done
     if (!this.aggressionVisualizer) {
