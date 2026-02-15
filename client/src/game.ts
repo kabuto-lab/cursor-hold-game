@@ -2043,22 +2043,27 @@ class AggressionVisualizer {
     const centerX = x + this.cellSize / 2;
     const centerY = y + this.cellSize / 2;
     const symbolSize = Math.min(6, Math.floor(this.cellSize / 4));
+
+    // Use aggressionLevel to modify appearance
+    // Higher aggression levels get more detailed/visually intense symbols
+    const detailLevel = Math.min(aggressionLevel, 3); // Cap detail level at 3
     
     // Draw sword handle (vertical line)
     cellGraphics.beginFill(0xffffff); // White handle
     cellGraphics.drawRect(centerX - 0.5, centerY - symbolSize/2, 1, symbolSize);
     cellGraphics.endFill();
-    
+
     // Draw crossguard (horizontal line)
     cellGraphics.beginFill(0xffffff);
     cellGraphics.drawRect(centerX - symbolSize/2, centerY - 0.5, symbolSize, 1);
     cellGraphics.endFill();
-    
-    // Draw blade
-    cellGraphics.beginFill(0xdddddd); // Light gray blade
+
+    // Draw blade with aggression-based intensity
+    const bladeColor = aggressionLevel >= 4 ? 0xdddddd : 0xaaaaaa; // More metallic for higher aggression
+    cellGraphics.beginFill(bladeColor);
     cellGraphics.drawRect(centerX - 0.5, centerY, 1, symbolSize/2);
     cellGraphics.endFill();
-    
+
     // Add black outline
     cellGraphics.lineStyle(0.5, 0x000000);
     cellGraphics.moveTo(centerX - 0.5, centerY - symbolSize/2);
