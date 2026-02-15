@@ -100,6 +100,15 @@
       height: 100%;
     }
 
+    #canvasContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    
     #hud {
       position: absolute;
       top: 10px;
@@ -208,6 +217,8 @@
 
     <!-- Game Screen -->
     <div id="gameScreen" class="screen hidden">
+      <div id="canvasContainer"></div>
+      
       <div id="hud">
         <div id="playerInfo">
           <span class="connection-status connected" id="connectionStatus"></span>
@@ -220,7 +231,6 @@
         <button id="createBallBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem; margin-left: 10px;">BALL</button>
         <button id="createFollowerBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem; margin-left: 10px;">FOLLOWER</button>
       </div>
-      <div id="canvasContainer"></div>
       
       <!-- Chat Container -->
       <div id="chat-container">
