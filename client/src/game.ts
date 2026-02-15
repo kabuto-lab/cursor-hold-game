@@ -1680,16 +1680,23 @@ export class Game {
     // Create a new graphics object for the battle visualization
     this.battleVisualization = new PIXI.Graphics();
     
-    // Position it in the battle grid area (center portion of screen, between sidebars)
-    // The battle grid occupies the center 33% of the screen, starting from 33% from left (as per index.html)
+    // Position it to match the battleGrid element in HTML
+    // battleGrid in HTML starts at 33% from left and takes 33% width, full height
     const width = 20;
     const height = 32;
-    const cellSize = Math.min(15, Math.floor((this.app.screen.width * 0.33) / width)); // 33% of screen width
-    const gridHeight = height * cellSize;
     
-    // Position to match the battleGrid in HTML (starting at 33% from left, centered vertically)
+    // Calculate cell size to match the battleGrid CSS sizing
+    // battleGrid has background-size: calc(100% / 20) calc(100% / 32) for 20x32 grid
+    const gridWidth = this.app.screen.width * 0.33; // 33% of screen width
+    const gridHeight = this.app.screen.height; // Full height
+    const cellSizeX = gridWidth / width;
+    const cellSizeY = gridHeight / height;
+    // Use minimum to ensure it fits
+    const cellSize = Math.min(cellSizeX, cellSizeY);
+    
+    // Position to match the battleGrid in HTML (starts at 33% from left, full height)
     this.battleVisualization.x = this.app.screen.width * 0.33; // Start from 33% from left
-    this.battleVisualization.y = this.app.screen.height / 2 - gridHeight / 2; // Center vertically
+    this.battleVisualization.y = 0; // Align to top
     
     // Add to the stage
     this.app.stage.addChild(this.battleVisualization);
@@ -1754,8 +1761,14 @@ export class Game {
     const width = 20;
     const height = 32;
     
-    // Calculate cell size based on available space
-    const cellSize = Math.min(15, Math.floor((this.app.screen.width * 0.33) / width)); // 33% of screen width
+    // Calculate cell size to match the battleGrid CSS sizing
+    // battleGrid has background-size: calc(100% / 20) calc(100% / 32) for 20x32 grid
+    const gridWidth = this.app.screen.width * 0.33; // 33% of screen width
+    const gridHeight = this.app.screen.height; // Full height
+    const cellSizeX = gridWidth / width;
+    const cellSizeY = gridHeight / height;
+    // Use minimum to ensure it fits
+    const cellSize = Math.min(cellSizeX, cellSizeY);
     
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
