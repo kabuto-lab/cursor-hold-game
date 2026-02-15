@@ -57,7 +57,6 @@ export class Game {
   private currentRoomIdEl!: HTMLElement;
   
   // Virus parameter elements
-  private paramCells: HTMLElement[] = [];
   private paramValues: { [key: string]: number } = {};
   private pointsRemainingEl!: HTMLElement;
   private readyBtn!: HTMLButtonElement;
@@ -1538,7 +1537,7 @@ export class Game {
     // 3. Start the visualization of the battle
   }
 
-  private handleVirusTick(tick: number, message: string): void {
+  private handleVirusTick(_tick: number, message: string): void {
     console.log(`Virus tick: ${message}`);
     
     // In the future, this would update the battle visualization
