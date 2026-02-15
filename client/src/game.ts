@@ -151,8 +151,6 @@ export class Game {
       canvasContainer.appendChild(this.app.canvas);
     }
 
-    // Create a starry background
-    this.createStarryBackground();
 
     // Initialize the Colyseus client with secure connection
     let serverUrl;
@@ -240,29 +238,6 @@ export class Game {
     }
   }
 
-  private createStarryBackground(): void {
-    // Create a container for stars
-    const starContainer = new PIXI.Container();
-    
-    // Generate random stars
-    for (let i = 0; i < 200; i++) {
-      const size = Math.random() * 2;
-      const star = new PIXI.Graphics()
-        .circle(0, 0, size)
-        .fill({ color: 0xFFFFFF });
-
-      // Random position
-      star.x = Math.random() * this.app.screen.width;
-      star.y = Math.random() * this.app.screen.height;
-
-      // Random twinkle effect
-      (star as any).alpha = 0.3 + Math.random() * 0.7;
-
-      starContainer.addChild(star);
-    }
-    
-    this.app.stage.addChildAt(starContainer, 0); // Add at bottom layer
-  }
 
   private setupKeyboardControls(): void {
     // Allow arrow key movement for accessibility
@@ -773,11 +748,6 @@ export class Game {
     if (!this.hasOwnCircle()) {
       this.createPlayerCircle();
     }
-    
-    // Also open the left sidebar with a slight delay for a coordinated effect
-    setTimeout(() => {
-      this.leftSidebar.classList.add('active');
-    }, 100);
   }
   
   private hasOwnCircle(): boolean {
@@ -824,11 +794,6 @@ export class Game {
 
   private closeSidebar(): void {
     this.sidebar.classList.remove('active');
-    
-    // Also close the left sidebar with a slight delay for a coordinated effect
-    setTimeout(() => {
-      this.leftSidebar.classList.remove('active');
-    }, 50);
   }
 
 
@@ -869,20 +834,10 @@ export class Game {
 
   private openLeftSidebar(): void {
     this.leftSidebar.classList.add('active');
-    
-    // Also open the right sidebar with a slight delay for a coordinated effect
-    setTimeout(() => {
-      this.sidebar.classList.add('active');
-    }, 100);
   }
 
   private closeLeftSidebar(): void {
     this.leftSidebar.classList.remove('active');
-    
-    // Also close the right sidebar with a slight delay for a coordinated effect
-    setTimeout(() => {
-      this.sidebar.classList.remove('active');
-    }, 50);
   }
 
   private createCursorSprite(playerId: string, _originalColor: number): PIXI.Sprite {
