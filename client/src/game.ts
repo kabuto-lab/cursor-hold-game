@@ -242,7 +242,7 @@ export class Game {
   
   // Virus battle simulation
   private virusBattle: VirusBattleAlgebra | null = null;
-  private battleVisualization: PIXI.Graphics = new PIXI.Graphics();
+  private battleVisualization: PIXI.Graphics | null = new PIXI.Graphics();
   private battleRunning: boolean = false;
   private battleTicker: PIXI.Ticker | null = null;
   
@@ -1697,7 +1697,7 @@ export class Game {
 
   private createBattleVisualization(): void {
     // Remove any existing battle visualization
-    if (this.battleVisualization.parent) {
+    if (this.battleVisualization?.parent) {
       this.battleVisualization.parent.removeChild(this.battleVisualization);
     }
     
@@ -1712,7 +1712,9 @@ export class Game {
     this.battleContainer.removeChildren();
     
     // Add visualization to container
-    this.battleContainer.addChild(this.battleVisualization);
+    if (this.battleVisualization) {
+      this.battleContainer.addChild(this.battleVisualization);
+    }
     
     // Add container to battle layer
     this.battleLayer.addChild(this.battleContainer);
