@@ -21,6 +21,9 @@ export class Game {
   private chatMessagesDiv!: HTMLElement;
   private chatInput!: HTMLInputElement;
   private chatSendBtn!: HTMLButtonElement;
+  
+  // Ball button element
+  private createBallBtn!: HTMLButtonElement;
 
   // UI elements
   private landingScreen!: HTMLElement;
@@ -52,6 +55,9 @@ export class Game {
     this.chatInput = document.getElementById('chat-input')! as HTMLInputElement;
     this.chatSendBtn = document.getElementById('chat-send-btn')! as HTMLButtonElement;
 
+    // Initialize ball button
+    this.createBallBtn = document.getElementById('createBallBtn')! as HTMLButtonElement;
+
     // Set up event listeners
     this.setupEventListeners();
   }
@@ -68,6 +74,9 @@ export class Game {
         this.sendMessage();
       }
     });
+    
+    // Ball button event listener
+    this.createBallBtn.addEventListener('click', () => this.createBall());
   }
 
   async init(): Promise<void> {
@@ -314,6 +323,21 @@ export class Game {
     // Listen for chat messages
     this.room.onMessage('chatMessage', (data: { playerId: string; playerName: string; message: string; timestamp: number }) => {
       this.displayChatMessage(data.playerName, data.message, data.timestamp);
+    });
+
+    // Listen for ball creation
+    this.room.onMessage('ballCreated', (data: { id: string; x: number; y: number; radius: number; color: number }) => {
+      // Create a temporary DraggableObjectSchema object to pass to addObject
+      const tempObj = {
+        id: data.id,
+        x: data.x,
+        y: data.y,
+        radius: data.radius,
+        color: data.color,
+        isBeingDragged: false,
+        draggedBy: ''
+      };
+      this.addObject(data.id, tempObj as DraggableObjectSchema);
     });
 
     // Handle room connection events
@@ -570,6 +594,22 @@ export class Game {
     
     // Scroll to the bottom of the chat
     this.chatMessagesDiv.scrollTop = this.chatMessagesDiv.scrollHeight;
+  }
+
+  private createBall(): void {
+    if (!this.room) return;
+    
+    // Generate a unique ID for the ball
+    const ballId = `ball_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    
+    // Send message to server to create the ball
+    this.room.send('createBall', {
+      id: ballId,
+      x: this.app.screen.width / 2, // Center of screen
+      y: this.app.screen.height / 2,
+      radius: 30,
+      color: 0xff69b4 // Hot pink color
+    });
   }
 
   private createCursorSprite(color: number): PIXI.Sprite {

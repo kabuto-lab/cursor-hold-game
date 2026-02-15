@@ -9,15 +9,6 @@ export class HoldingRoom extends Room<RoomState> {
     this.state.roomId = options.roomId || this.roomId;
     this.state.maxPlayers = 2;
 
-    // Add a default draggable circle object
-    const circleObject = new DraggableObjectSchema();
-    circleObject.id = 'circle1';
-    circleObject.x = 400;
-    circleObject.y = 300;
-    circleObject.radius = 30;
-    circleObject.color = 0xff69b4; // Hot pink color
-    this.state.objects.set(circleObject.id, circleObject);
-
     // Handle incoming messages using the modern messages object
     this.onMessage('updatePosition', (client, data) => {
       const player = this.state.players.get(client.sessionId);
@@ -161,6 +152,40 @@ export class HoldingRoom extends Room<RoomState> {
           playerName: player.name,
           message: message,
           timestamp: Date.now()
+        });
+      }
+    });
+
+    // Handle ball creation
+    this.onMessage('createBall', (client, data) => {
+      // Validate the data
+      if (
+        typeof data.id === 'string' &&
+        typeof data.x === 'number' &&
+        typeof data.y === 'number' &&
+        typeof data.radius === 'number' &&
+        typeof data.color === 'number'
+      ) {
+        // Create a new ball object
+        const ball = new DraggableObjectSchema();
+        ball.id = data.id;
+        ball.x = data.x;
+        ball.y = data.y;
+        ball.radius = data.radius;
+        ball.color = data.color;
+        ball.isBeingDragged = false;
+        ball.draggedBy = '';
+
+        // Add the ball to the room state
+        this.state.objects.set(ball.id, ball);
+
+        // Broadcast to all clients that a new ball has been created
+        this.broadcast('ballCreated', {
+          id: ball.id,
+          x: ball.x,
+          y: ball.y,
+          radius: ball.radius,
+          color: ball.color
         });
       }
     });
