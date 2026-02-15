@@ -2046,7 +2046,7 @@ class AggressionVisualizer {
 
     // Use aggressionLevel to modify appearance
     // Higher aggression levels get more detailed/visually intense symbols
-    const detailLevel = Math.min(aggressionLevel, 3); // Cap detail level at 3
+    // const detailLevel = Math.min(aggressionLevel, 3); // Cap detail level at 3 - not used yet
     
     // Draw sword handle (vertical line)
     cellGraphics.beginFill(0xffffff); // White handle
