@@ -1867,6 +1867,22 @@ export class Game {
       });
     }
   }
+  
+  private showCopiedMessage(): void {
+    // Create a temporary "Copied" message element
+    const copiedMessage = document.createElement('div');
+    copiedMessage.className = 'copied-message';
+    copiedMessage.textContent = 'COPIED!';
+
+    document.body.appendChild(copiedMessage);
+
+    // Remove the message after 2 seconds
+    setTimeout(() => {
+      if (copiedMessage.parentNode) {
+        copiedMessage.parentNode.removeChild(copiedMessage);
+      }
+    }, 2000);
+  }
 }
 
 // Aggression Parameter Visualization Class
@@ -2136,22 +2152,6 @@ class AggressionVisualizer {
       this.ticker.destroy();
     }
     this.cellGraphics.destroy();
-  }
-  
-  private showCopiedMessage(): void {
-    // Create a temporary "Copied" message element
-    const copiedMessage = document.createElement('div');
-    copiedMessage.className = 'copied-message';
-    copiedMessage.textContent = 'COPIED!';
-
-    document.body.appendChild(copiedMessage);
-
-    // Remove the message after 2 seconds
-    setTimeout(() => {
-      if (copiedMessage.parentNode) {
-        copiedMessage.parentNode.removeChild(copiedMessage);
-      }
-    }, 2000);
   }
 }
 
