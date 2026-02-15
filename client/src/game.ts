@@ -639,10 +639,23 @@ export class Game {
       this.endVirusBattle(`${data.message} Winner: ${data.winner}`);
     });
 
+    // Listen for cursor updates
+    this.room.onMessage('cursorUpdate', (data: { playerId: string; x: number; y: number }) => {
+      if (data.playerId !== this.currentPlayerId) {
+        this.updateOtherCursor(data.x, data.y);
+      }
+    });
+
     // Handle room connection events
     this.room.onLeave((code: number) => {
       console.log('Left room with code:', code);
       this.handleDisconnection(code);
+      
+      // Remove other player's cursor when they disconnect
+      if (this.otherCursor) {
+        this.app.stage.removeChild(this.otherCursor);
+        this.otherCursor = null;
+      }
     });
 
     this.room.onError((err: any) => {
@@ -1389,6 +1402,12 @@ export class Game {
         // Send position update to server
         this.room.send('updatePosition', { x: newX, y: newY });
       }
+      
+      // Send cursor position to server with throttling
+      if (!this.lastCursorUpdate || Date.now() - this.lastCursorUpdate > 50) {
+        this.room.send('updateCursor', { x: pos.x, y: pos.y });
+        this.lastCursorUpdate = Date.now();
+      }
     });
   }
 
@@ -1511,6 +1530,12 @@ export class Game {
   public onResize(): void {
     // Resize the PixiJS application to fit the window
     this.app.renderer.resize(window.innerWidth, window.innerHeight);
+    
+    // Clean up other cursor on resize
+    if (this.otherCursor) {
+      this.app.stage.removeChild(this.otherCursor);
+      this.otherCursor = null;
+    }
   }
 
   private updateVirusParameters(playerId: string, params: { [key: string]: number }): void {
@@ -1737,60 +1762,8 @@ export class Game {
     }
   }
 
-  private increaseParameterValue(param: string): void {
-    if (this.paramValues[param] < this.maxParamValue && this.totalPoints > 0) {
-      this.paramValues[param]++;
-      this.totalPoints--;
-      this.updateParameterDisplay(param);
-      this.updatePointsDisplay();
-      
-      // Create drop animation
-      const paramCell = document.querySelector(`.param-cell[data-param="${param}"]`) as HTMLElement;
-      if (paramCell) {
-        this.createDropAnimation(paramCell, param);
-      }
-      
-      // Update liquid level
-      this.updateLiquidLevel(param);
-      
-      // Send updated parameters to server
-      this.sendParameterUpdate();
-    }
-  }
 
-  private decreaseParameterValue(param: string): void {
-    if (this.paramValues[param] > 0) {
-      this.paramValues[param]--;
-      this.totalPoints++;
-      this.updateParameterDisplay(param);
-      this.updatePointsDisplay();
-      
-      // Update liquid level
-      this.updateLiquidLevel(param);
-      
-      // Send updated parameters to server
-      this.sendParameterUpdate();
-    }
-  }
 
-  // Property to store opponent's parameters
-  private opponentParamValues: { [key: string]: number } | null = null;
-
-  private getDefaultOpponentParams(): { [key: string]: number } {
-    // Default parameters for opponent if not received
-    const defaultParams: { [key: string]: number } = {};
-    const paramNames = [
-      'aggression', 'mutation', 'speed', 'defense', 
-      'reproduction', 'stealth', 'virulence', 'resilience', 
-      'mobility', 'intellect', 'contagiousness', 'lethality'
-    ];
-    
-    paramNames.forEach(param => {
-      defaultParams[param] = 0; // Default 0 points in each parameter
-    });
-    
-    return defaultParams;
-  }
 
   private createBattleVisualization(): void {
     // Remove any existing battle visualization
@@ -1910,6 +1883,28 @@ export class Game {
   private updateBattleVisualizationFromServer(battleGrid: number[]): void {
     this.serverBattleGrid = [...battleGrid]; // Copy the server grid
     this.renderBattleGrid(this.serverBattleGrid);
+  }
+
+  // Remote cursor functionality
+  private otherCursor: PIXI.Graphics | null = null;
+  private lastCursorUpdate: number | null = null;
+
+  private updateOtherCursor(x: number, y: number): void {
+    if (!this.otherCursor) {
+      this.otherCursor = new PIXI.Graphics();
+      this.otherCursor.beginFill(0xff00ff); // Magenta color
+      // Draw a simple arrow shape
+      this.otherCursor.moveTo(0, 0);
+      this.otherCursor.lineTo(10, 0);
+      this.otherCursor.lineTo(5, -10);
+      this.otherCursor.closePath();
+      this.otherCursor.endFill();
+      this.otherCursor.scale.set(1.5); // Slightly larger
+      this.app.stage.addChild(this.otherCursor);
+    }
+    
+    this.otherCursor.x = x;
+    this.otherCursor.y = y;
   }
 
 
