@@ -4,7 +4,7 @@
  */
 
 import * as PIXI from 'pixi.js';
-import { PlayerSchema } from '../../types/schema';
+import { PlayerSchema } from '../types/schema';
 
 export interface CursorCallbacks {
   onCursorClicked?: (playerId: string) => void;

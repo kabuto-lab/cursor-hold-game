@@ -25,16 +25,17 @@ export class GameEngine {
     });
 
     // Add retro filters
-    const pixelateFilter = new (PIXI.filters as any).PixelateFilter();
-    pixelateFilter.size = new PIXI.Point(4, 4);
+    // Note: These filters would need to be imported from appropriate packages
+    // const pixelateFilter = new PixelateFilter();
+    // pixelateFilter.size = new PIXI.Point(4, 4);
 
-    const noiseFilter = new (PIXI.filters as any).NoiseFilter();
-    noiseFilter.noise = 0.1;
-    noiseFilter.seed = Math.random();
+    // const noiseFilter = new NoiseFilter();
+    // noiseFilter.noise = 0.1;
+    // noiseFilter.seed = Math.random();
 
-    const bloomFilter = new (PIXI.filters as any).BloomFilter();
+    // const bloomFilter = new BloomFilter();
     
-    this.app.stage.filters = [pixelateFilter, noiseFilter, bloomFilter] as any;
+    // this.app.stage.filters = [pixelateFilter, noiseFilter, bloomFilter] as any;
   }
 
   get application(): PIXI.Application {
@@ -45,7 +46,7 @@ export class GameEngine {
     return this.app.renderer;
   }
 
-  get stage(): PIXI.Stage {
+  get stage(): PIXI.Container {
     return this.app.stage;
   }
 
