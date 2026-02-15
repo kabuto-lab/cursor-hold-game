@@ -254,6 +254,9 @@ export class Game {
   
   // Aggression visualizer for battle cells
   private aggressionVisualizer: AggressionVisualizer | null = null;
+  
+  // Battle container for easy positioning
+  private battleContainer: PIXI.Container | null = null;
 
   async init(): Promise<void> {
     // Initialize the PixiJS application
@@ -1488,6 +1491,11 @@ export class Game {
       this.app.stage.removeChild(this.otherCursor);
       this.otherCursor = null;
     }
+    
+    // Recalculate and redraw battle grid if battle is active
+    if (this.battleRunning && this.serverBattleGrid && this.serverBattleGrid.length > 0) {
+      this.renderBattleGrid(this.serverBattleGrid);
+    }
   }
 
   private updateVirusParameters(playerId: string, params: { [key: string]: number }): void {
@@ -1704,17 +1712,19 @@ export class Game {
       this.app.stage.addChild(this.battleLayer);
     }
     
+    // Create a battle container for easy positioning
+    if (!this.battleContainer) {
+      this.battleContainer = new PIXI.Container();
+    }
+    
     // Create a new graphics object for the battle visualization
     this.battleVisualization = new PIXI.Graphics();
     
-    // Position battle zone at the start of the second third of the screen
-    // Second third starts at ~33% of screen width
-    this.battleVisualization.x = this.app.screen.width * 0.33; // Start from 33% from left (second third)
-    // The y position will be adjusted in renderBattleGrid to center vertically
-    this.battleVisualization.y = 0; // Initially at top, will be adjusted in renderBattleGrid
+    // Add visualization to container
+    this.battleContainer.addChild(this.battleVisualization);
     
-    // Add to the battle layer (not directly to stage to avoid mouse conflicts)
-    this.battleLayer.addChild(this.battleVisualization);
+    // Add container to battle layer
+    this.battleLayer.addChild(this.battleContainer);
     
     // Draw the initial state
     this.updateBattleVisualization();
@@ -1771,36 +1781,37 @@ export class Game {
     
     // Clear the previous visualization
     this.battleVisualization.clear();
-    
+
     // Grid dimensions (20x32)
-    const width = 20;
-    const height = 32;
-    
-    // Calculate cell size based on available space in the battle zone
-    // The battle zone is positioned at 33% from left with 33% width
-    const gridWidth = this.app.screen.width * 0.33; // 33% of screen width
-    const gridHeight = this.app.screen.height; // Full height
-    const cellSizeX = gridWidth / width;
-    const cellSizeY = gridHeight / height;
-    // Use minimum to ensure it fits
-    const cellSize = Math.min(cellSizeX, cellSizeY);
-    
-    // Calculate actual grid height based on cell size
-    const actualGridHeight = cellSize * height;
-    
-    // Center the grid vertically in the battle zone
-    this.battleVisualization.y = (this.app.screen.height - actualGridHeight) / 2;
-    
+    const gridRows = 20;  // rows
+    const gridCols = 32;  // columns
+
+    // Calculate size for grid to fill available space with margins
+    const maxGridWidth = this.app.screen.width * 0.33 * 0.9;   // 90% of 33% width to add margin
+    const maxGridHeight = this.app.screen.height * 0.9; // 90% of height to add margin
+
+    const cellSizeX = maxGridWidth / gridCols;
+    const cellSizeY = maxGridHeight / gridRows;
+    const cellSize = Math.min(cellSizeX, cellSizeY);  // Square cells
+
+    const actualGridWidth = cellSize * gridCols;
+    const actualGridHeight = cellSize * gridRows;
+
+    // Position battle container in the center of the second third of the screen
+    const startX = this.app.screen.width * 0.33; // Start of second third
+    this.battleContainer.x = startX + (this.app.screen.width * 0.33 - actualGridWidth) / 2; // Center horizontally within second third
+    this.battleContainer.y = (this.app.screen.height - actualGridHeight) / 2; // Center vertically
+
     // Initialize aggression visualizer if not already done
     if (!this.aggressionVisualizer) {
       this.aggressionVisualizer = new AggressionVisualizer(cellSize);
     }
-    
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const idx = y * width + x;
+
+    for (let y = 0; y < gridRows; y++) {
+      for (let x = 0; x < gridCols; x++) {
+        const idx = y * gridCols + x;
         const cellState = battleGrid[idx];
-        
+
         // For now, just draw basic cells - aggression visualization will be added later
         let color: number;
         switch (cellState) {
@@ -1816,7 +1827,7 @@ export class Game {
           default:
             color = 0x000000; // Default to black
         }
-        
+
         // Correct order: lineStyle before fill and draw
         this.battleVisualization.lineStyle(0.5, 0x333333); // Thin gray border
         this.battleVisualization.beginFill(color, cellState === 0 ? 0.3 : 1); // More visible for empty cells
