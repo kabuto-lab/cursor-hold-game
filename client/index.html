@@ -113,7 +113,7 @@
       left: 33%; /* Start after the left sidebar area */
       width: 33%; /* 33.3% width */
       height: 100%;
-      z-index: 2; /* Above the grid and other elements */
+      z-index: 1; /* Below the grid */
     }
 
     #hud {
@@ -134,13 +134,11 @@
       width: 33%; /* 33.3% width */
       height: 100%;
       background-image: 
-        linear-gradient(to right, #0000ff 1px, transparent 1px),
-        linear-gradient(to bottom, #0000ff 1px, transparent 1px);
+        linear-gradient(to right, #ffffff 3px, transparent 3px),
+        linear-gradient(to bottom, #ffffff 3px, transparent 3px);
       background-size: calc(100% / 32) calc(100% / 16); /* 32 columns x 16 rows */
-      z-index: 1; /* Behind canvas but above other elements */
+      z-index: 9999; /* Highest z-index */
       pointer-events: none; /* So it doesn't interfere with mouse events */
-      opacity: 0.3; /* More subtle but still visible */
-      background-color: rgba(0, 0, 255, 0.02); /* Light blue tint to enhance visibility */
     }
 
     .connection-status {
