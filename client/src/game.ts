@@ -1785,8 +1785,7 @@ export class Game {
     // Use minimum to ensure it fits
     const cellSize = Math.min(cellSizeX, cellSizeY);
     
-    // Calculate actual grid dimensions based on cell size
-    const actualGridWidth = cellSize * width;
+    // Calculate actual grid height based on cell size
     const actualGridHeight = cellSize * height;
     
     // Center the grid vertically in the battle zone
