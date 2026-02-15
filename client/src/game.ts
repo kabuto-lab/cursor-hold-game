@@ -1841,7 +1841,7 @@ export class Game {
   private updateOtherCursor(x: number, y: number): void {
     // Don't update other cursor during battle
     if (this.battleRunning) return;
-    
+
     if (!this.otherCursor) {
       this.otherCursor = new PIXI.Graphics();
       this.otherCursor.beginFill(0xff00ff); // Magenta color
@@ -1852,9 +1852,11 @@ export class Game {
       this.otherCursor.closePath();
       this.otherCursor.endFill();
       this.otherCursor.scale.set(1.5); // Slightly larger
-      this.app.stage.addChild(this.otherCursor);
+      if (this.app?.stage) {
+        this.app.stage.addChild(this.otherCursor);
+      }
     }
-    
+
     this.otherCursor.x = x;
     this.otherCursor.y = y;
   }
