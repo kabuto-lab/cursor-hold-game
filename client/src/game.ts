@@ -24,6 +24,9 @@ export class Game {
   
   // Ball button element
   private createBallBtn!: HTMLButtonElement;
+  
+  // Follower button element
+  private createFollowerBtn!: HTMLButtonElement;
 
   // UI elements
   private landingScreen!: HTMLElement;
@@ -58,6 +61,9 @@ export class Game {
     // Initialize ball button
     this.createBallBtn = document.getElementById('createBallBtn')! as HTMLButtonElement;
 
+    // Initialize follower button
+    this.createFollowerBtn = document.getElementById('createFollowerBtn')! as HTMLButtonElement;
+
     // Set up event listeners
     this.setupEventListeners();
   }
@@ -77,6 +83,9 @@ export class Game {
     
     // Ball button event listener
     this.createBallBtn.addEventListener('click', () => this.createBall());
+    
+    // Follower button event listener
+    this.createFollowerBtn.addEventListener('click', () => this.createFollower());
   }
 
   async init(): Promise<void> {
@@ -126,8 +135,54 @@ export class Game {
     // Set up keyboard controls for accessibility
     this.setupKeyboardControls();
 
+    // Set up ticker for follower movement
+    this.setupFollowerTicker();
+
     // Make game instance accessible globally for resize handler
     (window as any).holdingHandsGame = this;
+  }
+
+  private setupFollowerTicker(): void {
+    // Set up a ticker to update follower positions with easing
+    this.app.ticker.add(() => {
+      this.updateFollowers();
+    });
+  }
+
+  private updateFollowers(): void {
+    // Iterate through all objects to find followers
+    for (const [id, container] of this.objects.entries()) {
+      const objData = this.room?.state.objects.get(id);
+      if (objData && objData.isFollower) {
+        // Apply easing to move the follower toward its target position
+        const easingFactor = 0.1; // Adjust for faster/slower following
+        
+        // Calculate the difference between current position and target position
+        const dx = objData.targetX - container.x;
+        const dy = objData.targetY - container.y;
+        
+        // Move the container towards the target with easing
+        container.x += dx * easingFactor;
+        container.y += dy * easingFactor;
+
+        // If the follower belongs to the current player, update the target position to follow the cursor
+        if (objData.owner === this.currentPlayerId) {
+          const cursor = this.cursors.get(this.currentPlayerId);
+          if (cursor) {
+            // Update the target position to follow the cursor with some delay
+            objData.targetX = cursor.x;
+            objData.targetY = cursor.y;
+            
+            // Send the new target position to the server
+            this.room?.send('updateFollowerTarget', {
+              id: id,
+              x: objData.targetX,
+              y: objData.targetY
+            });
+          }
+        }
+      }
+    }
   }
 
   private createStarryBackground(): void {
@@ -335,9 +390,42 @@ export class Game {
         radius: data.radius,
         color: data.color,
         isBeingDragged: false,
-        draggedBy: ''
+        draggedBy: '',
+        isFollower: false,
+        owner: '',
+        targetX: data.x,
+        targetY: data.y
       };
       this.addObject(data.id, tempObj as DraggableObjectSchema);
+    });
+
+    // Listen for follower creation
+    this.room.onMessage('followerCreated', (data: { id: string; x: number; y: number; radius: number; color: number; owner: string }) => {
+      // Create a temporary DraggableObjectSchema object to pass to addObject
+      const tempObj = {
+        id: data.id,
+        x: data.x,
+        y: data.y,
+        radius: data.radius,
+        color: data.color,
+        isBeingDragged: false,
+        draggedBy: '',
+        isFollower: true,
+        owner: data.owner,
+        targetX: data.x,
+        targetY: data.y
+      };
+      this.addObject(data.id, tempObj as DraggableObjectSchema);
+    });
+
+    // Listen for follower target updates
+    this.room.onMessage('followerTargetUpdated', (data: { id: string; x: number; y: number }) => {
+      // Update the target position for the follower
+      const objData = this.room.state.objects.get(data.id);
+      if (objData) {
+        objData.targetX = data.x;
+        objData.targetY = data.y;
+      }
     });
 
     // Handle room connection events
@@ -610,6 +698,31 @@ export class Game {
       radius: 30,
       color: 0xff69b4 // Hot pink color
     });
+  }
+
+  private createFollower(): void {
+    if (!this.room) return;
+    
+    // Generate a unique ID for the follower
+    const followerId = `follower_${this.currentPlayerId}_${Date.now()}`;
+    
+    // Send message to server to create the follower
+    this.room.send('createFollower', {
+      id: followerId,
+      x: this.app.screen.width / 2, // Center of screen initially
+      y: this.app.screen.height / 2,
+      radius: 20,
+      color: this.getRandomColor(),
+      owner: this.currentPlayerId
+    });
+  }
+
+  private getRandomColor(): number {
+    // Generate a random bright color
+    const r = Math.floor(Math.random() * 128) + 127; // 127-255
+    const g = Math.floor(Math.random() * 128) + 127;
+    const b = Math.floor(Math.random() * 128) + 127;
+    return (r << 16) + (g << 8) + b;
   }
 
   private createCursorSprite(color: number): PIXI.Sprite {

@@ -18,6 +18,10 @@ export class DraggableObjectSchema extends Schema {
   @type('number') color: number = 0xff69b4; // Hot pink color
   @type('boolean') isBeingDragged: boolean = false;
   @type('string') draggedBy: string = ''; // ID of player dragging the object
+  @type('boolean') isFollower: boolean = false; // Whether this object is a follower
+  @type('string') owner: string = ''; // ID of the player who owns this follower
+  @type('number') targetX: number = 0; // Target position for followers
+  @type('number') targetY: number = 0; // Target position for followers
 }
 
 export class RoomState extends Schema {

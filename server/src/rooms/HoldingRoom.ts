@@ -175,6 +175,7 @@ export class HoldingRoom extends Room<RoomState> {
         ball.color = data.color;
         ball.isBeingDragged = false;
         ball.draggedBy = '';
+        ball.isFollower = false;
 
         // Add the ball to the room state
         this.state.objects.set(ball.id, ball);
@@ -187,6 +188,70 @@ export class HoldingRoom extends Room<RoomState> {
           radius: ball.radius,
           color: ball.color
         });
+      }
+    });
+
+    // Handle follower creation
+    this.onMessage('createFollower', (client, data) => {
+      // Validate the data
+      if (
+        typeof data.id === 'string' &&
+        typeof data.x === 'number' &&
+        typeof data.y === 'number' &&
+        typeof data.radius === 'number' &&
+        typeof data.color === 'number' &&
+        typeof data.owner === 'string'
+      ) {
+        // Create a new follower object
+        const follower = new DraggableObjectSchema();
+        follower.id = data.id;
+        follower.x = data.x;
+        follower.y = data.y;
+        follower.radius = data.radius;
+        follower.color = data.color;
+        follower.isBeingDragged = false;
+        follower.draggedBy = '';
+        follower.isFollower = true;
+        follower.owner = data.owner;
+        follower.targetX = data.x; // Initially same as position
+        follower.targetY = data.y;
+
+        // Add the follower to the room state
+        this.state.objects.set(follower.id, follower);
+
+        // Broadcast to all clients that a new follower has been created
+        this.broadcast('followerCreated', {
+          id: follower.id,
+          x: follower.x,
+          y: follower.y,
+          radius: follower.radius,
+          color: follower.color,
+          owner: follower.owner
+        });
+      }
+    });
+
+    // Handle follower target updates
+    this.onMessage('updateFollowerTarget', (client, data) => {
+      const follower = this.state.objects.get(data.id);
+      if (follower && follower.isFollower && follower.owner === client.sessionId) {
+        // Validate the data
+        if (
+          typeof data.id === 'string' &&
+          typeof data.x === 'number' &&
+          typeof data.y === 'number'
+        ) {
+          // Update the follower's target position
+          follower.targetX = data.x;
+          follower.targetY = data.y;
+
+          // Broadcast to all clients that a follower's target has been updated
+          this.broadcast('followerTargetUpdated', {
+            id: data.id,
+            x: data.x,
+            y: data.y
+          });
+        }
       }
     });
   }
