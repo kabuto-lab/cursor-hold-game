@@ -358,6 +358,22 @@ export class HoldingRoom extends Room<RoomState> {
         });
       }
     });
+
+    // Handle cursor updates
+    this.onMessage('updateCursor', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player && typeof data.x === 'number' && typeof data.y === 'number') {
+        player.cursorX = data.x;
+        player.cursorY = data.y;
+        
+        // Broadcast cursor update to other players
+        this.broadcast('cursorUpdate', {
+          playerId: client.sessionId,
+          x: data.x,
+          y: data.y
+        }, { except: client });
+      }
+    });
   }
 
   onActivate() {

@@ -1404,7 +1404,7 @@ export class Game {
       }
       
       // Send cursor position to server with throttling
-      if (!this.lastCursorUpdate || Date.now() - this.lastCursorUpdate > 50) {
+      if (this.room && (!this.lastCursorUpdate || Date.now() - this.lastCursorUpdate > 50)) {
         this.room.send('updateCursor', { x: pos.x, y: pos.y });
         this.lastCursorUpdate = Date.now();
       }
