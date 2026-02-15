@@ -251,6 +251,9 @@ export class Game {
   
   // Battle visualization layer to avoid mouse event conflicts
   private battleLayer: PIXI.Container | null = null;
+  
+  // Aggression visualizer for battle cells
+  private aggressionVisualizer: AggressionVisualizer | null = null;
 
   async init(): Promise<void> {
     // Initialize the PixiJS application
@@ -1782,11 +1785,17 @@ export class Game {
     // Use minimum to ensure it fits
     const cellSize = Math.min(cellSizeX, cellSizeY);
     
+    // Initialize aggression visualizer if not already done
+    if (!this.aggressionVisualizer) {
+      this.aggressionVisualizer = new AggressionVisualizer(cellSize);
+    }
+    
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const idx = y * width + x;
         const cellState = battleGrid[idx];
         
+        // For now, just draw basic cells - aggression visualization will be added later
         let color: number;
         switch (cellState) {
           case 0: // EMPTY
@@ -1858,6 +1867,275 @@ export class Game {
       });
     }
   }
+}
+
+// Aggression Parameter Visualization Class
+class AggressionVisualizer {
+  private cellGraphics: PIXI.Graphics;
+  private spikes: PIXI.Graphics[];
+  private symbol: PIXI.Graphics | null = null;
+  private bloomFilter: PIXI.Filter | null = null;
+  private ticker: PIXI.Ticker | null = null;
+  private vibrationOffset: { x: number; y: number }[] = [];
+  private pulseScale: number = 1;
+  private pulseProgress: number = 0;
+  private isPulsing: boolean = false;
+
+  constructor(private cellSize: number) {
+    this.cellGraphics = new PIXI.Graphics();
+    this.spikes = [];
+    this.initializeSpikes();
+    this.setupTicker();
+  }
+
+  private initializeSpikes(): void {
+    // Create 6 spikes around the cell
+    for (let i = 0; i < 6; i++) {
+      const spike = new PIXI.Graphics();
+      this.spikes.push(spike);
+      this.vibrationOffset.push({ x: 0, y: 0 });
+    }
+  }
+
+  private setupTicker(): void {
+    this.ticker = new PIXI.Ticker();
+    this.ticker.add(() => {
+      this.updateVibration();
+      if (this.isPulsing) {
+        this.updatePulse();
+      }
+    });
+    this.ticker.start();
+  }
+
+  private updateVibration(): void {
+    for (let i = 0; i < this.spikes.length; i++) {
+      // Random vibration offset based on aggression level
+      const amplitude = 0.5 + (Math.random() * 0.5); // Base amplitude
+      this.vibrationOffset[i].x = (Math.random() - 0.5) * amplitude;
+      this.vibrationOffset[i].y = (Math.random() - 0.5) * amplitude;
+    }
+  }
+
+  private updatePulse(): void {
+    if (this.pulseProgress < 1) {
+      this.pulseProgress += 0.05; // Speed of pulse
+      // Pulse scale formula: 1.0 → 1.08 → 1.0
+      this.pulseScale = 1 + 0.08 * Math.sin(this.pulseProgress * Math.PI);
+    } else {
+      this.isPulsing = false;
+      this.pulseScale = 1;
+      this.pulseProgress = 0;
+    }
+  }
+
+  public updateAggressionVisual(
+    cell: any, 
+    aggressionLevel: number, 
+    x: number, 
+    y: number,
+    cellState: number
+  ): PIXI.Graphics {
+    // Create a new graphics object for this cell
+    const cellGraphics = new PIXI.Graphics();
+    
+    // Draw base cell with gradient based on virus type
+    const baseColor = cellState === 1 ? 0xaa0000 : 0x0000aa; // Red for A, Blue for B
+    const accentColor = cellState === 1 ? 0xff0000 : 0x0000ff; // Brighter version
+    
+    // Draw base cell with gradient effect
+    cellGraphics.beginFill(baseColor);
+    cellGraphics.drawRect(0, 0, this.cellSize, this.cellSize);
+    cellGraphics.endFill();
+    
+    // Add accent color for higher aggression
+    if (aggressionLevel > 2) {
+      cellGraphics.beginFill(accentColor, 0.2 * aggressionLevel);
+      cellGraphics.drawRect(0, 0, this.cellSize, this.cellSize);
+      cellGraphics.endFill();
+    }
+    
+    // Position the cell graphics
+    cellGraphics.x = x;
+    cellGraphics.y = y;
+    
+    // Update spikes based on aggression level
+    this.updateSpikes(cellGraphics, aggressionLevel, x, y);
+    
+    // Add aggression symbol for levels 3+
+    if (aggressionLevel >= 3) {
+      this.addAggressionSymbol(cellGraphics, aggressionLevel, x, y);
+    }
+    
+    // Apply pulse scale if pulsing
+    cellGraphics.scale.set(this.pulseScale);
+    
+    return cellGraphics;
+  }
+
+  private updateSpikes(cellGraphics: PIXI.Graphics, aggressionLevel: number, x: number, y: number): void {
+    const spikeCount = 4 + Math.floor(aggressionLevel / 2); // 4-6 spikes based on level
+    const spikeSize = 4 + Math.min(aggressionLevel, 2); // Larger spikes for higher aggression
+    
+    for (let i = 0; i < spikeCount; i++) {
+      // Calculate spike position around the cell
+      const angle = (i * (2 * Math.PI)) / spikeCount;
+      const offsetX = Math.cos(angle) * (this.cellSize / 2 - spikeSize / 2);
+      const offsetY = Math.sin(angle) * (this.cellSize / 2 - spikeSize / 2);
+      
+      // Draw triangular spike
+      const spikeX = x + this.cellSize / 2 + offsetX + this.vibrationOffset[i].x;
+      const spikeY = y + this.cellSize / 2 + offsetY + this.vibrationOffset[i].y;
+      
+      // Spike color based on aggression level
+      let spikeColor = 0x880000; // Dark red for low aggression
+      if (aggressionLevel >= 4) {
+        // Metallic gradient effect for high aggression
+        spikeColor = 0xcccccc; // Silver-like color
+      } else if (aggressionLevel >= 3) {
+        spikeColor = 0xaa0000; // Medium red
+      }
+      
+      cellGraphics.beginFill(spikeColor);
+      cellGraphics.moveTo(spikeX, spikeY);
+      
+      // Draw triangle pointing outward
+      const pointX = spikeX + Math.cos(angle) * spikeSize;
+      const pointY = spikeY + Math.sin(angle) * spikeSize;
+      
+      const perpAngle1 = angle - Math.PI/2;
+      const perpAngle2 = angle + Math.PI/2;
+      const width = spikeSize * 0.5;
+      
+      const p1x = spikeX + Math.cos(perpAngle1) * width/2;
+      const p1y = spikeY + Math.sin(perpAngle1) * width/2;
+      const p2x = spikeX + Math.cos(perpAngle2) * width/2;
+      const p2y = spikeY + Math.sin(perpAngle2) * width/2;
+      
+      cellGraphics.lineTo(p1x, p1y);
+      cellGraphics.lineTo(pointX, pointY);
+      cellGraphics.lineTo(p2x, p2y);
+      cellGraphics.closePath();
+      cellGraphics.endFill();
+    }
+  }
+
+  private addAggressionSymbol(cellGraphics: PIXI.Graphics, aggressionLevel: number, x: number, y: number): void {
+    // Draw ⚔️ symbol (sword) as pixel art
+    const centerX = x + this.cellSize / 2;
+    const centerY = y + this.cellSize / 2;
+    const symbolSize = Math.min(6, Math.floor(this.cellSize / 4));
+    
+    // Draw sword handle (vertical line)
+    cellGraphics.beginFill(0xffffff); // White handle
+    cellGraphics.drawRect(centerX - 0.5, centerY - symbolSize/2, 1, symbolSize);
+    cellGraphics.endFill();
+    
+    // Draw crossguard (horizontal line)
+    cellGraphics.beginFill(0xffffff);
+    cellGraphics.drawRect(centerX - symbolSize/2, centerY - 0.5, symbolSize, 1);
+    cellGraphics.endFill();
+    
+    // Draw blade
+    cellGraphics.beginFill(0xdddddd); // Light gray blade
+    cellGraphics.drawRect(centerX - 0.5, centerY, 1, symbolSize/2);
+    cellGraphics.endFill();
+    
+    // Add black outline
+    cellGraphics.lineStyle(0.5, 0x000000);
+    cellGraphics.moveTo(centerX - 0.5, centerY - symbolSize/2);
+    cellGraphics.lineTo(centerX - 0.5, centerY + symbolSize/2);
+    cellGraphics.moveTo(centerX - symbolSize/2, centerY - 0.5);
+    cellGraphics.lineTo(centerX + symbolSize/2, centerY - 0.5);
+  }
+
+  public triggerAttackAnimation(): void {
+    // Placeholder for attack animation
+    this.isPulsing = true;
+    this.pulseProgress = 0;
+  }
+
+  public createDamageEffect(targetCell: PIXI.Container): void {
+    // Create temporary crack effect on target cell
+    const crack = new PIXI.Graphics();
+    crack.lineStyle(1, 0xffffff);
+    crack.moveTo(0, 0);
+    crack.lineTo(targetCell.width, targetCell.height);
+    
+    targetCell.addChild(crack);
+    
+    // Fade out crack
+    let alpha = 1;
+    const fadeTicker = new PIXI.Ticker();
+    fadeTicker.add(() => {
+      alpha -= 0.01; // Fade speed
+      crack.alpha = alpha;
+      
+      if (alpha <= 0) {
+        fadeTicker.destroy();
+        if (crack.parent) {
+          crack.parent.removeChild(crack);
+        }
+      }
+    });
+    fadeTicker.start();
+  }
+
+  public createKillEffect(fromPos: PIXI.Point, toPos: PIXI.Point): void {
+    // Create particles flying from target to attacker
+    const particleCount = 8 + Math.floor(Math.random() * 5); // 8-12 particles
+    
+    for (let i = 0; i < particleCount; i++) {
+      const particle = new PIXI.Graphics();
+      const color = Math.random() > 0.5 ? 0xff0000 : 0x0000ff; // Red or blue
+      particle.beginFill(color);
+      particle.drawCircle(0, 0, 1.5);
+      particle.endFill();
+      
+      // Position at target
+      particle.x = toPos.x;
+      particle.y = toPos.y;
+      
+      // Add to stage
+      this.cellGraphics.parent?.addChild(particle);
+      
+      // Animate to attacker
+      const dx = fromPos.x - toPos.x;
+      const dy = fromPos.y - toPos.y;
+      const duration = 300 + Math.random() * 200; // 300-500ms
+      
+      let progress = 0;
+      const moveTicker = new PIXI.Ticker();
+      moveTicker.add(() => {
+        progress += 1000 / 60 / duration; // Assuming 60fps
+        
+        if (progress >= 1) {
+          moveTicker.destroy();
+          if (particle.parent) {
+            particle.parent.removeChild(particle);
+          }
+        } else {
+          // Apply easing and slight randomness
+          const easedProgress = this.easeOutQuad(progress);
+          particle.x = toPos.x + dx * easedProgress + (Math.random() - 0.5) * 2;
+          particle.y = toPos.y + dy * easedProgress + (Math.random() - 0.5) * 2;
+        }
+      });
+      moveTicker.start();
+    }
+  }
+
+  private easeOutQuad(t: number): number {
+    return t * (2 - t);
+  }
+
+  public destroy(): void {
+    if (this.ticker) {
+      this.ticker.destroy();
+    }
+    this.cellGraphics.destroy();
+  }
+}
 
   private showCopiedMessage(): void {
     // Create a temporary "Copied" message element
