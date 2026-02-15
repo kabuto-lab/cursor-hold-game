@@ -430,6 +430,33 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+    
+    .copyable-id {
+      cursor: pointer;
+      text-decoration: underline;
+      transition: color 0.2s;
+    }
+    
+    .copyable-id:hover {
+      color: #00ffff;
+    }
+    
+    .copied-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #00ff00;
+      padding: 10px 20px;
+      border: 2px solid #00ffff;
+      border-radius: 0;
+      font-family: 'Courier New', monospace;
+      font-size: 1.2rem;
+      z-index: 10000;
+      text-align: center;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -469,7 +496,7 @@
             </div>
             <button id="closeLeftSidebarBtn" class="btn close-btn">✕</button>
           </div>
-          <div id="roomInfo">Room: <span id="currentRoomId"></span></div>
+          <div id="roomInfo">Room: <span id="currentRoomId" class="copyable-id"></span></div>
         </div>
         <div class="sidebar-content">
           <div class="control-panel">
@@ -499,23 +526,6 @@
           </div>
         </div>
         <div class="sidebar-content">
-          <div class="setting-item">
-            <label for="followerSpeed">Follower Speed:</label>
-            <input type="range" id="followerSpeed" min="0.01" max="0.5" step="0.01" value="0.1">
-          </div>
-          <div class="setting-item">
-            <label for="cursorSize">Cursor Size:</label>
-            <input type="range" id="cursorSize" min="1" max="5" step="0.5" value="2">
-          </div>
-          <div class="setting-item">
-            <label for="themeSelect">Theme:</label>
-            <select id="themeSelect">
-              <option value="retro">Retro</option>
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-            </select>
-          </div>
-          
           <!-- Virus Parameter Selection -->
           <div class="setting-item">
             <h4>Virus Parameters (12 points total)</h4>

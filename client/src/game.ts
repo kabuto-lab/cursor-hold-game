@@ -38,9 +38,6 @@ export class Game {
   private menuBtn!: HTMLButtonElement;
   private sidebar!: HTMLElement;
   private closeSidebarBtn!: HTMLButtonElement;
-  private followerSpeedSlider!: HTMLInputElement;
-  private cursorSizeSlider!: HTMLInputElement;
-  private themeSelect!: HTMLSelectElement;
   
   // Left sidebar elements
   private leftMenuBtn!: HTMLButtonElement;
@@ -89,9 +86,6 @@ export class Game {
     this.menuBtn = document.getElementById('menuBtn')! as HTMLButtonElement;
     this.sidebar = document.getElementById('sidebar')!;
     this.closeSidebarBtn = document.getElementById('closeSidebarBtn')! as HTMLButtonElement;
-    this.followerSpeedSlider = document.getElementById('followerSpeed')! as HTMLInputElement;
-    this.cursorSizeSlider = document.getElementById('cursorSize')! as HTMLInputElement;
-    this.themeSelect = document.getElementById('themeSelect')! as HTMLSelectElement;
 
     // Initialize left sidebar elements
     this.leftMenuBtn = document.getElementById('leftMenuBtn')! as HTMLButtonElement;
@@ -123,10 +117,6 @@ export class Game {
     this.menuBtn.addEventListener('click', () => this.openSidebar());
     this.closeSidebarBtn.addEventListener('click', () => this.closeSidebar());
 
-    // Setting change listeners
-    this.followerSpeedSlider.addEventListener('input', () => this.updateFollowerSpeed());
-    this.cursorSizeSlider.addEventListener('input', () => this.updateCursorSize());
-    this.themeSelect.addEventListener('change', () => this.changeTheme());
 
     // Left sidebar event listeners
     this.leftMenuBtn.addEventListener('click', () => this.openLeftSidebar());
@@ -137,6 +127,9 @@ export class Game {
     
     // Ready button event listener
     this.readyBtn.addEventListener('click', () => this.toggleReadyStatus());
+    
+    // Room ID click to copy event listener
+    this.currentRoomIdEl.addEventListener('click', () => this.copyRoomIdToClipboard());
   }
 
   private setupVirusParameterEventListeners(): void {
@@ -307,8 +300,8 @@ export class Game {
       const objData = this.room?.state.objects.get(id);
       if (objData && objData.isFollower) {
         // Apply easing to move the follower toward its target position
-        // Use the value from the slider if available, otherwise default to 0.1
-        const easingFactor = this.followerSpeedSlider ? parseFloat(this.followerSpeedSlider.value) : 0.1;
+        // Use a default value since the slider was removed
+        const easingFactor = 0.1;
         
         // Calculate the difference between current position and target position
         const dx = objData.targetX - container.x;
@@ -943,40 +936,6 @@ export class Game {
   }
 
 
-  private updateFollowerSpeed(): void {
-    // In a real implementation, we would send this setting to the server
-    // For now, we just store it locally
-    console.log('Follower speed updated to:', this.followerSpeedSlider.value);
-  }
-
-  private updateCursorSize(): void {
-    // Update the size of the current player's cursor
-    const cursor = this.cursors.get(this.currentPlayerId);
-    if (cursor) {
-      const newSize = parseFloat(this.cursorSizeSlider.value);
-      cursor.scale.x = newSize;
-      cursor.scale.y = newSize;
-    }
-  }
-
-  private changeTheme(): void {
-    const selectedTheme = this.themeSelect.value;
-    console.log('Theme changed to:', selectedTheme);
-    
-    // In a real implementation, we would apply different visual themes
-    // For now, just log the change
-    switch(selectedTheme) {
-      case 'retro':
-        // Apply retro theme
-        break;
-      case 'dark':
-        // Apply dark theme
-        break;
-      case 'light':
-        // Apply light theme
-        break;
-    }
-  }
 
   private openLeftSidebar(): void {
     this.leftSidebar.classList.add('active');
@@ -1620,5 +1579,35 @@ export class Game {
     
     // Re-enable the ready button
     this.readyBtn.disabled = false;
+  }
+
+  private copyRoomIdToClipboard(): void {
+    const roomId = this.currentRoomIdEl.textContent;
+    if (roomId) {
+      navigator.clipboard.writeText(roomId).then(() => {
+        // Show "Copied" message
+        this.showCopiedMessage();
+      }).catch(err => {
+        console.error('Failed to copy room ID: ', err);
+        // Fallback: show message anyway
+        this.showCopiedMessage();
+      });
+    }
+  }
+
+  private showCopiedMessage(): void {
+    // Create a temporary "Copied" message element
+    const copiedMessage = document.createElement('div');
+    copiedMessage.className = 'copied-message';
+    copiedMessage.textContent = 'COPIED!';
+    
+    document.body.appendChild(copiedMessage);
+    
+    // Remove the message after 2 seconds
+    setTimeout(() => {
+      if (copiedMessage.parentNode) {
+        copiedMessage.parentNode.removeChild(copiedMessage);
+      }
+    }, 2000);
   }
 }
