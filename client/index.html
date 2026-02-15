@@ -137,7 +137,7 @@
         linear-gradient(to right, #0000ff 1px, transparent 1px),
         linear-gradient(to bottom, #0000ff 1px, transparent 1px);
       background-size: calc(100% / 32) calc(100% / 16); /* 32 columns x 16 rows */
-      z-index: 0; /* Behind other elements */
+      z-index: 1; /* Behind canvas but above other elements */
       pointer-events: none; /* So it doesn't interfere with mouse events */
       opacity: 0.3; /* More subtle but still visible */
       background-color: rgba(0, 0, 255, 0.02); /* Light blue tint to enhance visibility */
