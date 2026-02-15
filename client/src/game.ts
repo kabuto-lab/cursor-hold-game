@@ -1646,7 +1646,6 @@ export class Game {
     const width = 20;
     const height = 32;
     const cellSize = Math.min(15, Math.floor((this.app.screen.width * 0.33) / width)); // 33% of screen width
-    const gridWidth = width * cellSize;
     const gridHeight = height * cellSize;
     
     // Position to match the battleGrid in HTML (starting at 33% from left, centered vertically)
