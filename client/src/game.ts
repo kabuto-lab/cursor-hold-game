@@ -591,24 +591,6 @@ export class Game {
       }
     });
 
-    // Listen for player circle creation
-    this.room.onMessage('playerCircleCreated', (data: { id: string; x: number; y: number; radius: number; color: number; owner: string }) => {
-      // Create a temporary DraggableObjectSchema object to pass to addObject
-      const tempObj = {
-        id: data.id,
-        x: data.x,
-        y: data.y,
-        radius: data.radius,
-        color: data.color,
-        isBeingDragged: false,
-        draggedBy: '',
-        isFollower: true,
-        owner: data.owner,
-        targetX: data.x,
-        targetY: data.y
-      };
-      this.addObject(data.id, tempObj as DraggableObjectSchema);
-    });
 
     // Listen for virus parameter updates
     this.room.onMessage('virusParamsUpdated', (data: { playerId: string; params: { [key: string]: number } }) => {
@@ -913,54 +895,9 @@ export class Game {
 
   private openSidebar(): void {
     this.sidebar.classList.add('active');
-    
-    // Create a colored circle for the current player if not already created
-    if (!this.hasOwnCircle()) {
-      this.createPlayerCircle();
-    }
   }
   
-  private hasOwnCircle(): boolean {
-    // Check if a circle already exists for the current player
-    for (const [id, _container] of this.objects.entries()) {
-      const objData = this.room?.state.objects.get(id);
-      if (objData && objData.isFollower && objData.owner === this.currentPlayerId) {
-        return true;
-      }
-    }
-    return false;
-  }
   
-  private createPlayerCircle(): void {
-    if (!this.room) return;
-    
-    // Generate a unique ID for the player circle
-    const circleId = `circle_${this.currentPlayerId}_${Date.now()}`;
-    
-    // Get current cursor position
-    const cursor = this.cursors.get(this.currentPlayerId);
-    let cursorX = this.app.screen.width / 2; // Default to center
-    let cursorY = this.app.screen.height / 2;
-    
-    if (cursor) {
-      cursorX = cursor.x;
-      cursorY = cursor.y;
-    }
-    
-    // Determine color based on if player is room creator
-    const circleColor = this.isRoomCreator ? 0xff0000 : 0x0000ff; // Red for creator, Blue for joiner
-    
-    // Send message to server to create the player circle
-    this.room.send('createPlayerCircle', {
-      id: circleId,
-      x: cursorX,
-      y: cursorY,
-      radius: 20,
-      color: circleColor,
-      owner: this.currentPlayerId,
-      isCreator: this.isRoomCreator
-    });
-  }
 
   private closeSidebar(): void {
     this.sidebar.classList.remove('active');

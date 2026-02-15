@@ -255,56 +255,6 @@ export class HoldingRoom extends Room<RoomState> {
       }
     });
 
-    // Handle player circle creation
-    this.onMessage('createPlayerCircle', (client, data) => {
-      // Validate the data
-      if (
-        typeof data.id === 'string' &&
-        typeof data.x === 'number' &&
-        typeof data.y === 'number' &&
-        typeof data.radius === 'number' &&
-        typeof data.color === 'number' &&
-        typeof data.owner === 'string'
-      ) {
-        // Check if player already has a circle
-        let playerHasCircle = false;
-        for (const [id, obj] of this.state.objects) {
-          if (obj.isFollower && obj.owner === client.sessionId) {
-            playerHasCircle = true;
-            break;
-          }
-        }
-
-        if (!playerHasCircle) {
-          // Create a new player circle object
-          const circle = new DraggableObjectSchema();
-          circle.id = data.id;
-          circle.x = data.x;
-          circle.y = data.y;
-          circle.radius = data.radius;
-          circle.color = data.color;
-          circle.isBeingDragged = false;
-          circle.draggedBy = '';
-          circle.isFollower = true; // Use follower property to identify player circles
-          circle.owner = data.owner;
-          circle.targetX = data.x; // Initially same as position
-          circle.targetY = data.y;
-
-          // Add the circle to the room state
-          this.state.objects.set(circle.id, circle);
-
-          // Broadcast to all clients that a new player circle has been created
-          this.broadcast('playerCircleCreated', {
-            id: circle.id,
-            x: circle.x,
-            y: circle.y,
-            radius: circle.radius,
-            color: circle.color,
-            owner: circle.owner
-          });
-        }
-      }
-    });
 
     // Handle virus parameter updates
     this.onMessage('updateVirusParams', (client, data) => {
