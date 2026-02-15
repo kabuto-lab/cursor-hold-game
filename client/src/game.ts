@@ -1704,9 +1704,12 @@ export class Game {
     // Create a new graphics object for the battle visualization
     this.battleVisualization = new PIXI.Graphics();
     
-    // Position it in the left portion of the screen (33% from left, full height)
-    this.battleVisualization.x = this.app.screen.width * 0.33; // Start from 33% from left
-    this.battleVisualization.y = 0; // Align to top
+    // Position battle zone at the start of the second third of the screen (640px wide)
+    // Second third starts at ~33% of screen width
+    this.battleVisualization.x = this.app.screen.width * 0.33; // Start from 33% from left (second third)
+    // Center vertically to accommodate the fixed grid height
+    const gridHeight = (640 / 20) * 32; // Calculate height based on 640px width
+    this.battleVisualization.y = (this.app.screen.height - gridHeight) / 2; // Center vertically
     
     // Add to the battle layer (not directly to stage to avoid mouse conflicts)
     this.battleLayer.addChild(this.battleVisualization);
@@ -1771,9 +1774,9 @@ export class Game {
     const width = 20;
     const height = 32;
     
-    // Calculate cell size to fit in the allocated space
-    const gridWidth = this.app.screen.width * 0.33; // 33% of screen width
-    const gridHeight = this.app.screen.height; // Full height
+    // Calculate cell size based on fixed width of 640px
+    const gridWidth = 640; // Fixed width of 640px
+    const gridHeight = (640 / width) * height; // Maintain aspect ratio
     const cellSizeX = gridWidth / width;
     const cellSizeY = gridHeight / height;
     // Use minimum to ensure it fits
