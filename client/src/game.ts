@@ -4,6 +4,7 @@ import { PlayerSchema, DraggableObjectSchema } from './types/schema';
 import { PixelateFilter } from '@pixi/filter-pixelate';
 import { NoiseFilter } from '@pixi/filter-noise';
 import { BloomFilter } from '@pixi/filter-bloom';
+import { VirusBattleAlgebra, CellState } from './virus-battle-algebra';
 
 export class Game {
   private app!: PIXI.Application;
@@ -233,6 +234,12 @@ export class Game {
   }
 
   private isPlayerReady: boolean = false;
+  
+  // Virus battle simulation
+  private virusBattle: VirusBattleAlgebra | null = null;
+  private battleVisualization: PIXI.Graphics | null = null;
+  private battleRunning: boolean = false;
+  private battleTicker: PIXI.Ticker | null = null;
 
   async init(): Promise<void> {
     // Initialize the PixiJS application
@@ -1578,6 +1585,166 @@ export class Game {
     
     // Re-enable the ready button
     this.readyBtn.disabled = false;
+  }
+
+  private startVirusBattle(message: string): void {
+    console.log(message);
+    
+    // Show a message to the players
+    this.showMessage('VIRUS BATTLE STARTED!');
+    
+    // Disable parameter adjustments during battle
+    this.disableParameterAdjustments();
+    
+    // Initialize the virus battle simulation
+    this.virusBattle = new VirusBattleAlgebra(20, 32); // 20x32 grid as specified
+    
+    // Set player parameters based on distributed points
+    this.virusBattle.setPlayerParams('A', this.paramValues);
+    this.virusBattle.setPlayerParams('B', this.opponentParamValues || this.getDefaultOpponentParams());
+    
+    // Place initial viruses
+    this.virusBattle.placeInitialViruses();
+    
+    // Create visualization
+    this.createBattleVisualization();
+    
+    // Start the battle simulation
+    this.battleRunning = true;
+    
+    // Create a ticker for the battle simulation
+    this.battleTicker = new PIXI.Ticker();
+    this.battleTicker.add(() => {
+      if (this.battleRunning && this.virusBattle) {
+        const winner = this.virusBattle.simulateTick();
+        if (winner) {
+          this.endVirusBattle(`Player ${winner} wins the virus battle!`);
+          this.battleTicker?.destroy();
+          this.battleTicker = null;
+        } else {
+          this.updateBattleVisualization();
+        }
+      }
+    });
+    
+    this.battleTicker.start();
+  }
+
+  private getDefaultOpponentParams(): { [key: string]: number } {
+    // Default parameters for opponent if not received
+    const defaultParams: { [key: string]: number } = {};
+    const paramNames = [
+      'aggression', 'mutation', 'speed', 'defense', 
+      'reproduction', 'stealth', 'virulence', 'resilience', 
+      'mobility', 'intellect', 'contagiousness', 'lethality'
+    ];
+    
+    paramNames.forEach(param => {
+      defaultParams[param] = 1; // Default 1 point in each parameter
+    });
+    
+    return defaultParams;
+  }
+
+  private createBattleVisualization(): void {
+    if (!this.virusBattle) return;
+    
+    // Remove any existing battle visualization
+    if (this.battleVisualization) {
+      this.app.stage.removeChild(this.battleVisualization);
+    }
+    
+    // Create a new graphics object for the battle visualization
+    this.battleVisualization = new PIXI.Graphics();
+    
+    // Position it in the center of the screen
+    this.battleVisualization.x = this.app.screen.width / 2 - (20 * 10) / 2; // Center horizontally
+    this.battleVisualization.y = this.app.screen.height / 2 - (32 * 10) / 2; // Center vertically
+    
+    // Add to the stage
+    this.app.stage.addChild(this.battleVisualization);
+    
+    // Draw the initial state
+    this.updateBattleVisualization();
+  }
+
+  private updateBattleVisualization(): void {
+    if (!this.virusBattle || !this.battleVisualization) return;
+    
+    // Clear the previous visualization
+    this.battleVisualization.clear();
+    
+    const grid = this.virusBattle.getGrid();
+    const cellSize = 10; // Size of each cell in pixels
+    
+    for (let y = 0; y < grid.length; y++) {
+      for (let x = 0; x < grid[y].length; x++) {
+        const cell = grid[y][x];
+        let color: number;
+        
+        switch (cell.state) {
+          case CellState.EMPTY:
+            color = 0x000000; // Black for empty
+            break;
+          case CellState.VIRUS_A:
+            color = 0xff0000; // Red for player A
+            break;
+          case CellState.VIRUS_B:
+            color = 0x0000ff; // Blue for player B
+            break;
+          default:
+            color = 0x000000;
+        }
+        
+        // Draw the cell
+        this.battleVisualization.beginFill(color);
+        this.battleVisualization.drawRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        this.battleVisualization.endFill();
+        
+        // Add a thin border
+        this.battleVisualization.lineStyle(0.5, 0x333333);
+        this.battleVisualization.stroke();
+      }
+    }
+  }
+
+  private handleVirusTick(tick: number, message: string): void {
+    console.log(`Virus tick: ${message}`);
+    
+    // In the future, this would update the battle visualization
+    // based on the current state of the battle
+  }
+
+  private endVirusBattle(message: string): void {
+    console.log(message);
+    
+    // Show a message to the players
+    this.showMessage('VIRUS BATTLE ENDED!');
+    
+    // Stop the battle simulation
+    this.battleRunning = false;
+    
+    // Clean up visualization
+    if (this.battleVisualization) {
+      this.app.stage.removeChild(this.battleVisualization);
+      this.battleVisualization = null;
+    }
+    
+    // Re-enable parameter adjustments after battle
+    this.enableParameterAdjustments();
+  }
+
+  // Property to store opponent's parameters
+  private opponentParamValues: { [key: string]: number } | null = null;
+
+  private updateVirusParameters(playerId: string, params: { [key: string]: number }): void {
+    // Update the virus parameters for the specified player
+    console.log(`Virus parameters updated for player ${playerId}:`, params);
+    
+    // Store opponent's parameters if it's not our own
+    if (playerId !== this.currentPlayerId) {
+      this.opponentParamValues = params;
+    }
   }
 
   private copyRoomIdToClipboard(): void {

@@ -8,6 +8,7 @@ export interface PlayerSchema {
   isHoldingHands: boolean;
   holdingHandsWith: string;
   isReady: boolean;
+  virusParams?: { [key: string]: number };
 }
 
 export interface DraggableObjectSchema {

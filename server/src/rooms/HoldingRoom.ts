@@ -342,6 +342,22 @@ export class HoldingRoom extends Room<RoomState> {
         }
       }
     });
+
+    // Handle virus parameter updates
+    this.onMessage('updateVirusParams', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player && data.params) {
+        // Validate and update virus parameters
+        // In a real implementation, you would validate the parameters here
+        player.virusParams = data.params;
+
+        // Broadcast the updated parameters to all players in the room
+        this.broadcast('virusParamsUpdated', {
+          playerId: client.sessionId,
+          params: data.params
+        });
+      }
+    });
   }
 
   onActivate() {
@@ -450,6 +466,17 @@ export class HoldingRoom extends Room<RoomState> {
     player.y = Math.random() * 300 + 100;
     player.color = this.generateRandomColor(); // Assign a random color
     player.isRoomCreator = this.state.players.size === 0; // First player is the room creator
+
+    // Initialize virus parameters to default values
+    const paramNames = [
+      'aggression', 'mutation', 'speed', 'defense', 
+      'reproduction', 'stealth', 'virulence', 'resilience', 
+      'mobility', 'intellect', 'contagiousness', 'lethality'
+    ];
+    
+    paramNames.forEach(param => {
+      player.virusParams.set(param, 0);
+    });
 
     // Add player to state
     this.state.players.set(client.sessionId, player);
