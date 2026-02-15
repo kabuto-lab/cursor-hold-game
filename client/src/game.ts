@@ -1873,8 +1873,6 @@ export class Game {
 class AggressionVisualizer {
   private cellGraphics: PIXI.Graphics;
   private spikes: PIXI.Graphics[];
-  private symbol: PIXI.Graphics | null = null;
-  private bloomFilter: PIXI.Filter | null = null;
   private ticker: PIXI.Ticker | null = null;
   private vibrationOffset: { x: number; y: number }[] = [];
   private pulseScale: number = 1;
@@ -1930,46 +1928,46 @@ class AggressionVisualizer {
   }
 
   public updateAggressionVisual(
-    cell: any, 
-    aggressionLevel: number, 
-    x: number, 
+    _cell: any, // Not used in this implementation
+    aggressionLevel: number,
+    x: number,
     y: number,
     cellState: number
   ): PIXI.Graphics {
     // Create a new graphics object for this cell
     const cellGraphics = new PIXI.Graphics();
-    
+
     // Draw base cell with gradient based on virus type
     const baseColor = cellState === 1 ? 0xaa0000 : 0x0000aa; // Red for A, Blue for B
     const accentColor = cellState === 1 ? 0xff0000 : 0x0000ff; // Brighter version
-    
+
     // Draw base cell with gradient effect
     cellGraphics.beginFill(baseColor);
     cellGraphics.drawRect(0, 0, this.cellSize, this.cellSize);
     cellGraphics.endFill();
-    
+
     // Add accent color for higher aggression
     if (aggressionLevel > 2) {
       cellGraphics.beginFill(accentColor, 0.2 * aggressionLevel);
       cellGraphics.drawRect(0, 0, this.cellSize, this.cellSize);
       cellGraphics.endFill();
     }
-    
+
     // Position the cell graphics
     cellGraphics.x = x;
     cellGraphics.y = y;
-    
+
     // Update spikes based on aggression level
     this.updateSpikes(cellGraphics, aggressionLevel, x, y);
-    
+
     // Add aggression symbol for levels 3+
     if (aggressionLevel >= 3) {
       this.addAggressionSymbol(cellGraphics, aggressionLevel, x, y);
     }
-    
+
     // Apply pulse scale if pulsing
     cellGraphics.scale.set(this.pulseScale);
-    
+
     return cellGraphics;
   }
 
@@ -2138,6 +2136,22 @@ class AggressionVisualizer {
       this.ticker.destroy();
     }
     this.cellGraphics.destroy();
+  }
+  
+  private showCopiedMessage(): void {
+    // Create a temporary "Copied" message element
+    const copiedMessage = document.createElement('div');
+    copiedMessage.className = 'copied-message';
+    copiedMessage.textContent = 'COPIED!';
+
+    document.body.appendChild(copiedMessage);
+
+    // Remove the message after 2 seconds
+    setTimeout(() => {
+      if (copiedMessage.parentNode) {
+        copiedMessage.parentNode.removeChild(copiedMessage);
+      }
+    }, 2000);
   }
 }
 
