@@ -1996,8 +1996,9 @@ class AggressionVisualizer {
         spikeColor = 0xaa0000; // Medium red
       }
       
-      cellGraphics.beginFill(spikeColor);
-      cellGraphics.moveTo(spikeX, spikeY);
+      const spike = new PIXI.Graphics();
+      spike.beginFill(spikeColor);
+      spike.moveTo(spikeX, spikeY);
       
       // Draw triangle pointing outward
       const pointX = spikeX + Math.cos(angle) * spikeSize;
@@ -2012,11 +2013,14 @@ class AggressionVisualizer {
       const p2x = spikeX + Math.cos(perpAngle2) * width/2;
       const p2y = spikeY + Math.sin(perpAngle2) * width/2;
       
-      cellGraphics.lineTo(p1x, p1y);
-      cellGraphics.lineTo(pointX, pointY);
-      cellGraphics.lineTo(p2x, p2y);
-      cellGraphics.closePath();
-      cellGraphics.endFill();
+      spike.lineTo(p1x, p1y);
+      spike.lineTo(pointX, pointY);
+      spike.lineTo(p2x, p2y);
+      spike.closePath();
+      spike.endFill();
+      
+      // Add spike to cell graphics
+      cellGraphics.addChild(spike);
     }
   }
 
@@ -2081,7 +2085,7 @@ class AggressionVisualizer {
     fadeTicker.start();
   }
 
-  public createKillEffect(fromPos: PIXI.Point, toPos: PIXI.Point): void {
+  public createKillEffect(fromPos: PIXI.Point, toPos: PIXI.Point, stage: PIXI.Container): void {
     // Create particles flying from target to attacker
     const particleCount = 8 + Math.floor(Math.random() * 5); // 8-12 particles
     
@@ -2097,7 +2101,7 @@ class AggressionVisualizer {
       particle.y = toPos.y;
       
       // Add to stage
-      this.cellGraphics.parent?.addChild(particle);
+      stage.addChild(particle);
       
       // Animate to attacker
       const dx = fromPos.x - toPos.x;
@@ -2137,19 +2141,3 @@ class AggressionVisualizer {
   }
 }
 
-  private showCopiedMessage(): void {
-    // Create a temporary "Copied" message element
-    const copiedMessage = document.createElement('div');
-    copiedMessage.className = 'copied-message';
-    copiedMessage.textContent = 'COPIED!';
-    
-    document.body.appendChild(copiedMessage);
-    
-    // Remove the message after 2 seconds
-    setTimeout(() => {
-      if (copiedMessage.parentNode) {
-        copiedMessage.parentNode.removeChild(copiedMessage);
-      }
-    }, 2000);
-  }
-}
