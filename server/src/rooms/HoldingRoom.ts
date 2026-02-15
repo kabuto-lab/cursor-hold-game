@@ -305,6 +305,43 @@ export class HoldingRoom extends Room<RoomState> {
         }
       }
     });
+
+    // Handle virus parameter updates
+    this.onMessage('updateVirusParams', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player && data.params) {
+        // Validate and update virus parameters
+        // In a real implementation, you would validate the parameters here
+        
+        // Broadcast the updated parameters to all players in the room
+        this.broadcast('virusParamsUpdated', {
+          playerId: client.sessionId,
+          params: data.params
+        });
+      }
+    });
+
+    // Handle ready status toggling
+    this.onMessage('toggleReady', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player && typeof data.isReady === 'boolean') {
+        // Update player's ready status
+        player.isReady = data.isReady;
+
+        // Broadcast the ready status to all players in the room
+        this.broadcast('playerReadyStatus', {
+          playerId: client.sessionId,
+          isReady: data.isReady
+        });
+
+        // Check if all players are ready to start the virus battle
+        const allPlayersReady = Array.from(this.state.players.values()).every(p => p.isReady);
+        if (allPlayersReady && this.state.players.size === 2) {
+          // Start the virus battle simulation
+          this.startVirusBattle();
+        }
+      }
+    });
   }
 
   onActivate() {
@@ -323,6 +360,78 @@ export class HoldingRoom extends Room<RoomState> {
           this.holdTimeout = null;
         }
       }
+    });
+  }
+
+  private startVirusBattle(): void {
+    console.log('Starting virus battle!');
+    
+    // Initialize the virus battle state
+    // For now, we'll just broadcast a message to indicate the battle has started
+    
+    // In the future, this would:
+    // 1. Set up the battle grid state
+    // 2. Initialize virus positions (red at top, blue at bottom)
+    // 3. Start the tick-based simulation
+    // 4. Handle the spread mechanics based on player parameters
+    
+    this.broadcast('virusBattleStarted', {
+      message: 'Virus battle has started!',
+      timestamp: Date.now()
+    });
+    
+    // Start the battle simulation loop
+    this.startBattleSimulation();
+  }
+
+  private startBattleSimulation(): void {
+    // This would implement the tick-based virus spread simulation
+    // For now, we'll just simulate a basic tick
+    
+    let tickCount = 0;
+    const battleInterval = setInterval(() => {
+      // Update virus positions based on parameters
+      this.updateVirusSpread();
+      
+      // Check win conditions
+      if (this.checkWinConditions()) {
+        clearInterval(battleInterval);
+        this.endVirusBattle();
+      }
+      
+      tickCount++;
+      
+      // Stop after 100 ticks for demo purposes
+      if (tickCount > 100) {
+        clearInterval(battleInterval);
+        this.endVirusBattle();
+      }
+    }, 1000); // 1 second per tick for now
+  }
+
+  private updateVirusSpread(): void {
+    // This would implement the actual virus spread logic based on parameters
+    // For now, we'll just broadcast a tick update
+    
+    this.broadcast('virusTick', {
+      tick: Date.now(),
+      message: 'Virus spreading...'
+    });
+  }
+
+  private checkWinConditions(): boolean {
+    // This would check if one virus has taken over the grid or met other win conditions
+    // For now, we'll return false to continue the simulation
+    return false;
+  }
+
+  private endVirusBattle(): void {
+    console.log('Virus battle ended!');
+    
+    // Broadcast the end of the battle
+    this.broadcast('virusBattleEnded', {
+      message: 'Virus battle has ended!',
+      timestamp: Date.now()
     });
   }
 

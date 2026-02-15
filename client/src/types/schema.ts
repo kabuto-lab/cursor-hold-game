@@ -7,6 +7,7 @@ export interface PlayerSchema {
   color: number;
   isHoldingHands: boolean;
   holdingHandsWith: string;
+  isReady: boolean;
 }
 
 export interface DraggableObjectSchema {

@@ -376,6 +376,60 @@
       font-family: 'Courier New', monospace;
       font-size: 0.9rem;
     }
+    
+    /* Virus Parameter Styles */
+    .param-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    
+    .param-cell {
+      width: 30%;
+      text-align: center;
+      background-color: rgba(0, 0, 0, 0.3);
+      border: 1px solid #00ffff;
+      padding: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .param-cell:hover {
+      background-color: rgba(0, 255, 255, 0.2);
+    }
+    
+    .param-emoji {
+      font-size: 1.5rem;
+      margin-bottom: 3px;
+    }
+    
+    .param-name {
+      font-size: 0.7rem;
+      color: #00ff00;
+      margin-bottom: 3px;
+    }
+    
+    .param-value {
+      font-size: 1rem;
+      color: #ffff00;
+      font-weight: bold;
+    }
+    
+    .points-summary {
+      margin: 10px 0;
+      color: #00ff00;
+      font-size: 0.9rem;
+    }
+    
+    #readyBtn {
+      width: 100%;
+      margin-top: 10px;
+    }
+    
+    .param-cell.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -460,6 +514,94 @@
               <option value="dark">Dark</option>
               <option value="light">Light</option>
             </select>
+          </div>
+          
+          <!-- Virus Parameter Selection -->
+          <div class="setting-item">
+            <h4>Virus Parameters (12 points total)</h4>
+            <div id="virusParamsContainer">
+              <!-- Row 1 -->
+              <div class="param-row">
+                <div class="param-cell">
+                  <div class="param-emoji">⚔️</div>
+                  <div class="param-name">Aggression</div>
+                  <div class="param-value" id="param-aggression">0</div>
+                </div>
+                <div class="param-cell">
+                  <div class="param-emoji">🧬</div>
+                  <div class="param-name">Mutation</div>
+                  <div class="param-value" id="param-mutation">0</div>
+                </div>
+                <div class="param-cell">
+                  <div class="param-emoji">⚡</div>
+                  <div class="param-name">Speed</div>
+                  <div class="param-value" id="param-speed">0</div>
+                </div>
+              </div>
+              
+              <!-- Row 2 -->
+              <div class="param-row">
+                <div class="param-cell">
+                  <div class="param-emoji">🛡️</div>
+                  <div class="param-name">Defense</div>
+                  <div class="param-value" id="param-defense">0</div>
+                </div>
+                <div class="param-cell">
+                  <div class="param-emoji">🦠</div>
+                  <div class="param-name">Reproduction</div>
+                  <div class="param-value" id="param-reproduction">0</div>
+                </div>
+                <div class="param-cell">
+                  <div class="param-emoji">👻</div>
+                  <div class="param-name">Stealth</div>
+                  <div class="param-value" id="param-stealth">0</div>
+                </div>
+              </div>
+              
+              <!-- Row 3 -->
+              <div class="param-row">
+                <div class="param-cell">
+                  <div class="param-emoji">☣️</div>
+                  <div class="param-name">Virulence</div>
+                  <div class="param-value" id="param-virulence">0</div>
+                </div>
+                <div class="param-cell">
+                  <div class="param-emoji">💪</div>
+                  <div class="param-name">Resilience</div>
+                  <div class="param-value" id="param-resilience">0</div>
+                </div>
+                <div class="param-cell">
+                  <div class="param-emoji">🚶</div>
+                  <div class="param-name">Mobility</div>
+                  <div class="param-value" id="param-mobility">0</div>
+                </div>
+              </div>
+              
+              <!-- Row 4 -->
+              <div class="param-row">
+                <div class="param-cell">
+                  <div class="param-emoji">🧠</div>
+                  <div class="param-name">Intellect</div>
+                  <div class="param-value" id="param-intellect">0</div>
+                </div>
+                <div class="param-cell">
+                  <div class="param-emoji">🫁</div>
+                  <div class="param-name">Contagiousness</div>
+                  <div class="param-value" id="param-contagiousness">0</div>
+                </div>
+                <div class="param-cell">
+                  <div class="param-emoji">💀</div>
+                  <div class="param-name">Lethality</div>
+                  <div class="param-value" id="param-lethality">0</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="points-summary">
+              Points remaining: <span id="points-remaining">12</span>
+            </div>
+            
+            <button id="readyBtn" class="btn no-border">READY</button>
           </div>
         </div>
       </div>

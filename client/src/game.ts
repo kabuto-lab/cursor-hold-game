@@ -58,6 +58,14 @@ export class Game {
   private playerNameEl!: HTMLElement;
   private otherPlayerNameEl!: HTMLElement;
   private currentRoomIdEl!: HTMLElement;
+  
+  // Virus parameter elements
+  private paramCells: HTMLElement[] = [];
+  private paramValues: { [key: string]: number } = {};
+  private pointsRemainingEl!: HTMLElement;
+  private readyBtn!: HTMLButtonElement;
+  private totalPoints: number = 12;
+  private maxParamValue: number = 12; // Maximum value for any single parameter
 
   constructor() {
     // Initialize UI elements
@@ -90,6 +98,10 @@ export class Game {
     this.leftSidebar = document.getElementById('leftSidebar')!;
     this.closeLeftSidebarBtn = document.getElementById('closeLeftSidebarBtn')! as HTMLButtonElement;
 
+    // Initialize virus parameter elements
+    this.pointsRemainingEl = document.getElementById('points-remaining')!;
+    this.readyBtn = document.getElementById('readyBtn')! as HTMLButtonElement;
+
     // Set up event listeners
     this.setupEventListeners();
   }
@@ -98,7 +110,7 @@ export class Game {
     this.createRoomBtn.addEventListener('click', () => this.createRoom());
     this.joinRoomBtn.addEventListener('click', () => this.joinRoom());
     this.leaveRoomBtn.addEventListener('click', () => this.leaveRoom());
-    
+
     // Chat event listeners
     this.chatSendBtn.addEventListener('click', () => this.sendMessage());
     this.chatInput.addEventListener('keypress', (e) => {
@@ -106,7 +118,7 @@ export class Game {
         this.sendMessage();
       }
     });
-    
+
     // Sidebar event listeners
     this.menuBtn.addEventListener('click', () => this.openSidebar());
     this.closeSidebarBtn.addEventListener('click', () => this.closeSidebar());
@@ -119,7 +131,116 @@ export class Game {
     // Left sidebar event listeners
     this.leftMenuBtn.addEventListener('click', () => this.openLeftSidebar());
     this.closeLeftSidebarBtn.addEventListener('click', () => this.closeLeftSidebar());
+    
+    // Virus parameter event listeners
+    this.setupVirusParameterEventListeners();
+    
+    // Ready button event listener
+    this.readyBtn.addEventListener('click', () => this.toggleReadyStatus());
   }
+
+  private setupVirusParameterEventListeners(): void {
+    // Define all parameter names
+    const paramNames = [
+      'aggression', 'mutation', 'speed', 'defense', 
+      'reproduction', 'stealth', 'virulence', 'resilience', 
+      'mobility', 'intellect', 'contagiousness', 'lethality'
+    ];
+
+    // Initialize parameter values to 0
+    paramNames.forEach(param => {
+      this.paramValues[param] = 0;
+    });
+
+    // Add event listeners to each parameter cell
+    paramNames.forEach(param => {
+      const paramCell = document.querySelector(`#param-${param}`)?.parentElement;
+      if (paramCell) {
+        // Add click event to increase parameter value
+        paramCell.addEventListener('click', () => {
+          this.increaseParameterValue(param);
+        });
+
+        // Add click event to emoji and name to decrease parameter value
+        const emojiEl = paramCell.querySelector('.param-emoji');
+        const nameEl = paramCell.querySelector('.param-name');
+        
+        if (emojiEl) {
+          emojiEl.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering parent click
+            this.decreaseParameterValue(param);
+          });
+        }
+        
+        if (nameEl) {
+          nameEl.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering parent click
+            this.decreaseParameterValue(param);
+          });
+        }
+      }
+    });
+
+    // Initialize the display
+    this.updatePointsDisplay();
+  }
+
+  private increaseParameterValue(param: string): void {
+    if (this.paramValues[param] < this.maxParamValue && this.totalPoints > 0) {
+      this.paramValues[param]++;
+      this.totalPoints--;
+      this.updateParameterDisplay(param);
+      this.updatePointsDisplay();
+      
+      // Send updated parameters to server
+      this.sendParameterUpdate();
+    }
+  }
+
+  private decreaseParameterValue(param: string): void {
+    if (this.paramValues[param] > 0) {
+      this.paramValues[param]--;
+      this.totalPoints++;
+      this.updateParameterDisplay(param);
+      this.updatePointsDisplay();
+      
+      // Send updated parameters to server
+      this.sendParameterUpdate();
+    }
+  }
+
+  private updateParameterDisplay(param: string): void {
+    const paramValueEl = document.getElementById(`param-${param}`);
+    if (paramValueEl) {
+      paramValueEl.textContent = this.paramValues[param].toString();
+    }
+  }
+
+  private updatePointsDisplay(): void {
+    if (this.pointsRemainingEl) {
+      this.pointsRemainingEl.textContent = this.totalPoints.toString();
+    }
+  }
+
+  private sendParameterUpdate(): void {
+    if (this.room) {
+      // Send current parameter values to server
+      this.room.send('updateVirusParams', { params: this.paramValues });
+    }
+  }
+
+  private toggleReadyStatus(): void {
+    if (this.totalPoints === 0) {
+      if (this.room) {
+        // Toggle ready status
+        this.room.send('toggleReady', { isReady: !this.isPlayerReady });
+      }
+    } else {
+      alert('Please distribute all 12 points before marking as ready.');
+    }
+  }
+
+  private isPlayerReady: boolean = false;
 
   async init(): Promise<void> {
     // Initialize the PixiJS application
@@ -480,6 +601,31 @@ export class Game {
         targetY: data.y
       };
       this.addObject(data.id, tempObj as DraggableObjectSchema);
+    });
+
+    // Listen for virus parameter updates
+    this.room.onMessage('virusParamsUpdated', (data: { playerId: string; params: { [key: string]: number } }) => {
+      this.updateVirusParameters(data.playerId, data.params);
+    });
+
+    // Listen for ready status updates
+    this.room.onMessage('playerReadyStatus', (data: { playerId: string; isReady: boolean }) => {
+      this.updatePlayerReadyStatus(data.playerId, data.isReady);
+    });
+
+    // Listen for virus battle start
+    this.room.onMessage('virusBattleStarted', (data: { message: string; timestamp: number }) => {
+      this.startVirusBattle(data.message);
+    });
+
+    // Listen for virus battle tick
+    this.room.onMessage('virusTick', (data: { tick: number; message: string }) => {
+      this.handleVirusTick(data.tick, data.message);
+    });
+
+    // Listen for virus battle end
+    this.room.onMessage('virusBattleEnded', (data: { message: string; timestamp: number }) => {
+      this.endVirusBattle(data.message);
     });
 
     // Handle room connection events
@@ -1388,5 +1534,91 @@ export class Game {
   public onResize(): void {
     // Resize the PixiJS application to fit the window
     this.app.renderer.resize(window.innerWidth, window.innerHeight);
+  }
+
+  private updateVirusParameters(playerId: string, params: { [key: string]: number }): void {
+    // Update the virus parameters for the specified player
+    // For now, we'll just log the update
+    console.log(`Virus parameters updated for player ${playerId}:`, params);
+    
+    // In the future, we could update UI elements to show opponent's parameters
+    // or other visual indicators
+  }
+
+  private updatePlayerReadyStatus(playerId: string, isReady: boolean): void {
+    // Update the ready status for the specified player
+    if (playerId === this.currentPlayerId) {
+      this.isPlayerReady = isReady;
+      // Update UI to reflect ready status
+      this.updateReadyButtonDisplay(isReady);
+    } else {
+      // Update UI for other player's ready status
+      console.log(`Player ${playerId} ready status: ${isReady}`);
+    }
+  }
+
+  private updateReadyButtonDisplay(isReady: boolean): void {
+    if (this.readyBtn) {
+      this.readyBtn.textContent = isReady ? 'UNREADY' : 'READY';
+      this.readyBtn.style.backgroundColor = isReady ? '#00ff00' : '#ff00ff'; // Green if ready, magenta if not
+    }
+  }
+
+  private startVirusBattle(message: string): void {
+    console.log(message);
+    
+    // Show a message to the players
+    this.showMessage('VIRUS BATTLE STARTED!');
+    
+    // Disable parameter adjustments during battle
+    this.disableParameterAdjustments();
+    
+    // In the future, this would:
+    // 1. Show the battle grid
+    // 2. Initialize virus positions (red at top, blue at bottom)
+    // 3. Start the visualization of the battle
+  }
+
+  private handleVirusTick(tick: number, message: string): void {
+    console.log(`Virus tick: ${message}`);
+    
+    // In the future, this would update the battle visualization
+    // based on the current state of the battle
+  }
+
+  private endVirusBattle(message: string): void {
+    console.log(message);
+    
+    // Show a message to the players
+    this.showMessage('VIRUS BATTLE ENDED!');
+    
+    // Re-enable parameter adjustments after battle
+    this.enableParameterAdjustments();
+  }
+
+  private disableParameterAdjustments(): void {
+    // Disable clicking on parameter cells
+    const paramCells = document.querySelectorAll('.param-cell');
+    paramCells.forEach(cell => {
+      cell.classList.add('disabled');
+      (cell as HTMLElement).style.pointerEvents = 'none';
+      (cell as HTMLElement).style.opacity = '0.5';
+    });
+    
+    // Disable the ready button
+    this.readyBtn.disabled = true;
+  }
+
+  private enableParameterAdjustments(): void {
+    // Re-enable clicking on parameter cells
+    const paramCells = document.querySelectorAll('.param-cell');
+    paramCells.forEach(cell => {
+      cell.classList.remove('disabled');
+      (cell as HTMLElement).style.pointerEvents = 'auto';
+      (cell as HTMLElement).style.opacity = '1';
+    });
+    
+    // Re-enable the ready button
+    this.readyBtn.disabled = false;
   }
 }

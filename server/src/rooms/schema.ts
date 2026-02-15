@@ -9,6 +9,7 @@ export class PlayerSchema extends Schema {
   @type('boolean') isHoldingHands: boolean = false;
   @type('string') holdingHandsWith: string = ''; // ID of player this player is holding hands with
   @type('boolean') isRoomCreator: boolean = false; // Whether this player created the room
+  @type('boolean') isReady: boolean = false; // Whether the player is ready to start the virus battle
 }
 
 export class DraggableObjectSchema extends Schema {
