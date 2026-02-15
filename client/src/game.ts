@@ -623,7 +623,7 @@ export class Game {
 
     // Listen for cursor updates
     this.room.onMessage('cursorUpdate', (data: { playerId: string; x: number; y: number }) => {
-      if (data.playerId !== this.currentPlayerId) {
+      if (data.playerId !== this.currentPlayerId && !this.battleRunning) {
         this.updateOtherCursor(data.x, data.y);
       }
     });
@@ -633,8 +633,8 @@ export class Game {
       console.log('Left room with code:', code);
       this.handleDisconnection(code);
       
-      // Remove other player's cursor when they disconnect
-      if (this.otherCursor) {
+      // Remove other player's cursor when they disconnect, but not during battle
+      if (this.otherCursor && !this.battleRunning) {
         this.app.stage.removeChild(this.otherCursor);
         this.otherCursor = null;
       }
@@ -703,6 +703,12 @@ export class Game {
       }
       return true;
     });
+    
+    // Remove other player's cursor if they disconnected
+    if (this.otherCursor && playerId !== this.currentPlayerId && !this.battleRunning) {
+      this.app.stage.removeChild(this.otherCursor);
+      this.otherCursor = null;
+    }
   }
 
   private addObject(objectId: string, obj: DraggableObjectSchema): void {
@@ -1312,6 +1318,9 @@ export class Game {
     this.app.stage.on('pointermove', (event: PIXI.FederatedPointerEvent) => {
       if (!this.room || !this.currentPlayerId) return;
 
+      // Don't process mouse movement during battle
+      if (this.battleRunning) return;
+
       const pos = event.global;
       const cursor = this.cursors.get(this.currentPlayerId);
 
@@ -1468,8 +1477,8 @@ export class Game {
     // Resize the PixiJS application to fit the window
     this.app.renderer.resize(window.innerWidth, window.innerHeight);
     
-    // Clean up other cursor on resize
-    if (this.otherCursor) {
+    // Clean up other cursor on resize, but not during battle
+    if (this.otherCursor && !this.battleRunning) {
       this.app.stage.removeChild(this.otherCursor);
       this.otherCursor = null;
     }
@@ -1512,6 +1521,9 @@ export class Game {
     // Disable parameter adjustments during battle
     this.disableParameterAdjustments();
     
+    // Hide player cursors during battle
+    this.hidePlayerCursors();
+    
     // Create visualization based on server data
     this.createBattleVisualization();
     
@@ -1552,6 +1564,9 @@ export class Game {
     // Clear the server battle grid
     this.serverBattleGrid = [];
     
+    // Show player cursors again
+    this.showPlayerCursors();
+    
     // Re-enable parameter adjustments after battle
     this.enableParameterAdjustments();
   }
@@ -1580,6 +1595,30 @@ export class Game {
     
     // Re-enable the ready button
     this.readyBtn.disabled = false;
+  }
+
+  private hidePlayerCursors(): void {
+    // Hide all player cursors during battle
+    for (const [_, cursor] of this.cursors.entries()) {
+      cursor.visible = false;
+    }
+    
+    // Hide cursor labels
+    for (const [_, label] of this.cursorLabels.entries()) {
+      label.visible = false;
+    }
+  }
+
+  private showPlayerCursors(): void {
+    // Show all player cursors after battle
+    for (const [_, cursor] of this.cursors.entries()) {
+      cursor.visible = true;
+    }
+    
+    // Show cursor labels
+    for (const [_, label] of this.cursorLabels.entries()) {
+      label.visible = true;
+    }
   }
 
   private randomizeParameters(): void {
@@ -1748,6 +1787,9 @@ export class Game {
   }
 
   private updateBattleVisualizationFromServer(battleGrid: number[]): void {
+    // Only update if battle is running
+    if (!this.battleRunning) return;
+    
     this.serverBattleGrid = [...battleGrid]; // Copy the server grid
     this.renderBattleGrid(this.serverBattleGrid);
   }
@@ -1757,6 +1799,9 @@ export class Game {
   private lastCursorUpdate: number | null = null;
 
   private updateOtherCursor(x: number, y: number): void {
+    // Don't update other cursor during battle
+    if (this.battleRunning) return;
+    
     if (!this.otherCursor) {
       this.otherCursor = new PIXI.Graphics();
       this.otherCursor.beginFill(0xff00ff); // Magenta color
