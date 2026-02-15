@@ -360,24 +360,20 @@ export class HoldingRoom extends Room<RoomState> {
       const playerB = players.find(p => !p.isRoomCreator) || players[1];
       
       // Initialize battle grid with starting positions
-      // Place initial viruses for player A (top half)
-      for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) { // 3-5 initial cells
-        const x = Math.floor(Math.random() * 20);
-        const y = Math.floor(Math.random() * 10); // Top half (rows 0-9)
-        const index = y * 20 + x;
-        if (index < this.state.battleGrid.length) {
-          this.state.battleGrid[index] = 1; // 1 = VIRUS_A
-        }
+      // Place initial virus for player A (top center)
+      const topCenterX = Math.floor(20 / 2); // Center of the grid (column 10)
+      const topCenterY = 0; // Top row
+      const topIndex = topCenterY * 20 + topCenterX;
+      if (topIndex < this.state.battleGrid.length) {
+        this.state.battleGrid[topIndex] = 1; // 1 = VIRUS_A
       }
       
-      // Place initial viruses for player B (bottom half)
-      for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) { // 3-5 initial cells
-        const x = Math.floor(Math.random() * 20);
-        const y = 10 + Math.floor(Math.random() * 10); // Bottom half (rows 10-19)
-        const index = y * 20 + x;
-        if (index < this.state.battleGrid.length) {
-          this.state.battleGrid[index] = 2; // 2 = VIRUS_B
-        }
+      // Place initial virus for player B (bottom center)
+      const bottomCenterX = Math.floor(20 / 2); // Center of the grid (column 10)
+      const bottomCenterY = 31; // Bottom row (since we have 32 rows)
+      const bottomIndex = bottomCenterY * 20 + bottomCenterX;
+      if (bottomIndex < this.state.battleGrid.length) {
+        this.state.battleGrid[bottomIndex] = 2; // 2 = VIRUS_B
       }
     }
     
