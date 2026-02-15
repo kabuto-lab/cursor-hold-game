@@ -245,6 +245,9 @@ export class Game {
   private battleVisualization: PIXI.Graphics | null = null;
   private battleRunning: boolean = false;
   private battleTicker: PIXI.Ticker | null = null;
+  
+  // Server-synchronized battle grid
+  private serverBattleGrid: number[] = [];
 
   async init(): Promise<void> {
     // Initialize the PixiJS application
@@ -618,18 +621,22 @@ export class Game {
     });
 
     // Listen for virus battle start
-    this.room.onMessage('virusBattleStarted', (data: { message: string; timestamp: number }) => {
+    this.room.onMessage('virusBattleStarted', (data: { message: string; battleGrid: number[]; timestamp: number }) => {
       this.startVirusBattle(data.message);
+      // Initialize the battle grid from server data
+      this.updateBattleVisualizationFromServer(data.battleGrid);
     });
 
     // Listen for virus battle tick
-    this.room.onMessage('virusTick', (data: { tick: number; message: string }) => {
+    this.room.onMessage('virusTick', (data: { tick: number; battleGrid: number[]; message: string }) => {
+      // Update the battle grid from server data
+      this.updateBattleVisualizationFromServer(data.battleGrid);
       this.handleVirusTick(data.tick, data.message);
     });
 
     // Listen for virus battle end
-    this.room.onMessage('virusBattleEnded', (data: { message: string; timestamp: number }) => {
-      this.endVirusBattle(data.message);
+    this.room.onMessage('virusBattleEnded', (data: { message: string; winner: string; virusACount: number; virusBCount: number; timestamp: number }) => {
+      this.endVirusBattle(`${data.message} Winner: ${data.winner}`);
     });
 
     // Handle room connection events
@@ -1543,45 +1550,18 @@ export class Game {
     // Disable parameter adjustments during battle
     this.disableParameterAdjustments();
     
-    // Initialize the virus battle simulation
-    this.virusBattle = new VirusBattleAlgebra(20, 32); // 20x32 grid as specified
-    
-    // Set player parameters based on distributed points
-    this.virusBattle.setPlayerParams('A', this.paramValues);
-    this.virusBattle.setPlayerParams('B', this.opponentParamValues || this.getDefaultOpponentParams());
-    
-    // Place initial viruses
-    this.virusBattle.placeInitialViruses();
-    
-    // Create visualization
+    // Create visualization based on server data
     this.createBattleVisualization();
     
-    // Start the battle simulation
+    // Start the battle visualization (will be updated by server ticks)
     this.battleRunning = true;
-    
-    // Create a ticker for the battle simulation
-    this.battleTicker = new PIXI.Ticker();
-    this.battleTicker.add(() => {
-      if (this.battleRunning && this.virusBattle) {
-        const winner = this.virusBattle.simulateTick();
-        if (winner) {
-          this.endVirusBattle(`Player ${winner} wins the virus battle!`);
-          this.battleTicker?.destroy();
-          this.battleTicker = null;
-        } else {
-          this.updateBattleVisualization();
-        }
-      }
-    });
-    
-    this.battleTicker.start();
   }
 
   private handleVirusTick(_tick: number, message: string): void {
     console.log(`Virus tick: ${message}`);
     
     // Update the battle visualization if battle is running
-    if (this.battleRunning && this.virusBattle) {
+    if (this.battleRunning) {
       this.updateBattleVisualization();
     }
   }
@@ -1595,11 +1575,20 @@ export class Game {
     // Stop the battle simulation
     this.battleRunning = false;
     
+    // Stop the ticker if it exists
+    if (this.battleTicker) {
+      this.battleTicker.destroy();
+      this.battleTicker = null;
+    }
+    
     // Clean up visualization
     if (this.battleVisualization) {
       this.app.stage.removeChild(this.battleVisualization);
       this.battleVisualization = null;
     }
+    
+    // Clear the server battle grid
+    this.serverBattleGrid = [];
     
     // Re-enable parameter adjustments after battle
     this.enableParameterAdjustments();
@@ -1804,8 +1793,6 @@ export class Game {
   }
 
   private createBattleVisualization(): void {
-    if (!this.virusBattle) return;
-    
     // Remove any existing battle visualization
     if (this.battleVisualization) {
       this.app.stage.removeChild(this.battleVisualization);
@@ -1815,8 +1802,15 @@ export class Game {
     this.battleVisualization = new PIXI.Graphics();
     
     // Position it in the center of the screen
-    this.battleVisualization.x = this.app.screen.width / 2 - (20 * 10) / 2; // Center horizontally
-    this.battleVisualization.y = this.app.screen.height / 2 - (32 * 10) / 2; // Center vertically
+    // Use fixed grid dimensions (20x32)
+    const width = 20;
+    const height = 32;
+    const cellSize = Math.min(15, Math.floor((this.app.screen.width * 0.3) / width)); // 30% of screen width
+    const gridWidth = width * cellSize;
+    const gridHeight = height * cellSize;
+    
+    this.battleVisualization.x = this.app.screen.width / 2 - gridWidth / 2; // Center horizontally
+    this.battleVisualization.y = this.app.screen.height / 2 - gridHeight / 2; // Center vertically
     
     // Add to the stage
     this.app.stage.addChild(this.battleVisualization);
@@ -1826,43 +1820,96 @@ export class Game {
   }
 
   private updateBattleVisualization(): void {
-    if (!this.virusBattle || !this.battleVisualization) return;
+    // Use the server-synchronized battle grid if available
+    if (!this.battleVisualization) return;
     
     // Clear the previous visualization
     this.battleVisualization.clear();
     
-    const grid = this.virusBattle.getGrid();
-    const cellSize = 10; // Size of each cell in pixels
+    // Use the server grid if available, otherwise use local simulation
+    if (this.serverBattleGrid && this.serverBattleGrid.length > 0) {
+      this.renderBattleGrid(this.serverBattleGrid);
+    } else if (this.virusBattle) {
+      const grid = this.virusBattle.getGrid();
+      // Calculate cell size based on available space
+      const cellSize = Math.min(15, Math.floor((this.app.screen.width * 0.3) / grid[0].length)); // 30% of screen width
+      
+      for (let y = 0; y < grid.length; y++) {
+        for (let x = 0; x < grid[y].length; x++) {
+          const cell = grid[y][x];
+          let color: number;
+          
+          switch (cell.state) {
+            case CellState.EMPTY:
+              color = 0x000000; // Black for empty
+              break;
+            case CellState.VIRUS_A:
+              color = 0xff0000; // Red for player A
+              break;
+            case CellState.VIRUS_B:
+              color = 0x0000ff; // Blue for player B
+              break;
+          }
+          
+          // Correct order: lineStyle before fill and draw
+          this.battleVisualization.lineStyle(0.5, 0x333333); // Thin gray border
+          this.battleVisualization.beginFill(color, cell.state === CellState.EMPTY ? 0.3 : 1); // More visible for empty cells
+          this.battleVisualization.drawRect(x * cellSize, y * cellSize, cellSize, cellSize);
+          this.battleVisualization.endFill();
+        }
+      }
+      
+      // Add debug info
+      const stats = this.virusBattle.getStats();
+      console.log(`Rendered grid: A=${stats.aPercent.toFixed(1)}%, B=${stats.bPercent.toFixed(1)}%`);
+    }
+  }
+
+  private renderBattleGrid(battleGrid: number[]): void {
+    if (!this.battleVisualization) return;
     
-    for (let y = 0; y < grid.length; y++) {
-      for (let x = 0; x < grid[y].length; x++) {
-        const cell = grid[y][x];
-        let color: number;
+    // Clear the previous visualization
+    this.battleVisualization.clear();
+    
+    // Grid dimensions (20x32)
+    const width = 20;
+    const height = 32;
+    
+    // Calculate cell size based on available space
+    const cellSize = Math.min(15, Math.floor((this.app.screen.width * 0.3) / width)); // 30% of screen width
+    
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = y * width + x;
+        const cellState = battleGrid[idx];
         
-        switch (cell.state) {
-          case CellState.EMPTY:
+        let color: number;
+        switch (cellState) {
+          case 0: // EMPTY
             color = 0x000000; // Black for empty
             break;
-          case CellState.VIRUS_A:
+          case 1: // VIRUS_A
             color = 0xff0000; // Red for player A
             break;
-          case CellState.VIRUS_B:
+          case 2: // VIRUS_B
             color = 0x0000ff; // Blue for player B
             break;
           default:
-            color = 0x000000;
+            color = 0x000000; // Default to black
         }
         
-        // Draw the cell
-        this.battleVisualization.beginFill(color);
+        // Correct order: lineStyle before fill and draw
+        this.battleVisualization.lineStyle(0.5, 0x333333); // Thin gray border
+        this.battleVisualization.beginFill(color, cellState === 0 ? 0.3 : 1); // More visible for empty cells
         this.battleVisualization.drawRect(x * cellSize, y * cellSize, cellSize, cellSize);
         this.battleVisualization.endFill();
-        
-        // Add a thin border
-        this.battleVisualization.lineStyle(0.5, 0x333333);
-        this.battleVisualization.stroke();
       }
     }
+  }
+
+  private updateBattleVisualizationFromServer(battleGrid: number[]): void {
+    this.serverBattleGrid = [...battleGrid]; // Copy the server grid
+    this.renderBattleGrid(this.serverBattleGrid);
   }
 
 

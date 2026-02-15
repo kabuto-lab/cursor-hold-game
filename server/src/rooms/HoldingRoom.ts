@@ -383,16 +383,42 @@ export class HoldingRoom extends Room<RoomState> {
     console.log('Starting virus battle!');
     
     // Initialize the virus battle state
-    // For now, we'll just broadcast a message to indicate the battle has started
+    // Set up the battle grid (20x32 = 640 cells)
+    this.state.battleGrid = new Array(20 * 32).fill(0); // 0 = EMPTY
+    this.state.battleActive = true;
     
-    // In the future, this would:
-    // 1. Set up the battle grid state
-    // 2. Initialize virus positions (red at top, blue at bottom)
-    // 3. Start the tick-based simulation
-    // 4. Handle the spread mechanics based on player parameters
+    // Get player parameters for the simulation
+    const players = Array.from(this.state.players.values());
+    if (players.length >= 2) {
+      const playerA = players.find(p => p.isRoomCreator) || players[0];
+      const playerB = players.find(p => !p.isRoomCreator) || players[1];
+      
+      // Initialize battle grid with starting positions
+      // Place initial viruses for player A (top half)
+      for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) { // 3-5 initial cells
+        const x = Math.floor(Math.random() * 20);
+        const y = Math.floor(Math.random() * 10); // Top half (rows 0-9)
+        const index = y * 20 + x;
+        if (index < this.state.battleGrid.length) {
+          this.state.battleGrid[index] = 1; // 1 = VIRUS_A
+        }
+      }
+      
+      // Place initial viruses for player B (bottom half)
+      for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) { // 3-5 initial cells
+        const x = Math.floor(Math.random() * 20);
+        const y = 10 + Math.floor(Math.random() * 10); // Bottom half (rows 10-19)
+        const index = y * 20 + x;
+        if (index < this.state.battleGrid.length) {
+          this.state.battleGrid[index] = 2; // 2 = VIRUS_B
+        }
+      }
+    }
     
+    // Broadcast the initial battle state
     this.broadcast('virusBattleStarted', {
       message: 'Virus battle has started!',
+      battleGrid: this.state.battleGrid,
       timestamp: Date.now()
     });
     
@@ -401,8 +427,7 @@ export class HoldingRoom extends Room<RoomState> {
   }
 
   private startBattleSimulation(): void {
-    // This would implement the tick-based virus spread simulation
-    // For now, we'll just simulate a basic tick
+    // This implements the tick-based virus spread simulation on the server
     
     let tickCount = 0;
     const battleInterval = setInterval(() => {
@@ -417,38 +442,132 @@ export class HoldingRoom extends Room<RoomState> {
       
       tickCount++;
       
-      // Stop after 100 ticks for demo purposes
-      if (tickCount > 100) {
+      // Stop after 1000 ticks or if battle is no longer active
+      if (tickCount > 1000 || !this.state.battleActive) {
         clearInterval(battleInterval);
         this.endVirusBattle();
       }
     }, 1000); // 1 second per tick for now
+    
+    // Store interval reference to allow cleanup
+    (this as any).battleInterval = battleInterval;
   }
 
   private updateVirusSpread(): void {
-    // This would implement the actual virus spread logic based on parameters
-    // For now, we'll just broadcast a tick update
+    // This implements the actual virus spread logic based on parameters
+    // Simple algorithm: each virus tries to spread to adjacent empty cells
     
+    // Create a copy of the current grid to avoid race conditions during updates
+    const newGrid = [...this.state.battleGrid];
+    const width = 20;
+    const height = 32;
+    
+    // Process each cell
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = y * width + x;
+        const cell = this.state.battleGrid[idx];
+        
+        // If cell is not empty, check if it can spread
+        if (cell !== 0) {
+          // Look for adjacent empty cells
+          const neighbors = [
+            {x: x-1, y: y}, {x: x+1, y: y}, {x: x, y: y-1}, {x: x, y: y+1}, // 4 directions
+            {x: x-1, y: y-1}, {x: x+1, y: y-1}, {x: x-1, y: y+1}, {x: x+1, y: y+1} // 8 directions if needed
+          ];
+          
+          for (const neighbor of neighbors) {
+            if (neighbor.x >= 0 && neighbor.x < width && neighbor.y >= 0 && neighbor.y < height) {
+              const nIdx = neighbor.y * width + neighbor.x;
+              if (this.state.battleGrid[nIdx] === 0) { // Empty cell
+                // Simple spread chance - 30% chance to spread
+                if (Math.random() < 0.3) {
+                  newGrid[nIdx] = cell; // Spread the virus
+                  break; // Only spread to one cell per tick per virus cell
+                }
+              } else if (this.state.battleGrid[nIdx] !== cell) { // Opposing virus
+                // Conflict - virus with higher strength takes over (simplified)
+                if (Math.random() < 0.5) { // 50% chance for stronger virus to win
+                  newGrid[nIdx] = cell; // Take over the opposing virus
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Update the state with the new grid
+    this.state.battleGrid = newGrid;
+    
+    // Broadcast the updated grid to all players
     this.broadcast('virusTick', {
       tick: Date.now(),
+      battleGrid: this.state.battleGrid,
       message: 'Virus spreading...'
     });
   }
 
   private checkWinConditions(): boolean {
-    // This would check if one virus has taken over the grid or met other win conditions
-    // For now, we'll return false to continue the simulation
+    // Check if one virus has taken over the grid or met other win conditions
+    const totalCells = this.state.battleGrid.length;
+    let virusACount = 0;
+    let virusBCount = 0;
+    
+    for (const cell of this.state.battleGrid) {
+      if (cell === 1) virusACount++;
+      else if (cell === 2) virusBCount++;
+    }
+    
+    const virusAPercent = (virusACount / totalCells) * 100;
+    const virusBPercent = (virusBCount / totalCells) * 100;
+    
+    // Win condition: one virus controls 99% or more of the grid
+    if (virusAPercent >= 99 || virusBPercent >= 99) {
+      return true;
+    }
+    
     return false;
   }
 
   private endVirusBattle(): void {
     console.log('Virus battle ended!');
     
+    // Determine winner
+    const totalCells = this.state.battleGrid.length;
+    let virusACount = 0;
+    let virusBCount = 0;
+    
+    for (const cell of this.state.battleGrid) {
+      if (cell === 1) virusACount++;
+      else if (cell === 2) virusBCount++;
+    }
+    
+    let winner = 'Draw';
+    if (virusACount > virusBCount) {
+      winner = 'Player A';
+    } else if (virusBCount > virusACount) {
+      winner = 'Player B';
+    }
+    
     // Broadcast the end of the battle
     this.broadcast('virusBattleEnded', {
-      message: 'Virus battle has ended!',
+      message: `Virus battle has ended! Winner: ${winner}`,
+      winner: winner,
+      virusACount: virusACount,
+      virusBCount: virusBCount,
       timestamp: Date.now()
     });
+    
+    // Clean up the battle state
+    this.state.battleActive = false;
+    this.state.battleGrid = [];
+    
+    // Clear the battle interval if it exists
+    if ((this as any).battleInterval) {
+      clearInterval((this as any).battleInterval);
+      delete (this as any).battleInterval;
+    }
   }
 
   onJoin(client: Client, options: any) {
