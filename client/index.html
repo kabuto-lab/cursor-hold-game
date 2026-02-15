@@ -263,10 +263,9 @@
     
     .sidebar-title-controls {
       display: flex;
-      justify-content: flex-start;
+      justify-content: space-between;
       align-items: center;
       width: 100%;
-      gap: 10px;
     }
     
     .sidebar-header h3 {
@@ -281,7 +280,7 @@
       color: #00ff00;
       font-family: 'Courier New', monospace;
       font-size: 0.9rem;
-      text-align: right;
+      text-align: center;
       flex-grow: 1;
     }
     
@@ -410,11 +409,11 @@
       <div id="leftSidebar" class="sidebar left-sidebar">
         <div class="sidebar-header">
           <div class="sidebar-title-controls">
-            <button id="closeLeftSidebarBtn" class="btn close-btn">✕</button>
             <h3>Controls</h3>
             <div class="player-info">
               <div id="playerName">Player 1 | Player 2</div>
             </div>
+            <button id="closeLeftSidebarBtn" class="btn close-btn">✕</button>
           </div>
           <div id="roomInfo">Room: <span id="currentRoomId"></span></div>
         </div>
@@ -441,8 +440,8 @@
       <div id="sidebar" class="sidebar right-sidebar">
         <div class="sidebar-header">
           <div class="sidebar-title-controls">
-            <button id="closeSidebarBtn" class="btn close-btn">✕</button>
             <h3>Settings</h3>
+            <button id="closeSidebarBtn" class="btn close-btn">✕</button>
           </div>
         </div>
         <div class="sidebar-content">
