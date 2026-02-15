@@ -27,6 +27,21 @@ export class Game {
   
   // Follower button element
   private createFollowerBtn!: HTMLButtonElement;
+  
+  // Last known cursor positions for followers
+  private lastCursorPositions: Map<string, { x: number; y: number }> = new Map();
+  
+  // Last sent target positions for followers
+  private lastSentTargetPositions: Map<string, { x: number; y: number }> = new Map();
+  
+  // Sidebar elements
+  private menuBtn!: HTMLButtonElement;
+  private sidebar!: HTMLElement;
+  private closeSidebarBtn!: HTMLButtonElement;
+  private followerSpeedSlider!: HTMLInputElement;
+  private cursorSizeSlider!: HTMLInputElement;
+  private themeSelect!: HTMLSelectElement;
+  private resetFollowersBtn!: HTMLButtonElement;
 
   // UI elements
   private landingScreen!: HTMLElement;
@@ -64,6 +79,15 @@ export class Game {
     // Initialize follower button
     this.createFollowerBtn = document.getElementById('createFollowerBtn')! as HTMLButtonElement;
 
+    // Initialize sidebar elements
+    this.menuBtn = document.getElementById('menuBtn')! as HTMLButtonElement;
+    this.sidebar = document.getElementById('sidebar')!;
+    this.closeSidebarBtn = document.getElementById('closeSidebarBtn')! as HTMLButtonElement;
+    this.followerSpeedSlider = document.getElementById('followerSpeed')! as HTMLInputElement;
+    this.cursorSizeSlider = document.getElementById('cursorSize')! as HTMLInputElement;
+    this.themeSelect = document.getElementById('themeSelect')! as HTMLSelectElement;
+    this.resetFollowersBtn = document.getElementById('resetFollowersBtn')! as HTMLButtonElement;
+
     // Set up event listeners
     this.setupEventListeners();
   }
@@ -86,6 +110,16 @@ export class Game {
     
     // Follower button event listener
     this.createFollowerBtn.addEventListener('click', () => this.createFollower());
+    
+    // Sidebar event listeners
+    this.menuBtn.addEventListener('click', () => this.openSidebar());
+    this.closeSidebarBtn.addEventListener('click', () => this.closeSidebar());
+    this.resetFollowersBtn.addEventListener('click', () => this.resetFollowers());
+    
+    // Setting change listeners
+    this.followerSpeedSlider.addEventListener('input', () => this.updateFollowerSpeed());
+    this.cursorSizeSlider.addEventListener('input', () => this.updateCursorSize());
+    this.themeSelect.addEventListener('change', () => this.changeTheme());
   }
 
   async init(): Promise<void> {
@@ -155,7 +189,8 @@ export class Game {
       const objData = this.room?.state.objects.get(id);
       if (objData && objData.isFollower) {
         // Apply easing to move the follower toward its target position
-        const easingFactor = 0.1; // Adjust for faster/slower following
+        // Use the value from the slider if available, otherwise default to 0.1
+        const easingFactor = this.followerSpeedSlider ? parseFloat(this.followerSpeedSlider.value) : 0.1;
         
         // Calculate the difference between current position and target position
         const dx = objData.targetX - container.x;
@@ -170,15 +205,25 @@ export class Game {
           const cursor = this.cursors.get(this.currentPlayerId);
           if (cursor) {
             // Update the target position to follow the cursor with some delay
-            objData.targetX = cursor.x;
-            objData.targetY = cursor.y;
-            
-            // Send the new target position to the server
-            this.room?.send('updateFollowerTarget', {
-              id: id,
-              x: objData.targetX,
-              y: objData.targetY
-            });
+            // Only update if cursor is within canvas bounds
+            if (cursor.x >= 0 && cursor.x <= this.app.screen.width && 
+                cursor.y >= 0 && cursor.y <= this.app.screen.height) {
+              objData.targetX = cursor.x;
+              objData.targetY = cursor.y;
+              
+              // Store the last known cursor position
+              this.lastCursorPositions.set(this.currentPlayerId, { x: cursor.x, y: cursor.y });
+              
+              // Send the new target position to the server
+              this.room?.send('updateFollowerTarget', {
+                id: id,
+                x: objData.targetX,
+                y: objData.targetY
+              });
+              
+              // Store the last sent target position
+              this.lastSentTargetPositions.set(id, { x: objData.targetX, y: objData.targetY });
+            }
           }
         }
       }
@@ -425,6 +470,9 @@ export class Game {
       if (objData) {
         objData.targetX = data.x;
         objData.targetY = data.y;
+        
+        // Also update our local record of the last sent position
+        this.lastSentTargetPositions.set(data.id, { x: data.x, y: data.y });
       }
     });
 
@@ -706,11 +754,21 @@ export class Game {
     // Generate a unique ID for the follower
     const followerId = `follower_${this.currentPlayerId}_${Date.now()}`;
     
+    // Get current cursor position
+    const cursor = this.cursors.get(this.currentPlayerId);
+    let cursorX = this.app.screen.width / 2; // Default to center
+    let cursorY = this.app.screen.height / 2;
+    
+    if (cursor) {
+      cursorX = cursor.x;
+      cursorY = cursor.y;
+    }
+    
     // Send message to server to create the follower
     this.room.send('createFollower', {
       id: followerId,
-      x: this.app.screen.width / 2, // Center of screen initially
-      y: this.app.screen.height / 2,
+      x: cursorX,
+      y: cursorY,
       radius: 20,
       color: this.getRandomColor(),
       owner: this.currentPlayerId
@@ -723,6 +781,64 @@ export class Game {
     const g = Math.floor(Math.random() * 128) + 127;
     const b = Math.floor(Math.random() * 128) + 127;
     return (r << 16) + (g << 8) + b;
+  }
+
+  private openSidebar(): void {
+    this.sidebar.classList.add('active');
+  }
+
+  private closeSidebar(): void {
+    this.sidebar.classList.remove('active');
+  }
+
+  private resetFollowers(): void {
+    // Remove all followers owned by this player
+    for (const [id, container] of this.objects.entries()) {
+      const objData = this.room?.state.objects.get(id);
+      if (objData && objData.isFollower && objData.owner === this.currentPlayerId) {
+        this.app.stage.removeChild(container);
+        this.objects.delete(id);
+        
+        // Remove from server state
+        // Note: We would need to implement a server message to remove objects
+        // For now, just remove locally - in a real implementation, we'd send a message to the server
+      }
+    }
+  }
+
+  private updateFollowerSpeed(): void {
+    // In a real implementation, we would send this setting to the server
+    // For now, we just store it locally
+    console.log('Follower speed updated to:', this.followerSpeedSlider.value);
+  }
+
+  private updateCursorSize(): void {
+    // Update the size of the current player's cursor
+    const cursor = this.cursors.get(this.currentPlayerId);
+    if (cursor) {
+      const newSize = parseFloat(this.cursorSizeSlider.value);
+      cursor.scale.x = newSize;
+      cursor.scale.y = newSize;
+    }
+  }
+
+  private changeTheme(): void {
+    const selectedTheme = this.themeSelect.value;
+    console.log('Theme changed to:', selectedTheme);
+    
+    // In a real implementation, we would apply different visual themes
+    // For now, just log the change
+    switch(selectedTheme) {
+      case 'retro':
+        // Apply retro theme
+        break;
+      case 'dark':
+        // Apply dark theme
+        break;
+      case 'light':
+        // Apply light theme
+        break;
+    }
   }
 
   private createCursorSprite(color: number): PIXI.Sprite {

@@ -168,6 +168,75 @@
       font-family: 'Courier New', monospace;
       font-size: 0.9rem;
     }
+    
+    .sidebar {
+      position: fixed;
+      top: 0;
+      right: -300px; /* Hidden by default */
+      width: 300px;
+      height: 100%;
+      background-color: rgba(15, 15, 35, 0.95);
+      border-left: 2px solid #00ffff;
+      z-index: 1000;
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .sidebar.active {
+      right: 0;
+    }
+    
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #00ffff;
+    }
+    
+    .sidebar-header h3 {
+      margin: 0;
+      color: #00ff00;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .sidebar-content {
+      padding: 15px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+    
+    .setting-item {
+      margin-bottom: 15px;
+    }
+    
+    .setting-item label {
+      display: block;
+      color: #00ff00;
+      margin-bottom: 5px;
+      font-family: 'Courier New', monospace;
+    }
+    
+    .setting-item input[type="range"],
+    .setting-item select {
+      width: 100%;
+      padding: 5px;
+      background-color: #0f0f23;
+      color: #00ff00;
+      border: 1px solid #00ffff;
+      font-family: 'Courier New', monospace;
+    }
+    
+    #closeSidebarBtn {
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+    }
 
     .connection-status {
       display: inline-block;
@@ -230,6 +299,37 @@
         <button id="leaveRoomBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem;">LEAVE ROOM</button>
         <button id="createBallBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem; margin-left: 10px;">BALL</button>
         <button id="createFollowerBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem; margin-left: 10px;">FOLLOWER</button>
+        <!-- Menu button -->
+        <button id="menuBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem; margin-left: 10px;">☰</button>
+      </div>
+      
+      <!-- Sidebar -->
+      <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+          <h3>Settings</h3>
+          <button id="closeSidebarBtn" class="btn">✕</button>
+        </div>
+        <div class="sidebar-content">
+          <div class="setting-item">
+            <label for="followerSpeed">Follower Speed:</label>
+            <input type="range" id="followerSpeed" min="0.01" max="0.5" step="0.01" value="0.1">
+          </div>
+          <div class="setting-item">
+            <label for="cursorSize">Cursor Size:</label>
+            <input type="range" id="cursorSize" min="1" max="5" step="0.5" value="2">
+          </div>
+          <div class="setting-item">
+            <label for="themeSelect">Theme:</label>
+            <select id="themeSelect">
+              <option value="retro">Retro</option>
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <button id="resetFollowersBtn" class="btn">Reset Followers</button>
+          </div>
+        </div>
       </div>
       
       <!-- Chat Container -->
