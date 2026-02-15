@@ -12,7 +12,7 @@ export class Game {
   private cursors: Map<string, PIXI.Sprite> = new Map();
   private cursorLabels: Map<string, PIXI.Text> = new Map();
   private links: PIXI.Graphics[] = [];
-  private objects: Map<string, PIXI.Graphics> = new Map();
+  private objects: Map<string, PIXI.Container> = new Map();
   private currentPlayerId: string = '';
   // private gameState: RoomState | null = null;  // TODO: Use this for game state management - commented out for now to avoid unused error
   private playerName: string = '';
@@ -388,6 +388,9 @@ export class Game {
   }
 
   private addObject(objectId: string, obj: DraggableObjectSchema): void {
+    // Create a container for the circle and text
+    const container = new PIXI.Container();
+    
     // Create a circle graphic for the draggable object
     const circle = new PIXI.Graphics();
     
@@ -400,26 +403,39 @@ export class Game {
     circle.lineStyle(2, 0x000000); // Black border
     circle.drawCircle(0, 0, obj.radius);
     
-    // Position the circle
-    circle.x = obj.x;
-    circle.y = obj.y;
+    // Create text to put inside the circle
+    const text = new PIXI.Text("HERE", {
+      fontFamily: 'Courier New',
+      fontSize: 10,
+      fill: 0x000000, // Black text
+      align: 'center'
+    });
+    text.anchor.set(0.5); // Center the text
     
-    // Enable interactivity
-    circle.eventMode = 'static';
-    circle.cursor = 'pointer';
+    // Position the container
+    container.x = obj.x;
+    container.y = obj.y;
+    
+    // Add circle and text to the container
+    container.addChild(circle);
+    container.addChild(text);
+    
+    // Enable interactivity on the container
+    container.eventMode = 'static';
+    container.cursor = 'pointer';
     
     // Store reference to the object ID for event handling
-    (circle as any).objectId = objectId;
+    (container as any).objectId = objectId;
     
-    // Add drag event handlers
-    circle.on('pointerdown', (event: PIXI.FederatedPointerEvent) => this.startDraggingObject(event, objectId));
-    circle.on('globalpointermove', (_event: PIXI.FederatedPointerEvent) => this.draggingObject(_event, objectId));
-    circle.on('pointerup', (_event: PIXI.FederatedPointerEvent) => this.stopDraggingObject(_event, objectId));
-    circle.on('pointerupoutside', (_event: PIXI.FederatedPointerEvent) => this.stopDraggingObject(_event, objectId));
+    // Add drag event handlers to the container
+    container.on('pointerdown', (event: PIXI.FederatedPointerEvent) => this.startDraggingObject(event, objectId));
+    container.on('globalpointermove', (_event: PIXI.FederatedPointerEvent) => this.draggingObject(_event, objectId));
+    container.on('pointerup', (_event: PIXI.FederatedPointerEvent) => this.stopDraggingObject(_event, objectId));
+    container.on('pointerupoutside', (_event: PIXI.FederatedPointerEvent) => this.stopDraggingObject(_event, objectId));
     
     // Add to stage and store in our map
-    this.app.stage.addChild(circle);
-    this.objects.set(objectId, circle);
+    this.app.stage.addChild(container);
+    this.objects.set(objectId, container);
   }
 
   private removeObject(objectId: string): void {
@@ -475,42 +491,48 @@ export class Game {
   }
 
   private handleObjectDragStarted(objectId: string, _playerId: string): void {
-    const object = this.objects.get(objectId);
-    if (object) {
+    const container = this.objects.get(objectId);
+    if (container) {
+      // Get the circle graphics from the container
+      const circle = container.children[0] as PIXI.Graphics;
+      
       // Visually indicate that the object is being dragged by another player
       // For example, change the border color
-      object.clear();
+      circle.clear();
       
       // Redraw the circle with the specified color and radius
       const objData = this.room.state.objects.get(objectId);
       if (objData) {
-        object.beginFill(objData.color);
-        object.drawCircle(0, 0, objData.radius);
-        object.endFill();
+        circle.beginFill(objData.color);
+        circle.drawCircle(0, 0, objData.radius);
+        circle.endFill();
         
         // Add a different colored border to indicate it's being dragged
-        object.lineStyle(3, 0xffff00); // Yellow border when being dragged
-        object.drawCircle(0, 0, objData.radius);
+        circle.lineStyle(3, 0xffff00); // Yellow border when being dragged
+        circle.drawCircle(0, 0, objData.radius);
       }
     }
   }
 
   private handleObjectDragStopped(objectId: string, _playerId: string): void {
-    const object = this.objects.get(objectId);
-    if (object) {
+    const container = this.objects.get(objectId);
+    if (container) {
+      // Get the circle graphics from the container
+      const circle = container.children[0] as PIXI.Graphics;
+      
       // Reset the visual indication that the object is being dragged
       const objData = this.room.state.objects.get(objectId);
       if (objData) {
-        object.clear();
+        circle.clear();
         
         // Redraw the circle with the specified color and radius
-        object.beginFill(objData.color);
-        object.drawCircle(0, 0, objData.radius);
-        object.endFill();
+        circle.beginFill(objData.color);
+        circle.drawCircle(0, 0, objData.radius);
+        circle.endFill();
         
         // Add a black border
-        object.lineStyle(2, 0x000000); // Black border
-        object.drawCircle(0, 0, objData.radius);
+        circle.lineStyle(2, 0x000000); // Black border
+        circle.drawCircle(0, 0, objData.radius);
       }
     }
   }
