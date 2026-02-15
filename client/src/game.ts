@@ -773,6 +773,11 @@ export class Game {
     if (!this.hasOwnCircle()) {
       this.createPlayerCircle();
     }
+    
+    // Also open the left sidebar with a slight delay for a coordinated effect
+    setTimeout(() => {
+      this.leftSidebar.classList.add('active');
+    }, 100);
   }
   
   private hasOwnCircle(): boolean {
@@ -819,6 +824,11 @@ export class Game {
 
   private closeSidebar(): void {
     this.sidebar.classList.remove('active');
+    
+    // Also close the left sidebar with a slight delay for a coordinated effect
+    setTimeout(() => {
+      this.leftSidebar.classList.remove('active');
+    }, 50);
   }
 
 
@@ -859,10 +869,20 @@ export class Game {
 
   private openLeftSidebar(): void {
     this.leftSidebar.classList.add('active');
+    
+    // Also open the right sidebar with a slight delay for a coordinated effect
+    setTimeout(() => {
+      this.sidebar.classList.add('active');
+    }, 100);
   }
 
   private closeLeftSidebar(): void {
     this.leftSidebar.classList.remove('active');
+    
+    // Also close the right sidebar with a slight delay for a coordinated effect
+    setTimeout(() => {
+      this.sidebar.classList.remove('active');
+    }, 50);
   }
 
   private createCursorSprite(playerId: string, _originalColor: number): PIXI.Sprite {
