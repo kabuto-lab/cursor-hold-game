@@ -248,6 +248,9 @@ export class Game {
   
   // Server-synchronized battle grid
   private serverBattleGrid: number[] = [];
+  
+  // Battle visualization layer to avoid mouse event conflicts
+  private battleLayer: PIXI.Container | null = null;
 
   async init(): Promise<void> {
     // Initialize the PixiJS application
@@ -1557,8 +1560,18 @@ export class Game {
     
     // Clean up visualization
     if (this.battleVisualization) {
-      this.app.stage.removeChild(this.battleVisualization);
+      if (this.battleLayer) {
+        this.battleLayer.removeChild(this.battleVisualization);
+      } else {
+        this.app.stage.removeChild(this.battleVisualization);
+      }
       this.battleVisualization = null;
+    }
+    
+    // Remove the battle layer
+    if (this.battleLayer) {
+      this.app.stage.removeChild(this.battleLayer);
+      this.battleLayer = null;
     }
     
     // Clear the server battle grid
@@ -1674,7 +1687,18 @@ export class Game {
   private createBattleVisualization(): void {
     // Remove any existing battle visualization
     if (this.battleVisualization) {
-      this.app.stage.removeChild(this.battleVisualization);
+      if (this.battleLayer) {
+        this.battleLayer.removeChild(this.battleVisualization);
+      } else {
+        this.app.stage.removeChild(this.battleVisualization);
+      }
+    }
+    
+    // Create a battle layer if it doesn't exist
+    if (!this.battleLayer) {
+      this.battleLayer = new PIXI.Container();
+      // Add battle layer to stage
+      this.app.stage.addChild(this.battleLayer);
     }
     
     // Create a new graphics object for the battle visualization
@@ -1698,8 +1722,8 @@ export class Game {
     this.battleVisualization.x = this.app.screen.width * 0.33; // Start from 33% from left
     this.battleVisualization.y = 0; // Align to top
     
-    // Add to the stage
-    this.app.stage.addChild(this.battleVisualization);
+    // Add to the battle layer (not directly to stage to avoid mouse conflicts)
+    this.battleLayer.addChild(this.battleVisualization);
     
     // Draw the initial state
     this.updateBattleVisualization();
