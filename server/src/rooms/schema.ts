@@ -8,6 +8,7 @@ export class PlayerSchema extends Schema {
   @type('number') color: number = 0xffffff; // Default white color
   @type('boolean') isHoldingHands: boolean = false;
   @type('string') holdingHandsWith: string = ''; // ID of player this player is holding hands with
+  @type('boolean') isRoomCreator: boolean = false; // Whether this player created the room
 }
 
 export class DraggableObjectSchema extends Schema {

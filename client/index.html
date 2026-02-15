@@ -172,8 +172,8 @@
     .sidebar {
       position: fixed;
       top: 0;
-      right: -300px; /* Hidden by default */
-      width: 300px;
+      right: -33%; /* Hidden by default */
+      width: 33%;
       height: 100%;
       background-color: rgba(15, 15, 35, 0.95);
       border-left: 2px solid #00ffff;
@@ -185,6 +185,14 @@
     
     .sidebar.active {
       right: 0;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        right: -100%;
+      }
     }
     
     .sidebar-header {
@@ -299,9 +307,10 @@
         <button id="leaveRoomBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem;">LEAVE ROOM</button>
         <button id="createBallBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem; margin-left: 10px;">BALL</button>
         <button id="createFollowerBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem; margin-left: 10px;">FOLLOWER</button>
-        <!-- Menu button -->
-        <button id="menuBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem; margin-left: 10px;">☰</button>
       </div>
+      
+      <!-- Menu button in top right corner -->
+      <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
       
       <!-- Sidebar -->
       <div id="sidebar" class="sidebar">

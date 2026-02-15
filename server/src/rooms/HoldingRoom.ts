@@ -289,10 +289,11 @@ export class HoldingRoom extends Room<RoomState> {
     player.x = Math.random() * 400 + 100; // Random starting position
     player.y = Math.random() * 300 + 100;
     player.color = this.generateRandomColor(); // Assign a random color
-    
+    player.isRoomCreator = this.state.players.size === 0; // First player is the room creator
+
     // Add player to state
     this.state.players.set(client.sessionId, player);
-    
+
     console.log(`${client.sessionId} joined room ${this.roomId}`);
   }
 

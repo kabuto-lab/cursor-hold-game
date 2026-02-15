@@ -17,6 +17,10 @@ export class Game {
   // private gameState: RoomState | null = null;  // TODO: Use this for game state management - commented out for now to avoid unused error
   private playerName: string = '';
   
+  // Track if current player is the room creator
+  private isRoomCreator: boolean = false;
+  
+  
   // Chat elements
   private chatMessagesDiv!: HTMLElement;
   private chatInput!: HTMLInputElement;
@@ -305,6 +309,7 @@ export class Game {
       // Create room without specifying custom ID - let Colyseus assign one
       this.room = await this.client.create('holding_room', {});
       this.currentPlayerId = this.room.sessionId;
+      this.isRoomCreator = true; // Set flag for room creator
       this.setupRoomHandlers();
 
       // Prompt for player name
@@ -341,6 +346,7 @@ export class Game {
     try {
       this.room = await this.client.joinById(roomId);
       this.currentPlayerId = this.room.sessionId;
+      this.isRoomCreator = false; // Set flag for non-creator
       this.setupRoomHandlers();
 
       // Prompt for player name
@@ -493,8 +499,8 @@ export class Game {
   }
 
   private addPlayer(playerId: string, player: PlayerSchema): void {
-    // Create cursor sprite
-    const cursorSprite = this.createCursorSprite(player.color);
+    // Create cursor sprite with appropriate color
+    const cursorSprite = this.createCursorSprite(playerId, player.color);
     this.app.stage.addChild(cursorSprite);
     this.cursors.set(playerId, cursorSprite);
 
@@ -841,13 +847,24 @@ export class Game {
     }
   }
 
-  private createCursorSprite(color: number): PIXI.Sprite {
+  private createCursorSprite(playerId: string, _originalColor: number): PIXI.Sprite {
+    // Determine cursor color based on whether player is room creator
+    let cursorColor: number;
+    if (playerId === this.currentPlayerId) {
+      // Use local variable for current player
+      cursorColor = this.isRoomCreator ? 0xff0000 : 0x0000ff; // Red for creator, Blue for joiner
+    } else {
+      // For other players, get the data from the server state
+      const playerData = this.room?.state.players.get(playerId);
+      cursorColor = playerData?.isRoomCreator ? 0xff0000 : 0x0000ff; // Red for creator, Blue for joiner
+    }
+
     // Create an 8-bit style cursor sprite
     const graphics = new PIXI.Graphics();
-    
+
     // Draw an 8-bit style hand/cursor
     graphics.rect(-8, -8, 16, 16); // Main body
-    graphics.fill({ color: color });
+    graphics.fill({ color: cursorColor });
 
     // Add details to make it look more like a hand
     graphics.lineStyle(1, 0x000000); // Black outline (width, color)
@@ -856,20 +873,20 @@ export class Game {
 
     // Add finger-like pixels
     graphics.rect(-6, -10, 4, 4); // Thumb
-    graphics.fill({ color: color });
+    graphics.fill({ color: cursorColor });
     graphics.rect(-2, -11, 4, 5); // Index finger
-    graphics.fill({ color: color });
+    graphics.fill({ color: cursorColor });
     graphics.rect(2, -10, 4, 4);  // Middle finger
-    graphics.fill({ color: color });
-    
+    graphics.fill({ color: cursorColor });
+
     // Convert to texture and create sprite
     const texture = this.app.renderer.generateTexture(graphics);
     const sprite = new PIXI.Sprite(texture);
-    
+
     // Add pixel art scaling
     sprite.scale.x = 2;
     sprite.scale.y = 2;
-    
+
     return sprite;
   }
 
