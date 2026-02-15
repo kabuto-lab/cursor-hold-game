@@ -3,10 +3,10 @@
  * Теперь использует архитектуру с разделением ответственности
  */
 
-import { GameStateManager } from './GameStateManager';
-import { NetworkManager } from './NetworkManager';
-import { GameRenderer } from './GameRenderer';
-import { UIController } from './UIController';
+import { GameStateManager } from './core/GameStateManager';
+import { NetworkManager } from './core/NetworkManager';
+import { GameRenderer } from './core/GameRenderer';
+import { UIController } from './ui/UIController';
 
 export class Game {
   private gameStateManager: GameStateManager;
