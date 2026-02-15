@@ -392,6 +392,9 @@
       padding: 5px;
       cursor: pointer;
       transition: background-color 0.2s;
+      position: relative;
+      border-radius: 0 0 5px 5px; /* Rounded bottom for test tube shape */
+      overflow: hidden;
     }
     
     .param-cell:hover {
@@ -401,6 +404,7 @@
     .param-emoji {
       font-size: 1.5rem;
       margin-bottom: 3px;
+      display: block;
     }
     
     .param-name {
@@ -413,6 +417,42 @@
       font-size: 1rem;
       color: #ffff00;
       font-weight: bold;
+    }
+    
+    /* Test tube liquid effect */
+    .param-liquid {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 0%;
+      transition: height 0.5s ease;
+      z-index: 1;
+    }
+    
+    /* Emoji-specific colors for liquids */
+    .param-cell[data-param="aggression"] .param-liquid { background-color: rgba(255, 0, 0, 0.6); } /* Red for ⚔️ */
+    .param-cell[data-param="mutation"] .param-liquid { background-color: rgba(128, 0, 128, 0.6); } /* Purple for 🧬 */
+    .param-cell[data-param="speed"] .param-liquid { background-color: rgba(255, 165, 0, 0.6); } /* Orange for ⚡ */
+    .param-cell[data-param="defense"] .param-liquid { background-color: rgba(0, 0, 255, 0.6); } /* Blue for 🛡️ */
+    .param-cell[data-param="reproduction"] .param-liquid { background-color: rgba(0, 128, 0, 0.6); } /* Green for 🦠 */
+    .param-cell[data-param="stealth"] .param-liquid { background-color: rgba(128, 128, 128, 0.6); } /* Gray for 👻 */
+    .param-cell[data-param="virulence"] .param-liquid { background-color: rgba(128, 0, 0, 0.6); } /* Maroon for ☣️ */
+    .param-cell[data-param="resilience"] .param-liquid { background-color: rgba(255, 192, 203, 0.6); } /* Pink for 💪 */
+    .param-cell[data-param="mobility"] .param-liquid { background-color: rgba(139, 69, 19, 0.6); } /* Brown for 🚶 */
+    .param-cell[data-param="intellect"] .param-liquid { background-color: rgba(255, 255, 0, 0.6); } /* Yellow for 🧠 */
+    .param-cell[data-param="contagiousness"] .param-liquid { background-color: rgba(0, 255, 255, 0.6); } /* Cyan for 🫁 */
+    .param-cell[data-param="lethality"] .param-liquid { background-color: rgba(0, 0, 0, 0.6); } /* Black for 💀 */
+    
+    /* Drop animation */
+    .drop-animation {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: currentColor; /* Will inherit the color from parent */
+      pointer-events: none;
+      z-index: 2;
     }
     
     .points-summary {
@@ -542,77 +582,89 @@
             <div id="virusParamsContainer">
               <!-- Row 1 -->
               <div class="param-row">
-                <div class="param-cell">
+                <div class="param-cell" data-param="aggression">
                   <div class="param-emoji">⚔️</div>
                   <div class="param-name">Aggression</div>
                   <div class="param-value" id="param-aggression">0</div>
+                  <div class="param-liquid"></div>
                 </div>
-                <div class="param-cell">
+                <div class="param-cell" data-param="mutation">
                   <div class="param-emoji">🧬</div>
                   <div class="param-name">Mutation</div>
                   <div class="param-value" id="param-mutation">0</div>
+                  <div class="param-liquid"></div>
                 </div>
-                <div class="param-cell">
+                <div class="param-cell" data-param="speed">
                   <div class="param-emoji">⚡</div>
                   <div class="param-name">Speed</div>
                   <div class="param-value" id="param-speed">0</div>
+                  <div class="param-liquid"></div>
                 </div>
               </div>
-              
+
               <!-- Row 2 -->
               <div class="param-row">
-                <div class="param-cell">
+                <div class="param-cell" data-param="defense">
                   <div class="param-emoji">🛡️</div>
                   <div class="param-name">Defense</div>
                   <div class="param-value" id="param-defense">0</div>
+                  <div class="param-liquid"></div>
                 </div>
-                <div class="param-cell">
+                <div class="param-cell" data-param="reproduction">
                   <div class="param-emoji">🦠</div>
                   <div class="param-name">Reproduction</div>
                   <div class="param-value" id="param-reproduction">0</div>
+                  <div class="param-liquid"></div>
                 </div>
-                <div class="param-cell">
+                <div class="param-cell" data-param="stealth">
                   <div class="param-emoji">👻</div>
                   <div class="param-name">Stealth</div>
                   <div class="param-value" id="param-stealth">0</div>
+                  <div class="param-liquid"></div>
                 </div>
               </div>
-              
+
               <!-- Row 3 -->
               <div class="param-row">
-                <div class="param-cell">
+                <div class="param-cell" data-param="virulence">
                   <div class="param-emoji">☣️</div>
                   <div class="param-name">Virulence</div>
                   <div class="param-value" id="param-virulence">0</div>
+                  <div class="param-liquid"></div>
                 </div>
-                <div class="param-cell">
+                <div class="param-cell" data-param="resilience">
                   <div class="param-emoji">💪</div>
                   <div class="param-name">Resilience</div>
                   <div class="param-value" id="param-resilience">0</div>
+                  <div class="param-liquid"></div>
                 </div>
-                <div class="param-cell">
+                <div class="param-cell" data-param="mobility">
                   <div class="param-emoji">🚶</div>
                   <div class="param-name">Mobility</div>
                   <div class="param-value" id="param-mobility">0</div>
+                  <div class="param-liquid"></div>
                 </div>
               </div>
-              
+
               <!-- Row 4 -->
               <div class="param-row">
-                <div class="param-cell">
+                <div class="param-cell" data-param="intellect">
                   <div class="param-emoji">🧠</div>
                   <div class="param-name">Intellect</div>
                   <div class="param-value" id="param-intellect">0</div>
+                  <div class="param-liquid"></div>
                 </div>
-                <div class="param-cell">
+                <div class="param-cell" data-param="contagiousness">
                   <div class="param-emoji">🫁</div>
                   <div class="param-name">Contagiousness</div>
                   <div class="param-value" id="param-contagiousness">0</div>
+                  <div class="param-liquid"></div>
                 </div>
-                <div class="param-cell">
+                <div class="param-cell" data-param="lethality">
                   <div class="param-emoji">💀</div>
                   <div class="param-name">Lethality</div>
                   <div class="param-value" id="param-lethality">0</div>
+                  <div class="param-liquid"></div>
                 </div>
               </div>
             </div>
@@ -620,7 +672,8 @@
             <div class="points-summary">
               Points remaining: <span id="points-remaining">12</span>
             </div>
-            
+
+            <button id="randomizeBtn" class="btn no-border">RANDOMIZE</button>
             <button id="readyBtn" class="btn no-border">READY</button>
           </div>
         </div>

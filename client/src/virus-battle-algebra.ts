@@ -112,7 +112,7 @@ class VirusBattleAlgebra {
       
       this.grid[y][x] = {
         state: CellState.VIRUS_A,
-        health: 20 + this.virusAParams.defense * 2 + this.virusAParams.resilience * 3,
+        health: 20 + (this.virusAParams.defense || 0) * 2 + (this.virusAParams.resilience || 0) * 3,
         infectionLevel: 1.0,
         ownerParams: this.virusAParams
       };
@@ -128,7 +128,7 @@ class VirusBattleAlgebra {
       
       this.grid[y][x] = {
         state: CellState.VIRUS_B,
-        health: 20 + this.virusBParams.defense * 2 + this.virusBParams.resilience * 3,
+        health: 20 + (this.virusBParams.defense || 0) * 2 + (this.virusBParams.resilience || 0) * 3,
         infectionLevel: 1.0,
         ownerParams: this.virusBParams
       };
@@ -169,13 +169,13 @@ class VirusBattleAlgebra {
         
         // Базовый шанс размножения
         const reproductionChance = Math.min(
-          params.reproduction / 12.0 + params.speed / 24.0,
+          (params.reproduction || 0) / 12.0 + (params.speed || 0) / 24.0,
           1.0
         );
         
         if (Math.random() < reproductionChance) {
           // Определяем дальность распространения
-          const maxDistance = 1 + Math.floor(params.mobility / 3) + Math.floor(params.speed / 4);
+          const maxDistance = 1 + Math.floor((params.mobility || 0) / 3) + Math.floor((params.speed || 0) / 4);
           
           // Получаем соседей
           const neighbors = this.getNeighbors(x, y, maxDistance);
@@ -186,11 +186,11 @@ class VirusBattleAlgebra {
             
             if (neighborCell.state === CellState.EMPTY) {
               // Заражаем пустую клетку
-              const infectionLevel = 0.5 * params.contagiousness / 12.0;
+              const infectionLevel = 0.5 * (params.contagiousness || 0) / 12.0;
               
               newGrid[ny][nx] = {
                 state: cell.state,
-                health: 10 + params.resilience * 2,
+                health: 10 + (params.resilience || 0) * 2,
                 infectionLevel: infectionLevel,
                 ownerParams: params
               };
@@ -225,16 +225,16 @@ class VirusBattleAlgebra {
             // Попытка заражения пустой клетки
             const stealthNeighbor = neighborCell.ownerParams?.stealth || 0;
             
-            const infectChance = 
-              (params.contagiousness / 12.0) *
+            const infectChance =
+              ((params.contagiousness || 0) / 12.0) *
               (1 - stealthNeighbor / 24.0) *
-              (params.virulence / 12.0);
+              ((params.virulence || 0) / 12.0);
             
             if (Math.random() < infectChance) {
               // Заражаем клетку
               newGrid[ny][nx] = {
                 state: cell.state,
-                health: 10 + params.resilience * 2,
+                health: 10 + (params.resilience || 0) * 2,
                 infectionLevel: Math.min(1.0, neighborCell.infectionLevel + 0.2),
                 ownerParams: params
               };
@@ -246,23 +246,23 @@ class VirusBattleAlgebra {
             const attackerParams = isAttackerA ? this.virusAParams : this.virusBParams;
             const defenderParams = isAttackerA ? this.virusBParams : this.virusAParams;
             
-            const attackPower = 
-              attackerParams.aggression + 
-              attackerParams.virulence + 
-              attackerParams.lethality;
-              
-            const defendPower = 
-              defenderParams.defense + 
-              defenderParams.resilience + 
-              defenderParams.stealth;
+            const attackPower =
+              (attackerParams.aggression || 0) +
+              (attackerParams.virulence || 0) +
+              (attackerParams.lethality || 0);
+
+            const defendPower =
+              (defenderParams.defense || 0) +
+              (defenderParams.resilience || 0) +
+              (defenderParams.stealth || 0);
             
             const captureChance = attackPower / (attackPower + defendPower || 1);
             
             const damage = Math.max(
               0,
-              attackerParams.lethality / 2.0 + 
-              attackerParams.aggression / 3.0 - 
-              defenderParams.defense / 4.0
+              (attackerParams.lethality || 0) / 2.0 +
+              (attackerParams.aggression || 0) / 3.0 -
+              (defenderParams.defense || 0) / 4.0
             );
             
             if (Math.random() < captureChance) {
@@ -288,7 +288,7 @@ class VirusBattleAlgebra {
                 } else {
                   newGrid[ny][nx] = {
                     state: cell.state,
-                    health: 5 + attackerParams.resilience,
+                    health: 5 + (attackerParams.resilience || 0),
                     infectionLevel: 0.5,
                     ownerParams: attackerParams
                   };
@@ -333,7 +333,7 @@ class VirusBattleAlgebra {
     }
     
     // Мутации
-    if (Math.random() < this.virusAParams.mutation / 12.0) {
+    if (Math.random() < (this.virusAParams.mutation || 0) / 12.0) {
       // Мутация параметров вируса A
       const paramKeys = Object.keys(this.virusAParams) as (keyof VirusParams)[];
       const paramName = paramKeys[Math.floor(Math.random() * paramKeys.length)];
@@ -349,7 +349,7 @@ class VirusBattleAlgebra {
       this.virusAParams[paramName] = newValue as any;
     }
     
-    if (Math.random() < this.virusBParams.mutation / 12.0) {
+    if (Math.random() < (this.virusBParams.mutation || 0) / 12.0) {
       // Мутация параметров вируса B
       const paramKeys = Object.keys(this.virusBParams) as (keyof VirusParams)[];
       const paramName = paramKeys[Math.floor(Math.random() * paramKeys.length)];
@@ -378,8 +378,8 @@ class VirusBattleAlgebra {
         
         if (eventType === 'global_outbreak') {
           // Глобальная вспышка: +20% к Contagiousness всем на 3 тика
-          this.virusAParams.contagiousness = Math.min(12, Math.floor(this.virusAParams.contagiousness * 1.2));
-          this.virusBParams.contagiousness = Math.min(12, Math.floor(this.virusBParams.contagiousness * 1.2));
+          this.virusAParams.contagiousness = Math.min(12, Math.floor((this.virusAParams.contagiousness || 0) * 1.2));
+          this.virusBParams.contagiousness = Math.min(12, Math.floor((this.virusBParams.contagiousness || 0) * 1.2));
         } 
         else if (eventType === 'weakening') {
           // Ослабление: -30% здоровья случайным 10% клеток доминирующей фракции
@@ -470,8 +470,8 @@ class VirusBattleAlgebra {
         const cell = this.grid[y][x];
         if (cell.state !== CellState.EMPTY && cell.ownerParams) {
           // Восстановление здоровья
-          const recoveryAmount = cell.ownerParams.resilience / 5.0;
-          const maxHealth = 20 + (cell.ownerParams.defense * 2) + (cell.ownerParams.resilience * 3);
+          const recoveryAmount = (cell.ownerParams.resilience || 0) / 5.0;
+          const maxHealth = 20 + ((cell.ownerParams.defense || 0) * 2) + ((cell.ownerParams.resilience || 0) * 3);
           cell.health = Math.min(maxHealth, cell.health + recoveryAmount);
 
           // Увеличение уровня заражения для живых клеток

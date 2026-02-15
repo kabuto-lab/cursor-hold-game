@@ -61,6 +61,7 @@ export class Game {
   private paramValues: { [key: string]: number } = {};
   private pointsRemainingEl!: HTMLElement;
   private readyBtn!: HTMLButtonElement;
+  private randomizeBtn!: HTMLButtonElement;
   private totalPoints: number = 12;
   private maxParamValue: number = 12; // Maximum value for any single parameter
 
@@ -95,6 +96,7 @@ export class Game {
     // Initialize virus parameter elements
     this.pointsRemainingEl = document.getElementById('points-remaining')!;
     this.readyBtn = document.getElementById('readyBtn')! as HTMLButtonElement;
+    this.randomizeBtn = document.getElementById('randomizeBtn')! as HTMLButtonElement;
 
     // Set up event listeners
     this.setupEventListeners();
@@ -128,6 +130,9 @@ export class Game {
     // Ready button event listener
     this.readyBtn.addEventListener('click', () => this.toggleReadyStatus());
     
+    // Randomize button event listener
+    this.randomizeBtn.addEventListener('click', () => this.randomizeParameters());
+    
     // Room ID click to copy event listener
     this.currentRoomIdEl.addEventListener('click', () => this.copyRoomIdToClipboard());
   }
@@ -147,7 +152,7 @@ export class Game {
 
     // Add event listeners to each parameter cell
     paramNames.forEach(param => {
-      const paramCell = document.querySelector(`#param-${param}`)?.parentElement;
+      const paramCell = document.querySelector(`.param-cell[data-param="${param}"]`);
       if (paramCell) {
         // Add click event to increase parameter value
         paramCell.addEventListener('click', () => {
@@ -1626,6 +1631,159 @@ export class Game {
     this.readyBtn.disabled = false;
   }
 
+  private randomizeParameters(): void {
+    // Reset all parameters to 0
+    const paramNames = [
+      'aggression', 'mutation', 'speed', 'defense', 
+      'reproduction', 'stealth', 'virulence', 'resilience', 
+      'mobility', 'intellect', 'contagiousness', 'lethality'
+    ];
+
+    // Reset all values to 0
+    paramNames.forEach(param => {
+      this.paramValues[param] = 0;
+    });
+
+    // Distribute 12 points randomly
+    let pointsToDistribute = 12;
+    while (pointsToDistribute > 0) {
+      const randomParam = paramNames[Math.floor(Math.random() * paramNames.length)];
+      if (this.paramValues[randomParam] < 12) { // Max 12 points per parameter
+        this.paramValues[randomParam]++;
+        pointsToDistribute--;
+        this.updateParameterDisplay(randomParam);
+      }
+    }
+
+    // Update the points display
+    this.totalPoints = 0; // All points have been distributed
+    this.updatePointsDisplay();
+
+    // Update the liquid levels in the tubes
+    paramNames.forEach(param => {
+      this.updateLiquidLevel(param);
+    });
+
+    // Send the randomized parameters to the server
+    this.sendParameterUpdate();
+  }
+
+  private createDropAnimation(element: HTMLElement, param: string): void {
+    // Create a drop element
+    const drop = document.createElement('div');
+    drop.className = 'drop-animation';
+    
+    // Get the color for this parameter
+    const paramCell = element.closest('.param-cell') as HTMLElement;
+    if (paramCell) {
+      // Get the emoji element to determine the color
+      const emojiEl = paramCell.querySelector('.param-emoji');
+      if (emojiEl) {
+        // For simplicity, we'll use a color based on the parameter
+        const colorMap: {[key: string]: string} = {
+          'aggression': '#FF0000', // Red for ⚔️
+          'mutation': '#800080', // Purple for 🧬
+          'speed': '#FFA500', // Orange for ⚡
+          'defense': '#0000FF', // Blue for 🛡️
+          'reproduction': '#008000', // Green for 🦠
+          'stealth': '#808080', // Gray for 👻
+          'virulence': '#800000', // Maroon for ☣️
+          'resilience': '#FFC0CB', // Pink for 💪
+          'mobility': '#8B4513', // Brown for 🚶
+          'intellect': '#FFFF00', // Yellow for 🧠
+          'contagiousness': '#00FFFF', // Cyan for 🫁
+          'lethality': '#000000'  // Black for 💀
+        };
+        
+        drop.style.backgroundColor = colorMap[param] || '#FFFFFF';
+      }
+    }
+    
+    // Position the drop at the top of the element
+    const rect = element.getBoundingClientRect();
+    const sidebarRect = this.sidebar.getBoundingClientRect();
+    
+    drop.style.left = `${rect.left - sidebarRect.left + rect.width / 2}px`;
+    drop.style.top = `${rect.top - sidebarRect.top}px`;
+    
+    // Add to the sidebar
+    this.sidebar.appendChild(drop);
+    
+    // Animate the drop falling
+    const startY = parseInt(drop.style.top);
+    const endY = startY + rect.height - 20; // Drop to near the bottom of the cell
+    
+    let currentY = startY;
+    const fallDuration = 500; // ms
+    const startTime = Date.now();
+    
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / fallDuration, 1);
+      
+      currentY = startY + (endY - startY) * progress;
+      drop.style.top = `${currentY}px`;
+      
+      // Make the drop slightly bigger as it falls
+      const scale = 1 + (progress * 0.5);
+      drop.style.transform = `scale(${scale})`;
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        // Remove the drop after it reaches the bottom
+        drop.remove();
+      }
+    };
+    
+    requestAnimationFrame(animate);
+  }
+
+  private updateLiquidLevel(param: string): void {
+    const liquidElement = document.querySelector(`.param-cell[data-param="${param}"] .param-liquid`) as HTMLElement;
+    if (liquidElement) {
+      // Calculate the percentage based on the current value (max 12)
+      const percentage = (this.paramValues[param] / 12) * 100;
+      liquidElement.style.height = `${percentage}%`;
+    }
+  }
+
+  private increaseParameterValue(param: string): void {
+    if (this.paramValues[param] < this.maxParamValue && this.totalPoints > 0) {
+      this.paramValues[param]++;
+      this.totalPoints--;
+      this.updateParameterDisplay(param);
+      this.updatePointsDisplay();
+      
+      // Create drop animation
+      const paramCell = document.querySelector(`.param-cell[data-param="${param}"]`) as HTMLElement;
+      if (paramCell) {
+        this.createDropAnimation(paramCell, param);
+      }
+      
+      // Update liquid level
+      this.updateLiquidLevel(param);
+      
+      // Send updated parameters to server
+      this.sendParameterUpdate();
+    }
+  }
+
+  private decreaseParameterValue(param: string): void {
+    if (this.paramValues[param] > 0) {
+      this.paramValues[param]--;
+      this.totalPoints++;
+      this.updateParameterDisplay(param);
+      this.updatePointsDisplay();
+      
+      // Update liquid level
+      this.updateLiquidLevel(param);
+      
+      // Send updated parameters to server
+      this.sendParameterUpdate();
+    }
+  }
+
   // Property to store opponent's parameters
   private opponentParamValues: { [key: string]: number } | null = null;
 
@@ -1639,7 +1797,7 @@ export class Game {
     ];
     
     paramNames.forEach(param => {
-      defaultParams[param] = 1; // Default 1 point in each parameter
+      defaultParams[param] = 0; // Default 0 points in each parameter
     });
     
     return defaultParams;
