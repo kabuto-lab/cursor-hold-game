@@ -1704,7 +1704,7 @@ export class Game {
     // Create a new graphics object for the battle visualization
     this.battleVisualization = new PIXI.Graphics();
     
-    // Position it to match the battleGrid in HTML (starts at 33% from left, full height)
+    // Position it in the left portion of the screen (33% from left, full height)
     this.battleVisualization.x = this.app.screen.width * 0.33; // Start from 33% from left
     this.battleVisualization.y = 0; // Align to top
     
@@ -1771,8 +1771,7 @@ export class Game {
     const width = 20;
     const height = 32;
     
-    // Calculate cell size to match the battleGrid CSS sizing
-    // battleGrid has background-size: calc(100% / 20) calc(100% / 32) for 20x32 grid
+    // Calculate cell size to fit in the allocated space
     const gridWidth = this.app.screen.width * 0.33; // 33% of screen width
     const gridHeight = this.app.screen.height; // Full height
     const cellSizeX = gridWidth / width;

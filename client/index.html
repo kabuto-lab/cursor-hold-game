@@ -127,19 +127,6 @@
       font-size: 0.9rem;
     }
     
-    #battleGrid {
-      position: absolute;
-      top: 0;
-      left: 33%; /* Start after the left sidebar area */
-      width: 33%; /* 33.3% width */
-      height: 100%;
-      background-image: 
-        linear-gradient(to right, #ffffff 3px, transparent 3px),
-        linear-gradient(to bottom, #ffffff 3px, transparent 3px);
-      background-size: calc(100% / 20) calc(100% / 32); /* 20 columns x 32 rows */
-      z-index: 9999; /* Highest z-index */
-      pointer-events: none; /* So it doesn't interfere with mouse events */
-    }
 
     .connection-status {
       display: inline-block;
@@ -249,9 +236,6 @@
         width: 100%;
       }
       
-      #battleGrid {
-        display: none; /* Hide grid on mobile */
-      }
     }
     
     .sidebar-header {
@@ -527,8 +511,6 @@
     <div id="gameScreen" class="screen hidden">
       <div id="canvasContainer"></div>
       
-      <!-- Battle grid -->
-      <div id="battleGrid"></div>
       
       <!-- Left menu button -->
       <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
