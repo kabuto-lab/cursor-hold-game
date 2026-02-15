@@ -187,11 +187,36 @@
       right: 0;
     }
     
+    .left-sidebar {
+      right: auto;
+      left: -33%; /* Hidden by default */
+    }
+    
+    .left-sidebar.active {
+      left: 0;
+      right: auto;
+    }
+    
     /* Mobile responsiveness */
     @media (max-width: 768px) {
       .sidebar {
         width: 100%;
+      }
+      
+      .right-sidebar {
         right: -100%;
+      }
+      
+      .left-sidebar {
+        left: -100%;
+      }
+      
+      .right-sidebar.active {
+        right: 0;
+      }
+      
+      .left-sidebar.active {
+        left: 0;
       }
     }
     
@@ -296,24 +321,45 @@
     <div id="gameScreen" class="screen hidden">
       <div id="canvasContainer"></div>
       
-      <div id="hud">
-        <div id="playerInfo">
-          <span class="connection-status connected" id="connectionStatus"></span>
-          <span id="playerName">Player 1</span> |
-          <span id="otherPlayerName">Player 2</span>
-        </div>
-        <div id="roomInfo">Room: <span id="currentRoomId"></span></div>
-        <div id="playerCounter">Players: <span id="playerCount">0</span>/2</div>
-        <button id="leaveRoomBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem;">LEAVE ROOM</button>
-        <button id="createBallBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem; margin-left: 10px;">BALL</button>
-        <button id="createFollowerBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem; margin-left: 10px;">FOLLOWER</button>
-      </div>
+      <!-- Left menu button -->
+      <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
       
       <!-- Menu button in top right corner -->
       <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
       
-      <!-- Sidebar -->
-      <div id="sidebar" class="sidebar">
+      <!-- Left Sidebar -->
+      <div id="leftSidebar" class="sidebar left-sidebar">
+        <div class="sidebar-header">
+          <h3>Controls & Chat</h3>
+          <button id="closeLeftSidebarBtn" class="btn">✕</button>
+        </div>
+        <div class="sidebar-content">
+          <div class="control-panel">
+            <div id="hud">
+              <div id="playerInfo">
+                <span class="connection-status connected" id="connectionStatus"></span>
+                <span id="playerName">Player 1</span> |
+                <span id="otherPlayerName">Player 2</span>
+              </div>
+              <div id="roomInfo">Room: <span id="currentRoomId"></span></div>
+              <div id="playerCounter">Players: <span id="playerCount">0</span>/2</div>
+              <button id="leaveRoomBtn" class="btn" style="padding: 5px 10px; font-size: 0.9rem; margin-top: 10px; display: block; width: 100%;">LEAVE ROOM</button>
+            </div>
+          </div>
+          
+          <!-- Chat Container -->
+          <div id="chat-container">
+            <div id="chat-messages"></div>
+            <div id="chat-input-container">
+              <input type="text" id="chat-input" placeholder="Type your message...">
+              <button id="chat-send-btn">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Right Sidebar -->
+      <div id="sidebar" class="sidebar right-sidebar">
         <div class="sidebar-header">
           <h3>Settings</h3>
           <button id="closeSidebarBtn" class="btn">✕</button>
@@ -335,18 +381,6 @@
               <option value="light">Light</option>
             </select>
           </div>
-          <div class="setting-item">
-            <button id="resetFollowersBtn" class="btn">Reset Followers</button>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Chat Container -->
-      <div id="chat-container">
-        <div id="chat-messages"></div>
-        <div id="chat-input-container">
-          <input type="text" id="chat-input" placeholder="Type your message...">
-          <button id="chat-send-btn">Send</button>
         </div>
       </div>
     </div>

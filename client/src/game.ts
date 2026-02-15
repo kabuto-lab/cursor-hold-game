@@ -26,11 +26,7 @@ export class Game {
   private chatInput!: HTMLInputElement;
   private chatSendBtn!: HTMLButtonElement;
   
-  // Ball button element
-  private createBallBtn!: HTMLButtonElement;
   
-  // Follower button element
-  private createFollowerBtn!: HTMLButtonElement;
   
   // Last known cursor positions for followers
   private lastCursorPositions: Map<string, { x: number; y: number }> = new Map();
@@ -45,7 +41,11 @@ export class Game {
   private followerSpeedSlider!: HTMLInputElement;
   private cursorSizeSlider!: HTMLInputElement;
   private themeSelect!: HTMLSelectElement;
-  private resetFollowersBtn!: HTMLButtonElement;
+  
+  // Left sidebar elements
+  private leftMenuBtn!: HTMLButtonElement;
+  private leftSidebar!: HTMLElement;
+  private closeLeftSidebarBtn!: HTMLButtonElement;
 
   // UI elements
   private landingScreen!: HTMLElement;
@@ -77,12 +77,6 @@ export class Game {
     this.chatInput = document.getElementById('chat-input')! as HTMLInputElement;
     this.chatSendBtn = document.getElementById('chat-send-btn')! as HTMLButtonElement;
 
-    // Initialize ball button
-    this.createBallBtn = document.getElementById('createBallBtn')! as HTMLButtonElement;
-
-    // Initialize follower button
-    this.createFollowerBtn = document.getElementById('createFollowerBtn')! as HTMLButtonElement;
-
     // Initialize sidebar elements
     this.menuBtn = document.getElementById('menuBtn')! as HTMLButtonElement;
     this.sidebar = document.getElementById('sidebar')!;
@@ -90,7 +84,11 @@ export class Game {
     this.followerSpeedSlider = document.getElementById('followerSpeed')! as HTMLInputElement;
     this.cursorSizeSlider = document.getElementById('cursorSize')! as HTMLInputElement;
     this.themeSelect = document.getElementById('themeSelect')! as HTMLSelectElement;
-    this.resetFollowersBtn = document.getElementById('resetFollowersBtn')! as HTMLButtonElement;
+
+    // Initialize left sidebar elements
+    this.leftMenuBtn = document.getElementById('leftMenuBtn')! as HTMLButtonElement;
+    this.leftSidebar = document.getElementById('leftSidebar')!;
+    this.closeLeftSidebarBtn = document.getElementById('closeLeftSidebarBtn')! as HTMLButtonElement;
 
     // Set up event listeners
     this.setupEventListeners();
@@ -109,21 +107,18 @@ export class Game {
       }
     });
     
-    // Ball button event listener
-    this.createBallBtn.addEventListener('click', () => this.createBall());
-    
-    // Follower button event listener
-    this.createFollowerBtn.addEventListener('click', () => this.createFollower());
-    
     // Sidebar event listeners
     this.menuBtn.addEventListener('click', () => this.openSidebar());
     this.closeSidebarBtn.addEventListener('click', () => this.closeSidebar());
-    this.resetFollowersBtn.addEventListener('click', () => this.resetFollowers());
-    
+
     // Setting change listeners
     this.followerSpeedSlider.addEventListener('input', () => this.updateFollowerSpeed());
     this.cursorSizeSlider.addEventListener('input', () => this.updateCursorSize());
     this.themeSelect.addEventListener('change', () => this.changeTheme());
+
+    // Left sidebar event listeners
+    this.leftMenuBtn.addEventListener('click', () => this.openLeftSidebar());
+    this.closeLeftSidebarBtn.addEventListener('click', () => this.closeLeftSidebar());
   }
 
   async init(): Promise<void> {
@@ -227,6 +222,17 @@ export class Game {
               
               // Store the last sent target position
               this.lastSentTargetPositions.set(id, { x: objData.targetX, y: objData.targetY });
+            }
+          }
+        } else {
+          // If this is another player's circle, ensure it's always following their cursor
+          const otherPlayerCursor = this.cursors.get(objData.owner);
+          if (otherPlayerCursor) {
+            // Update the target position to follow the other player's cursor
+            if (otherPlayerCursor.x >= 0 && otherPlayerCursor.x <= this.app.screen.width && 
+                otherPlayerCursor.y >= 0 && otherPlayerCursor.y <= this.app.screen.height) {
+              objData.targetX = otherPlayerCursor.x;
+              objData.targetY = otherPlayerCursor.y;
             }
           }
         }
@@ -476,10 +482,29 @@ export class Game {
       if (objData) {
         objData.targetX = data.x;
         objData.targetY = data.y;
-        
+
         // Also update our local record of the last sent position
         this.lastSentTargetPositions.set(data.id, { x: data.x, y: data.y });
       }
+    });
+
+    // Listen for player circle creation
+    this.room.onMessage('playerCircleCreated', (data: { id: string; x: number; y: number; radius: number; color: number; owner: string }) => {
+      // Create a temporary DraggableObjectSchema object to pass to addObject
+      const tempObj = {
+        id: data.id,
+        x: data.x,
+        y: data.y,
+        radius: data.radius,
+        color: data.color,
+        isBeingDragged: false,
+        draggedBy: '',
+        isFollower: true,
+        owner: data.owner,
+        targetX: data.x,
+        targetY: data.y
+      };
+      this.addObject(data.id, tempObj as DraggableObjectSchema);
     });
 
     // Handle room connection events
@@ -738,27 +763,34 @@ export class Game {
     this.chatMessagesDiv.scrollTop = this.chatMessagesDiv.scrollHeight;
   }
 
-  private createBall(): void {
-    if (!this.room) return;
-    
-    // Generate a unique ID for the ball
-    const ballId = `ball_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-    
-    // Send message to server to create the ball
-    this.room.send('createBall', {
-      id: ballId,
-      x: this.app.screen.width / 2, // Center of screen
-      y: this.app.screen.height / 2,
-      radius: 30,
-      color: 0xff69b4 // Hot pink color
-    });
-  }
 
-  private createFollower(): void {
+
+
+  private openSidebar(): void {
+    this.sidebar.classList.add('active');
+    
+    // Create a colored circle for the current player if not already created
+    if (!this.hasOwnCircle()) {
+      this.createPlayerCircle();
+    }
+  }
+  
+  private hasOwnCircle(): boolean {
+    // Check if a circle already exists for the current player
+    for (const [id, _container] of this.objects.entries()) {
+      const objData = this.room?.state.objects.get(id);
+      if (objData && objData.isFollower && objData.owner === this.currentPlayerId) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
+  private createPlayerCircle(): void {
     if (!this.room) return;
     
-    // Generate a unique ID for the follower
-    const followerId = `follower_${this.currentPlayerId}_${Date.now()}`;
+    // Generate a unique ID for the player circle
+    const circleId = `circle_${this.currentPlayerId}_${Date.now()}`;
     
     // Get current cursor position
     const cursor = this.cursors.get(this.currentPlayerId);
@@ -770,47 +802,25 @@ export class Game {
       cursorY = cursor.y;
     }
     
-    // Send message to server to create the follower
-    this.room.send('createFollower', {
-      id: followerId,
+    // Determine color based on if player is room creator
+    const circleColor = this.isRoomCreator ? 0xff0000 : 0x0000ff; // Red for creator, Blue for joiner
+    
+    // Send message to server to create the player circle
+    this.room.send('createPlayerCircle', {
+      id: circleId,
       x: cursorX,
       y: cursorY,
       radius: 20,
-      color: this.getRandomColor(),
-      owner: this.currentPlayerId
+      color: circleColor,
+      owner: this.currentPlayerId,
+      isCreator: this.isRoomCreator
     });
-  }
-
-  private getRandomColor(): number {
-    // Generate a random bright color
-    const r = Math.floor(Math.random() * 128) + 127; // 127-255
-    const g = Math.floor(Math.random() * 128) + 127;
-    const b = Math.floor(Math.random() * 128) + 127;
-    return (r << 16) + (g << 8) + b;
-  }
-
-  private openSidebar(): void {
-    this.sidebar.classList.add('active');
   }
 
   private closeSidebar(): void {
     this.sidebar.classList.remove('active');
   }
 
-  private resetFollowers(): void {
-    // Remove all followers owned by this player
-    for (const [id, container] of this.objects.entries()) {
-      const objData = this.room?.state.objects.get(id);
-      if (objData && objData.isFollower && objData.owner === this.currentPlayerId) {
-        this.app.stage.removeChild(container);
-        this.objects.delete(id);
-        
-        // Remove from server state
-        // Note: We would need to implement a server message to remove objects
-        // For now, just remove locally - in a real implementation, we'd send a message to the server
-      }
-    }
-  }
 
   private updateFollowerSpeed(): void {
     // In a real implementation, we would send this setting to the server
@@ -845,6 +855,14 @@ export class Game {
         // Apply light theme
         break;
     }
+  }
+
+  private openLeftSidebar(): void {
+    this.leftSidebar.classList.add('active');
+  }
+
+  private closeLeftSidebar(): void {
+    this.leftSidebar.classList.remove('active');
   }
 
   private createCursorSprite(playerId: string, _originalColor: number): PIXI.Sprite {
