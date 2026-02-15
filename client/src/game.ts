@@ -1641,15 +1641,16 @@ export class Game {
     // Create a new graphics object for the battle visualization
     this.battleVisualization = new PIXI.Graphics();
     
-    // Position it in the center of the screen
-    // Use fixed grid dimensions (20x32)
+    // Position it in the battle grid area (center portion of screen, between sidebars)
+    // The battle grid occupies the center 33% of the screen, starting from 33% from left (as per index.html)
     const width = 20;
     const height = 32;
-    const cellSize = Math.min(15, Math.floor((this.app.screen.width * 0.3) / width)); // 30% of screen width
+    const cellSize = Math.min(15, Math.floor((this.app.screen.width * 0.33) / width)); // 33% of screen width
     const gridWidth = width * cellSize;
     const gridHeight = height * cellSize;
     
-    this.battleVisualization.x = this.app.screen.width / 2 - gridWidth / 2; // Center horizontally
+    // Position to match the battleGrid in HTML (starting at 33% from left, centered vertically)
+    this.battleVisualization.x = this.app.screen.width * 0.33; // Start from 33% from left
     this.battleVisualization.y = this.app.screen.height / 2 - gridHeight / 2; // Center vertically
     
     // Add to the stage
@@ -1716,7 +1717,7 @@ export class Game {
     const height = 32;
     
     // Calculate cell size based on available space
-    const cellSize = Math.min(15, Math.floor((this.app.screen.width * 0.3) / width)); // 30% of screen width
+    const cellSize = Math.min(15, Math.floor((this.app.screen.width * 0.33) / width)); // 33% of screen width
     
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
