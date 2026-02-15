@@ -1538,17 +1538,47 @@ export class Game {
     // Disable parameter adjustments during battle
     this.disableParameterAdjustments();
     
-    // In the future, this would:
-    // 1. Show the battle grid
-    // 2. Initialize virus positions (red at top, blue at bottom)
-    // 3. Start the visualization of the battle
+    // Initialize the virus battle simulation
+    this.virusBattle = new VirusBattleAlgebra(20, 32); // 20x32 grid as specified
+    
+    // Set player parameters based on distributed points
+    this.virusBattle.setPlayerParams('A', this.paramValues);
+    this.virusBattle.setPlayerParams('B', this.opponentParamValues || this.getDefaultOpponentParams());
+    
+    // Place initial viruses
+    this.virusBattle.placeInitialViruses();
+    
+    // Create visualization
+    this.createBattleVisualization();
+    
+    // Start the battle simulation
+    this.battleRunning = true;
+    
+    // Create a ticker for the battle simulation
+    this.battleTicker = new PIXI.Ticker();
+    this.battleTicker.add(() => {
+      if (this.battleRunning && this.virusBattle) {
+        const winner = this.virusBattle.simulateTick();
+        if (winner) {
+          this.endVirusBattle(`Player ${winner} wins the virus battle!`);
+          this.battleTicker?.destroy();
+          this.battleTicker = null;
+        } else {
+          this.updateBattleVisualization();
+        }
+      }
+    });
+    
+    this.battleTicker.start();
   }
 
   private handleVirusTick(_tick: number, message: string): void {
     console.log(`Virus tick: ${message}`);
     
-    // In the future, this would update the battle visualization
-    // based on the current state of the battle
+    // Update the battle visualization if battle is running
+    if (this.battleRunning && this.virusBattle) {
+      this.updateBattleVisualization();
+    }
   }
 
   private endVirusBattle(message: string): void {
@@ -1556,6 +1586,15 @@ export class Game {
     
     // Show a message to the players
     this.showMessage('VIRUS BATTLE ENDED!');
+    
+    // Stop the battle simulation
+    this.battleRunning = false;
+    
+    // Clean up visualization
+    if (this.battleVisualization) {
+      this.app.stage.removeChild(this.battleVisualization);
+      this.battleVisualization = null;
+    }
     
     // Re-enable parameter adjustments after battle
     this.enableParameterAdjustments();
@@ -1668,84 +1707,6 @@ export class Game {
     }
   }
 
-  private handleVirusTick(_tick: number, message: string): void {
-    console.log(`Virus tick: ${message}`);
-    
-    // In the future, this would update the battle visualization
-    // based on the current state of the battle
-  }
-
-  private updateVirusParameters(playerId: string, params: { [key: string]: number }): void {
-    // Update the virus parameters for the specified player
-    console.log(`Virus parameters updated for player ${playerId}:`, params);
-    
-    // Store opponent's parameters if it's not our own
-    if (playerId !== this.currentPlayerId) {
-      this.opponentParamValues = params;
-    }
-  }
-
-  private startVirusBattle(message: string): void {
-    console.log(message);
-    
-    // Show a message to the players
-    this.showMessage('VIRUS BATTLE STARTED!');
-    
-    // Disable parameter adjustments during battle
-    this.disableParameterAdjustments();
-    
-    // Initialize the virus battle simulation
-    this.virusBattle = new VirusBattleAlgebra(20, 32); // 20x32 grid as specified
-    
-    // Set player parameters based on distributed points
-    this.virusBattle.setPlayerParams('A', this.paramValues);
-    this.virusBattle.setPlayerParams('B', this.opponentParamValues || this.getDefaultOpponentParams());
-    
-    // Place initial viruses
-    this.virusBattle.placeInitialViruses();
-    
-    // Create visualization
-    this.createBattleVisualization();
-    
-    // Start the battle simulation
-    this.battleRunning = true;
-    
-    // Create a ticker for the battle simulation
-    this.battleTicker = new PIXI.Ticker();
-    this.battleTicker.add(() => {
-      if (this.battleRunning && this.virusBattle) {
-        const winner = this.virusBattle.simulateTick();
-        if (winner) {
-          this.endVirusBattle(`Player ${winner} wins the virus battle!`);
-          this.battleTicker?.destroy();
-          this.battleTicker = null;
-        } else {
-          this.updateBattleVisualization();
-        }
-      }
-    });
-    
-    this.battleTicker.start();
-  }
-
-  private endVirusBattle(message: string): void {
-    console.log(message);
-    
-    // Show a message to the players
-    this.showMessage('VIRUS BATTLE ENDED!');
-    
-    // Stop the battle simulation
-    this.battleRunning = false;
-    
-    // Clean up visualization
-    if (this.battleVisualization) {
-      this.app.stage.removeChild(this.battleVisualization);
-      this.battleVisualization = null;
-    }
-    
-    // Re-enable parameter adjustments after battle
-    this.enableParameterAdjustments();
-  }
 
   private copyRoomIdToClipboard(): void {
     const roomId = this.currentRoomIdEl.textContent;
