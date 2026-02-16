@@ -17,7 +17,7 @@ export class GameEngine {
    */
   async init(containerId: string): Promise<void> {
     console.log('[GameEngine] Initializing PixiJS...');
-    
+
     const container = document.getElementById(containerId);
     if (!container) {
       throw new Error(`Container element with id "${containerId}" not found`);
@@ -25,7 +25,7 @@ export class GameEngine {
 
     // Создаём и инициализируем приложение
     this.app = new PIXI.Application();
-    
+
     await this.app.init({
       backgroundColor: 0x1a1a1a,
       width: window.innerWidth,
@@ -36,14 +36,18 @@ export class GameEngine {
     });
 
     console.log('[GameEngine] PixiJS initialized, getting ticker...');
-    
+
     // Получаем ticker после инициализации
     this.ticker = this.app.ticker;
-    
+
+    // КРИТИЧЕСКАЯ СТРОКА — отключаем pointer events на canvas
+    this.app.canvas.style.pointerEvents = 'none';
+    console.log('[GameEngine] Canvas pointer-events set to none');
+
     console.log('[GameEngine] Appending canvas...');
     // Добавляем canvas в контейнер
     container.appendChild(this.app.canvas);
-    
+
     console.log('[GameEngine] Canvas appended');
   }
 
