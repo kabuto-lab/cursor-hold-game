@@ -1,144 +1,146 @@
+import { Client } from 'colyseus.js';
+import { Room } from 'colyseus.js';
+
 /**
- * NetworkManager.ts
- * Управление сетевым взаимодействием через Colyseus
+ * Менеджер сетевого подключения
+ * Управляет подключением к Colyseus серверу
  */
-
-import { Client, Room } from 'colyseus.js';
-import { PlayerSchema } from '../types/schema';
-
-export interface NetworkCallbacks {
-  onPlayerJoined?: (playerId: string, player: PlayerSchema) => void;
-  onPlayerLeft?: (_playerId: string) => void;
-  onPlayerUpdated?: (playerId: string, player: PlayerSchema) => void;
-  onChatMessage?: (_message: string) => void;
-  onError?: (error: unknown) => void;
-  onDisconnected?: () => void;
-}
-
 export class NetworkManager {
   private client: Client;
-  private room: Room | null = null;
-  private callbacks: NetworkCallbacks = {};
+  private currentRoom: Room | null = null;
+  private readonly serverUrl: string;
 
-  constructor() {
-    // Use the same server URL as in the original code
-    const serverUrl = window.location.protocol === 'https:'
-      ? 'wss://cursor-hold-game-server.onrender.com'
-      : `ws://${window.location.hostname}:2567`;
-
-    this.client = new Client(serverUrl);
+  constructor(serverUrl: string = 'ws://localhost:2567') {
+    this.serverUrl = serverUrl;
+    this.client = new Client(this.serverUrl);
   }
 
-  async connectToRoom(roomId: string): Promise<void> {
+  /**
+   * Подключиться к серверу
+   */
+  async connect(): Promise<void> {
     try {
-      this.room = await this.client.joinById(roomId);
-      this.setupEventHandlers();
+      // Проверяем соединение
+      await this.client.joinOrCreate('holding_room'); // Используем правильное имя комнаты
+      console.log('Connected to server:', this.serverUrl);
     } catch (error) {
-      console.error('Failed to join room:', error);
-      if (this.callbacks.onError) {
-        this.callbacks.onError(error);
-      }
+      console.error('Failed to connect to server:', error);
       throw error;
     }
   }
 
-  async createRoom(): Promise<string> {
+  /**
+   * Создать новую комнату с указанным ID
+   */
+  async createRoom(roomId?: string): Promise<string> {
     try {
-      this.room = await this.client.create('holding_room', {});
-      this.setupEventHandlers();
-      return this.room.id;
+      // Если ID не предоставлен, генерируем новый
+      const finalRoomId = roomId || this.generateRoomId();
+      
+      // Создаем комнату с указанным ID
+      this.currentRoom = await this.client.create('holding_room', { roomId: finalRoomId });
+      
+      return finalRoomId;
     } catch (error) {
       console.error('Failed to create room:', error);
-      if (this.callbacks.onError) {
-        this.callbacks.onError(error);
-      }
       throw error;
     }
   }
 
-  private setupEventHandlers(): void {
-    if (!this.room) return;
+  /**
+   * Присоединиться к существующей комнате по ID
+   */
+  async joinRoom(roomId: string): Promise<Room> {
+    try {
+      this.currentRoom = await this.client.joinById(roomId);
+      return this.currentRoom;
+    } catch (error) {
+      console.error('Failed to join room:', error);
+      throw error;
+    }
+  }
 
-    // State change handler
-    this.room.onStateChange.once(() => {
-      // Initialize players from state
-      this.room!.state.players.forEach((player: PlayerSchema, playerId: string) => {
-        if (this.callbacks.onPlayerJoined) {
-          this.callbacks.onPlayerJoined(playerId, player);
-        }
+  /**
+   * Присоединиться к комнате по имени (если нужен поиск по имени)
+   */
+  async joinOrCreateRoom(roomName: string = 'holding_room'): Promise<Room> {
+    try {
+      this.currentRoom = await this.client.joinOrCreate(roomName);
+      return this.currentRoom;
+    } catch (error) {
+      console.error('Failed to join or create room:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Покинуть текущую комнату
+   */
+  leaveCurrentRoom(): void {
+    if (this.currentRoom) {
+      this.currentRoom.leave();
+      this.currentRoom = null;
+    }
+  }
+
+  /**
+   * Получить текущую комнату
+   */
+  getCurrentRoom(): Room | null {
+    return this.currentRoom;
+  }
+
+  /**
+   * Отправить сообщение в комнату
+   */
+  sendToRoom(messageType: string, data: any): void {
+    if (this.currentRoom) {
+      this.currentRoom.send(messageType, data);
+    } else {
+      console.warn('No active room to send message to');
+    }
+  }
+
+  /**
+   * Подписаться на сообщения из комнаты
+   */
+  onMessage(messageType: string, callback: (data: any) => void): void {
+    if (this.currentRoom) {
+      this.currentRoom.onMessage(messageType, (data) => {
+        callback(data);
       });
-    });
-
-    // Player events
-    this.room.state.players.onAdd((player: PlayerSchema, playerId: string) => {
-      if (this.callbacks.onPlayerJoined) {
-        this.callbacks.onPlayerJoined(playerId, player);
-      }
-    });
-
-    this.room.state.players.onRemove((_player: PlayerSchema, playerId: string) => {
-      if (this.callbacks.onPlayerLeft) {
-        this.callbacks.onPlayerLeft(playerId);
-      }
-    });
-
-    this.room.state.players.onChange((player: PlayerSchema, playerId: string) => {
-      if (this.callbacks.onPlayerUpdated) {
-        this.callbacks.onPlayerUpdated(playerId, player);
-      }
-    });
-
-    // Chat messages
-    this.room.onMessage('chatMessage', (data: { message: string }) => {
-      if (this.callbacks.onChatMessage) {
-        this.callbacks.onChatMessage(data.message);
-      }
-    });
-
-    // Connection events
-    this.room.onLeave(() => {
-      if (this.callbacks.onDisconnected) {
-        this.callbacks.onDisconnected();
-      }
-    });
-
-    this.room.onError((error) => {
-      if (this.callbacks.onError) {
-        this.callbacks.onError(error);
-      }
-    });
-  }
-
-  sendChatMessage(message: string): void {
-    if (this.room) {
-      this.room.send('chatMessage', { message });
+    } else {
+      console.warn('No active room to listen to messages from');
     }
   }
 
-  leaveRoom(): void {
-    if (this.room) {
-      this.room.leave();
-      this.room = null;
+  /**
+   * Подписаться на изменения состояния комнаты
+   */
+  onStateChange(callback: (state: any) => void): void {
+    if (this.currentRoom) {
+      this.currentRoom.onStateChange((state) => {
+        callback(state);
+      });
+    } else {
+      console.warn('No active room to listen to state changes from');
     }
   }
 
-  getRoomId(): string | null {
-    return this.room ? this.room.id : null;
+  /**
+   * Получить текущее состояние комнаты
+   */
+  getState() {
+    if (this.currentRoom) {
+      return this.currentRoom.state;
+    }
+    return null;
   }
 
-  getPlayerCount(): number {
-    return this.room ? this.room.state.players.size : 0;
-  }
-
-  getSessionId(): string | null {
-    return this.room ? this.room.sessionId : null;
-  }
-
-  isConnected(): boolean {
-    return this.room !== null;
-  }
-
-  setCallbacks(callbacks: NetworkCallbacks): void {
-    this.callbacks = { ...this.callbacks, ...callbacks };
+  /**
+   * Генерация уникального ID комнаты
+   */
+  private generateRoomId(): string {
+    return Math.random().toString(36).substring(2, 10).toUpperCase();
   }
 }

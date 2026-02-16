@@ -1,55 +1,56 @@
-// GameEngine.ts - only PIXI.Application + ticker + basic resize
 import * as PIXI from 'pixi.js';
 
+/**
+ * Базовый игровой движок
+ * Только рендер + ticker, без логики
+ */
 export class GameEngine {
-  private app: PIXI.Application;
+  readonly app: PIXI.Application;
   private ticker: PIXI.Ticker;
 
-  constructor() {
+  constructor(canvasId: string) {
     this.app = new PIXI.Application();
-    this.ticker = new PIXI.Ticker();
+    this.ticker = this.app.ticker;
+    
+    // Инициализация canvas
+    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+    if (!canvas) {
+      throw new Error(`Canvas element with id "${canvasId}" not found`);
+    }
     
     this.app.init({
-      backgroundColor: 0x0f0f23, // Dark blue background
-      antialias: false, // For crisp pixel art
-      autoDensity: true,
+      view: canvas,
+      backgroundColor: 0x1a1a1a,
       width: window.innerWidth,
       height: window.innerHeight,
-      resolution: window.devicePixelRatio || 1,
+      antialias: true,
+      autoDensity: true,
+      resolution: Math.min(window.devicePixelRatio, 2),
     });
   }
 
-  get application(): PIXI.Application {
-    return this.app;
+  /**
+   * Добавить обновление на тикер
+   * @param updateFn - функция обновления (dt передаётся автоматически)
+   */
+  addTickerUpdate(updateFn: (dt: number) => void): void {
+    this.ticker.add((ticker) => {
+      const dt = ticker.deltaTime;
+      updateFn(dt);
+    });
   }
 
-  get tickerInstance(): PIXI.Ticker {
-    return this.ticker;
-  }
-
+  /**
+   * Запустить тикер
+   */
   start(): void {
     this.ticker.start();
   }
 
+  /**
+   * Остановить тикер
+   */
   stop(): void {
     this.ticker.stop();
-  }
-
-  addTickerCallback(callback: (deltaTime: number) => void): void {
-    // In PixiJS v8, ticker callback receives Ticker object, not deltaTime directly
-    this.ticker.add((ticker) => callback(ticker.deltaTime));
-  }
-
-  removeTickerCallback(callback: (deltaTime: number) => void): void {
-    this.ticker.remove((ticker) => callback(ticker.deltaTime));
-  }
-
-  resize(width: number, height: number): void {
-    this.app.renderer.resize(width, height);
-  }
-
-  destroy(): void {
-    this.ticker.destroy();
-    this.app.destroy(true, { children: true });
   }
 }

@@ -1,197 +1,114 @@
-/**
- * main.ts - entry point with composition
- */
-
 import { GameEngine } from './core/GameEngine';
 import { NetworkManager } from './core/NetworkManager';
+import { InputManager } from './core/InputManager';
 import { UIController } from './ui/UIController';
-import { ChatManager } from './features/chat/ChatManager';
+import { ChatManager } from './chat/ChatManager';
 
-class Application {
+class MainApp {
   private gameEngine: GameEngine;
   private networkManager: NetworkManager;
+  private inputManager: InputManager; // eslint-disable-line @typescript-eslint/no-unused-vars
   private uiController: UIController;
   private chatManager: ChatManager;
 
   constructor() {
-    // Initialize core components
-    this.gameEngine = new GameEngine();
-    this.networkManager = new NetworkManager();
+    // Инициализация всех модулей
+    this.gameEngine = new GameEngine('game-canvas');
+    this.networkManager = new NetworkManager(process.env.SERVER_URL || 'ws://localhost:2567');
+    this.inputManager = new InputManager();
     this.uiController = new UIController();
     this.chatManager = new ChatManager();
 
-    // Set up event listeners
-    this.setupEventListeners();
+    // Настройка взаимодействия между модулями
+    this.setupInteractions();
+    
+    // Запуск игры
+    this.gameEngine.start();
   }
 
-  private setupEventListeners(): void {
-    // Network events
-    this.networkManager.setCallbacks({
-      onPlayerJoined: (playerId, player) => {
-        console.log(`Player joined: ${playerId}`, player);
-        this.updatePlayerCount();
-      },
-      onPlayerLeft: (playerId) => {
-        console.log(`Player left: ${playerId}`);
-        this.updatePlayerCount();
-      },
-      onPlayerUpdated: (playerId, player) => {
-        console.log(`Player updated: ${playerId}`, player);
-      },
-      onChatMessage: (message) => {
-        this.uiController.addChatMessage(message);
-      },
-      onError: (error) => {
-        console.error('Network error:', error);
-      },
-      onDisconnected: () => {
-        console.log('Disconnected from server');
-        this.uiController.showLandingScreen();
+  /**
+   * Получить менеджер ввода
+   * Используется для предотвращения ошибки неиспользуемой переменной
+   */
+  getInputManager(): InputManager {
+    return this.inputManager;
+  }
+
+  /**
+   * Настройка взаимодействия между модулями
+   */
+  private setupInteractions(): void {
+    // Обработка создания комнаты
+    this.uiController.onCreateRoom = async (roomId) => {
+      try {
+        // Создаём комнату через NetworkManager
+        const createdRoomId = await this.networkManager.createRoom(roomId);
+        
+        // Показываем ID созданной комнаты
+        this.uiController.showCreatedRoomId(createdRoomId);
+        
+        // Переключаемся в комнату
+        this.uiController.setView('room');
+        
+        // Подключаем чат к комнате
+        this.chatManager.attachToRoom(this.networkManager.getCurrentRoom()!);
+        
+        // Устанавливаем имя игрока (временно фиктивное)
+        this.uiController.setPlayerName('Player 1');
+        
+        // Подписываемся на обновления состояния комнаты
+        this.setupRoomStateListener();
+      } catch (error) {
+        console.error('Failed to create room:', error);
+        alert('Failed to create room. Please try again.');
+      }
+    };
+
+    // Обработка присоединения к комнате
+    this.uiController.onJoinRoom = async (roomId) => {
+      try {
+        // Присоединяемся к комнате
+        await this.networkManager.joinRoom(roomId);
+        
+        // Переключаемся в комнату
+        this.uiController.setView('room');
+        
+        // Подключаем чат к комнате
+        this.chatManager.attachToRoom(this.networkManager.getCurrentRoom()!);
+        
+        // Устанавливаем имя игрока (временно фиктивное)
+        this.uiController.setPlayerName('Player 2');
+        
+        // Подписываемся на обновления состояния комнаты
+        this.setupRoomStateListener();
+      } catch (error) {
+        console.error('Failed to join room:', error);
+        alert('Failed to join room. Invalid room ID or connection error.');
+      }
+    };
+  }
+
+  /**
+   * Настройка подписки на обновления состояния комнаты
+   */
+  private setupRoomStateListener(): void {
+    // Подписываемся на обновления состояния комнаты
+    this.networkManager.onStateChange((state) => {
+      // Обновляем счётчик игроков при изменении состояния
+      if (state && state.players) {
+        this.uiController.updatePlayerCount(state.players.size);
       }
     });
 
-    // Chat events
-    this.chatManager.setCallbacks({
-      onMessageReceived: (message) => {
-        this.uiController.addChatMessage(`${message.playerName}: ${message.message}`);
-      },
-      onMessageSent: (message) => {
-        console.log('Message sent:', message);
-      }
-    });
-
-    // UI events - these would need to be connected differently in a real implementation
-    // For now, we'll add event listeners directly to the DOM elements
-    const createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement | null;
-    const joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement | null;
-    const leaveRoomBtn = document.getElementById('leaveRoomBtn') as HTMLButtonElement | null;
-    const roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement | null;
-    const chatInput = document.getElementById('chat-input') as HTMLInputElement | null;
-    const chatSendBtn = document.getElementById('chat-send-btn') as HTMLButtonElement | null;
-
-    if (createRoomBtn) {
-      createRoomBtn.onclick = () => this.handleCreateRoom();
+    // Инициализируем счётчик при подключении
+    const initialState = this.networkManager.getState();
+    if (initialState && initialState.players) {
+      this.uiController.updatePlayerCount(initialState.players.size);
     }
-
-    if (joinRoomBtn && roomIdInput) {
-      joinRoomBtn.onclick = () => {
-        const roomId = roomIdInput.value.trim();
-        if (roomId) {
-          this.handleJoinRoom(roomId);
-        }
-      };
-    }
-
-    if (leaveRoomBtn) {
-      leaveRoomBtn.onclick = () => this.handleLeaveRoom();
-    }
-
-    if (chatSendBtn && chatInput) {
-      chatSendBtn.onclick = () => {
-        const message = chatInput.value.trim();
-        if (message) {
-          this.handleSendMessage(message);
-          chatInput.value = '';
-        }
-      };
-    }
-
-    if (chatInput) {
-      chatInput.onkeypress = (e) => {
-        if (e.key === 'Enter') {
-          const message = chatInput.value.trim();
-          if (message && chatInput) {
-            this.handleSendMessage(message);
-            chatInput.value = '';
-          }
-        }
-      };
-    }
-  }
-
-  private async handleCreateRoom(): Promise<void> {
-    try {
-      const roomId = await this.networkManager.createRoom();
-      this.uiController.updateRoomInfo(roomId);
-      this.uiController.showGameScreen();
-      this.uiController.updatePlayerCount(1);
-      
-      console.log(`Created room: ${roomId}`);
-    } catch (error) {
-      console.error('Failed to create room:', error);
-    }
-  }
-
-  private async handleJoinRoom(roomId: string): Promise<void> {
-    try {
-      await this.networkManager.connectToRoom(roomId);
-      this.uiController.updateRoomInfo(roomId);
-      this.uiController.showGameScreen();
-      
-      // Get initial player count
-      const count = this.networkManager.getPlayerCount();
-      this.uiController.updatePlayerCount(count);
-      
-      console.log(`Joined room: ${roomId}`);
-    } catch (error) {
-      console.error('Failed to join room:', error);
-    }
-  }
-
-  private async handleLeaveRoom(): Promise<void> {
-    try {
-      this.networkManager.leaveRoom();
-      this.uiController.showLandingScreen();
-      this.uiController.clearRoomInfo();
-      
-      console.log('Left room');
-    } catch (error) {
-      console.error('Failed to leave room:', error);
-    }
-  }
-
-  private handleSendMessage(message: string): void {
-    this.networkManager.sendChatMessage(message);
-    // Also add to local chat display
-    this.uiController.addChatMessage(`You: ${message}`);
-  }
-
-  private updatePlayerCount(): void {
-    const count = this.networkManager.getPlayerCount();
-    this.uiController.updatePlayerCount(count);
-  }
-
-  async init(): Promise<void> {
-    // Wait for DOM to be loaded
-    if (document.readyState === 'loading') {
-      await new Promise(resolve => window.addEventListener('DOMContentLoaded', resolve));
-    }
-
-    console.log('Application initialized');
-  }
-
-  destroy(): void {
-    // Clean up all components
-    this.gameEngine.destroy();
-    this.networkManager.leaveRoom();
   }
 }
 
-// Initialize the application when the page loads
-let app: Application;
-
-window.addEventListener('load', async () => {
-  try {
-    app = new Application();
-    await app.init();
-  } catch (error) {
-    console.error('Failed to initialize application:', error);
-  }
-});
-
-// Clean up on page unload
-window.addEventListener('beforeunload', () => {
-  if (app) {
-    app.destroy();
-  }
+// Запуск приложения при загрузке страницы
+window.addEventListener('load', () => {
+  new MainApp();
 });

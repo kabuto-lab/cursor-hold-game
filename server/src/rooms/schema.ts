@@ -11,6 +11,8 @@ export class PlayerSchema extends Schema {
   @type('boolean') isRoomCreator: boolean = false; // Whether this player created the room
   @type('boolean') isReady: boolean = false; // Whether the player is ready to start the virus battle
   @type({ map: 'number' }) virusParams: Map<string, number> = new Map<string, number>(); // Virus parameters for the player
+  @type('number') cursorX: number = 0; // Cursor X position for the player
+  @type('number') cursorY: number = 0; // Cursor Y position for the player
 }
 
 export class DraggableObjectSchema extends Schema {

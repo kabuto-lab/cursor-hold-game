@@ -491,6 +491,37 @@
       -ms-overflow-style: none;  /* IE and Edge */
       scrollbar-width: none;  /* Firefox */
     }
+
+    /* 4 желтых круга по углам экрана для проверки позиционирования */
+    .corner-circle {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: #ffff00;
+      z-index: 50;
+      border: 3px solid #ff00ff;
+    }
+
+    .corner-circle.top-left {
+      top: 10px;
+      left: 10px;
+    }
+
+    .corner-circle.top-right {
+      top: 10px;
+      right: 10px;
+    }
+
+    .corner-circle.bottom-left {
+      bottom: 10px;
+      left: 10px;
+    }
+
+    .corner-circle.bottom-right {
+      bottom: 10px;
+      right: 10px;
+    }
   </style>
 </head>
 <body>
@@ -510,13 +541,36 @@
     <!-- Game Screen -->
     <div id="gameScreen" class="screen hidden">
       <div id="canvasContainer"></div>
-      
-      
+
+      <!-- 4 желтых круга по углам экрана для проверки позиционирования -->
+      <div class="corner-circle top-left"></div>
+      <div class="corner-circle top-right"></div>
+      <div class="corner-circle bottom-left"></div>
+      <div class="corner-circle bottom-right"></div>
+
       <!-- Left menu button -->
       <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
-      
+
       <!-- Menu button in top right corner -->
       <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+
+      <!-- Центральная панель с ID комнаты и чатом -->
+      <div id="centerPanel" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 600px; z-index: 150;">
+        <!-- ID комнаты -->
+        <div id="centerRoomId" style="background-color: rgba(15, 15, 35, 0.9); border: 2px solid #ffff00; padding: 15px; margin-bottom: 10px; text-align: center; border-radius: 0;">
+          <span style="color: #ffff00; font-family: 'Courier New', monospace; font-size: 1rem;">Room ID: </span>
+          <span id="currentRoomId" class="copyable-id" style="color: #00ff00; font-family: 'Courier New', monospace; font-size: 1.2rem; font-weight: bold;"></span>
+        </div>
+
+        <!-- Чат -->
+        <div id="chat-container" style="position: relative; bottom: auto; left: auto; transform: none; width: 100%; margin: 0;">
+          <div id="chat-messages"></div>
+          <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type your message...">
+            <button id="chat-send-btn">Send</button>
+          </div>
+        </div>
+      </div>
       
       <!-- Left Sidebar -->
       <div id="leftSidebar" class="sidebar left-sidebar">
@@ -528,22 +582,13 @@
             </div>
             <button id="closeLeftSidebarBtn" class="btn close-btn">✕</button>
           </div>
-          <div id="roomInfo">Room: <span id="currentRoomId" class="copyable-id"></span></div>
+          <div id="roomInfo">Room: <span id="leftRoomId" class="copyable-id"></span></div>
         </div>
         <div class="sidebar-content">
           <div class="control-panel">
             <div id="hud">
               <div id="playerCounter">Players: <span id="playerCount">0</span>/2</div>
               <button id="leaveRoomBtn" class="btn no-border">LEAVE ROOM</button>
-            </div>
-          </div>
-          
-          <!-- Chat Container -->
-          <div id="chat-container">
-            <div id="chat-messages"></div>
-            <div id="chat-input-container">
-              <input type="text" id="chat-input" placeholder="Type your message...">
-              <button id="chat-send-btn">Send</button>
             </div>
           </div>
         </div>

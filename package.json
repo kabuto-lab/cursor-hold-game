@@ -26,7 +26,8 @@
     "server"
   ],
   "lint-staged": {
-    "*.{ts,tsx}": ["tsc --noEmit"]
+    "client/*.{ts,tsx}": ["cd client && npx tsc --noEmit"],
+    "server/*.{ts,tsx}": ["cd server && npx tsc --noEmit"]
   },
   "devDependencies": {
     "concurrently": "^8.2.0",

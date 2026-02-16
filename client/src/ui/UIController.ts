@@ -1,139 +1,252 @@
-// UIController.ts - manages screens: lobby → room → chat
+/**
+ * Контроллер пользовательского интерфейса
+ * Управляет переключением между lobby ↔ room и боковыми панелями
+ */
 export class UIController {
-  private uiElements: {
-    landingScreen: HTMLElement;
-    gameScreen: HTMLElement;
-    createRoomBtn: HTMLButtonElement;
-    roomIdInput: HTMLInputElement;
-    joinRoomBtn: HTMLButtonElement;
-    leaveRoomBtn: HTMLButtonElement;
-    currentRoomId: HTMLElement;
-    playerCount: HTMLElement;
-    chatContainer: HTMLElement;
-    chatMessages: HTMLElement;
-    chatInput: HTMLInputElement;
-    chatSendBtn: HTMLButtonElement;
-  };
+  private lobbyContainer: HTMLElement;
+  private roomContainer: HTMLElement;
+  private createRoomBtn: HTMLButtonElement;
+  private joinRoomBtn: HTMLButtonElement;
+  private roomIdInput: HTMLInputElement;
+  private currentView: 'lobby' | 'room' = 'lobby'; // eslint-disable-line @typescript-eslint/no-unused-vars
+
+  // Элементы для боковых панелей
+  private leftMenuBtn: HTMLButtonElement;
+  private menuBtn: HTMLButtonElement;
+  private leftSidebar: HTMLElement;
+  private rightSidebar: HTMLElement;
+  private closeLeftSidebarBtn: HTMLButtonElement;
+  private closeSidebarBtn: HTMLButtonElement;
 
   constructor() {
-    // Get all required UI elements
-    const landingScreen = document.getElementById('landingScreen') as HTMLElement | null;
-    const gameScreen = document.getElementById('gameScreen') as HTMLElement | null;
-    const createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement | null;
-    const roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement | null;
-    const joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement | null;
-    const leaveRoomBtn = document.getElementById('leaveRoomBtn') as HTMLButtonElement | null;
-    const currentRoomId = document.getElementById('currentRoomId') as HTMLElement | null;
-    const playerCount = document.getElementById('playerCount') as HTMLElement | null;
-    const chatContainer = document.getElementById('chat-container') as HTMLElement | null;
-    const chatMessages = document.getElementById('chat-messages') as HTMLElement | null;
-    const chatInput = document.getElementById('chat-input') as HTMLInputElement | null;
-    const chatSendBtn = document.getElementById('chat-send-btn') as HTMLButtonElement | null;
+    // Основные элементы
+    this.lobbyContainer = document.getElementById('landingScreen')!;
+    this.roomContainer = document.getElementById('gameScreen')!;
+    this.createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
+    this.joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
+    this.roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
 
-    if (!landingScreen || !gameScreen || !createRoomBtn || !roomIdInput || !joinRoomBtn || 
-        !leaveRoomBtn || !currentRoomId || !playerCount || !chatContainer || 
-        !chatMessages || !chatInput || !chatSendBtn) {
-      throw new Error('Missing required UI elements');
-    }
-
-    this.uiElements = {
-      landingScreen: landingScreen!,
-      gameScreen: gameScreen!,
-      createRoomBtn: createRoomBtn!,
-      roomIdInput: roomIdInput!,
-      joinRoomBtn: joinRoomBtn!,
-      leaveRoomBtn: leaveRoomBtn!,
-      currentRoomId: currentRoomId!,
-      playerCount: playerCount!,
-      chatContainer: chatContainer!,
-      chatMessages: chatMessages!,
-      chatInput: chatInput!,
-      chatSendBtn: chatSendBtn!
-    };
+    // Элементы боковых панелей
+    this.leftMenuBtn = document.getElementById('leftMenuBtn') as HTMLButtonElement;
+    this.menuBtn = document.getElementById('menuBtn') as HTMLButtonElement;
+    this.leftSidebar = document.getElementById('leftSidebar')!;
+    this.rightSidebar = document.getElementById('sidebar')!;
+    this.closeLeftSidebarBtn = document.getElementById('closeLeftSidebarBtn') as HTMLButtonElement;
+    this.closeSidebarBtn = document.getElementById('closeSidebarBtn') as HTMLButtonElement;
 
     this.setupEventListeners();
-    this.showLandingScreen();
+    this.setView('lobby');
   }
 
+  /**
+   * Установить обработчики событий
+   */
   private setupEventListeners(): void {
-    // Chat functionality
-    this.uiElements.chatSendBtn.addEventListener('click', () => {
-      this.sendChatMessage();
+    // Обработчики для lobby/room
+    this.createRoomBtn?.addEventListener('click', () => {
+      this.onCreateRoomClick();
     });
 
-    this.uiElements.chatInput.addEventListener('keypress', (e) => {
+    this.joinRoomBtn?.addEventListener('click', () => {
+      this.onJoinRoomClick();
+    });
+
+    // Обработка Enter в поле ввода ID комнаты
+    this.roomIdInput?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
-        this.sendChatMessage();
+        this.onJoinRoomClick();
       }
     });
+
+    // Обработчики для боковых панелей
+    this.leftMenuBtn?.addEventListener('click', () => {
+      this.toggleLeftSidebar();
+    });
+
+    this.menuBtn?.addEventListener('click', () => {
+      this.toggleRightSidebar();
+    });
+
+    this.closeLeftSidebarBtn?.addEventListener('click', () => {
+      this.closeLeftSidebar();
+    });
+
+    this.closeSidebarBtn?.addEventListener('click', () => {
+      this.closeRightSidebar();
+    });
   }
 
-  private sendChatMessage(): void {
-    const message = this.uiElements.chatInput.value.trim();
-    if (message) {
-      // Add message to chat display
-      const messageElement = document.createElement('div');
-      messageElement.textContent = `You: ${message}`;
-      this.uiElements.chatMessages.appendChild(messageElement);
-      
-      // Scroll to bottom
-      this.uiElements.chatMessages.scrollTop = this.uiElements.chatMessages.scrollHeight;
-      
-      // Clear input
-      this.uiElements.chatInput.value = '';
+  /**
+   * Обработчик клика на "Create Room"
+   */
+  private onCreateRoomClick(): void {
+    // Генерируем ID комнаты
+    const roomId = this.generateRoomId();
+
+    // Вызываем callback для создания комнаты
+    if (this.onCreateRoom) {
+      this.onCreateRoom(roomId);
     }
   }
 
-  showLandingScreen(): void {
-    this.uiElements.landingScreen.classList.remove('hidden');
-    this.uiElements.gameScreen.classList.add('hidden');
+  /**
+   * Обработчик клика на "Join Room"
+   */
+  private onJoinRoomClick(): void {
+    const roomId = this.roomIdInput?.value.trim();
+    if (!roomId) {
+      alert('Please enter a room ID');
+      return;
+    }
+
+    // Вызываем callback для присоединения к комнате
+    if (this.onJoinRoom) {
+      this.onJoinRoom(roomId);
+    }
   }
 
-  showGameScreen(): void {
-    this.uiElements.landingScreen.classList.add('hidden');
-    this.uiElements.gameScreen.classList.remove('hidden');
+  /**
+   * Установить текущее представление
+   */
+  setView(view: 'lobby' | 'room'): void {
+    this.currentView = view;
+
+    if (view === 'lobby') {
+      this.lobbyContainer.style.display = 'flex';
+      this.roomContainer.style.display = 'none';
+    } else {
+      this.lobbyContainer.style.display = 'none';
+      this.roomContainer.style.display = 'flex';
+    }
   }
 
-  updateRoomInfo(roomId: string): void {
-    this.uiElements.currentRoomId.textContent = roomId;
+  /**
+   * Показать ID созданной комнаты
+   */
+  showCreatedRoomId(roomId: string): void {
+    // Обновляем отображение ID комнаты в центральной панели
+    const centerRoomIdElement = document.getElementById('currentRoomId');
+    if (centerRoomIdElement) {
+      centerRoomIdElement.textContent = roomId;
+      
+      // Добавляем возможность копирования
+      centerRoomIdElement.classList.add('copyable-id');
+      centerRoomIdElement.onclick = () => {
+        navigator.clipboard.writeText(roomId).then(() => {
+          // Показываем сообщение о копировании
+          this.showCopiedMessage();
+        });
+      };
+    }
     
-    // Add click to copy functionality
-    this.uiElements.currentRoomId.onclick = () => {
-      navigator.clipboard.writeText(roomId).then(() => {
-        // Show temporary "COPIED!" message
-        const originalText = this.uiElements.currentRoomId.textContent;
-        this.uiElements.currentRoomId.textContent = 'COPIED!';
-        
-        setTimeout(() => {
-          this.uiElements.currentRoomId.textContent = originalText;
-        }, 2000);
-      });
-    };
+    // Также обновляем в левой sidebar
+    const leftSidebarRoomIdElement = document.getElementById('leftRoomId');
+    if (leftSidebarRoomIdElement) {
+      leftSidebarRoomIdElement.textContent = roomId;
+      leftSidebarRoomIdElement.classList.add('copyable-id');
+      leftSidebarRoomIdElement.onclick = () => {
+        navigator.clipboard.writeText(roomId).then(() => {
+          this.showCopiedMessage();
+        });
+      };
+    }
   }
 
+  /**
+   * Установить имя игрока
+   */
+  setPlayerName(name: string): void {
+    const playerNameElement = document.getElementById('playerName');
+    if (playerNameElement) {
+      playerNameElement.textContent = name;
+    }
+  }
+
+  /**
+   * Обновить счётчик игроков
+   */
   updatePlayerCount(count: number, maxPlayers: number = 2): void {
-    this.uiElements.playerCount.textContent = `${count}/${maxPlayers}`;
+    const playerCountElement = document.getElementById('playerCount');
+    if (playerCountElement) {
+      playerCountElement.textContent = `${count}/${maxPlayers}`;
+    }
   }
 
-  setRoomIdInput(roomId: string): void {
-    this.uiElements.roomIdInput.value = roomId;
-  }
-
-  clearRoomInfo(): void {
-    this.uiElements.currentRoomId.textContent = '';
-    this.uiElements.playerCount.textContent = '0/2';
-  }
-
-  addChatMessage(message: string): void {
-    const messageElement = document.createElement('div');
-    messageElement.textContent = message;
-    this.uiElements.chatMessages.appendChild(messageElement);
+  /**
+   * Показать сообщение о копировании
+   */
+  private showCopiedMessage(): void {
+    // Создаем элемент сообщения
+    const message = document.createElement('div');
+    message.className = 'copied-message';
+    message.textContent = 'Copied to clipboard!';
     
-    // Scroll to bottom
-    this.uiElements.chatMessages.scrollTop = this.uiElements.chatMessages.scrollHeight;
+    document.body.appendChild(message);
+    
+    // Удаляем сообщение через 2 секунды
+    setTimeout(() => {
+      document.body.removeChild(message);
+    }, 2000);
   }
 
-  destroy(): void {
-    // Clean up event listeners if needed
+  /**
+   * Переключить левую боковую панель
+   */
+  toggleLeftSidebar(): void {
+    this.leftSidebar.classList.toggle('active');
   }
+
+  /**
+   * Открыть левую боковую панель
+   */
+  openLeftSidebar(): void {
+    this.leftSidebar.classList.add('active');
+  }
+
+  /**
+   * Закрыть левую боковую панель
+   */
+  closeLeftSidebar(): void {
+    this.leftSidebar.classList.remove('active');
+  }
+
+  /**
+   * Переключить правую боковую панель
+   */
+  toggleRightSidebar(): void {
+    this.rightSidebar.classList.toggle('active');
+  }
+
+  /**
+   * Открыть правую боковую панель
+   */
+  openRightSidebar(): void {
+    this.rightSidebar.classList.add('active');
+  }
+
+  /**
+   * Закрыть правую боковую панель
+   */
+  closeRightSidebar(): void {
+    this.rightSidebar.classList.remove('active');
+  }
+
+  /**
+   * Генерация уникального ID комнаты
+   */
+  private generateRoomId(): string {
+    return Math.random().toString(36).substring(2, 10).toUpperCase();
+  }
+
+  /**
+   * Получить текущее представление
+   * Используется для предотвращения ошибки неиспользуемой переменной
+   */
+  getCurrentView(): 'lobby' | 'room' {
+    return this.currentView;
+  }
+
+  // Callbacks для взаимодействия с NetworkManager
+  onCreateRoom?: (roomId: string) => void;
+  onJoinRoom?: (roomId: string) => void;
 }
