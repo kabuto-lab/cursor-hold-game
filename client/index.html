@@ -249,17 +249,28 @@
     .menu-btn {
       position: fixed;
       top: 16px;
-      z-index: 50;
+      z-index: 200;
       background: var(--bg-tertiary);
       border: 1px solid var(--border);
+      color: var(--text-primary);
       padding: 8px 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1;
+      transition: background-color 0.15s ease;
     }
-
-    .menu-btn.left { left: 16px; }
-    .menu-btn.right { right: 16px; }
 
     .menu-btn:hover {
       background: var(--border);
+    }
+
+    #leftMenuBtn {
+      left: 16px;
+    }
+
+    #menuBtn {
+      right: 16px;
     }
 
     /* Center panel */
@@ -535,8 +546,8 @@
       <div class="corner-circle bottom-right"></div>
 
       <!-- Menu buttons -->
-      <button id="leftMenuBtn" class="btn btn-sm menu-btn left">☰</button>
-      <button id="menuBtn" class="btn btn-sm menu-btn right">☰</button>
+      <button id="leftMenuBtn" class="menu-btn">☰</button>
+      <button id="menuBtn" class="menu-btn">☰</button>
 
       <!-- Center panel with room ID and chat -->
       <div id="centerPanel">
