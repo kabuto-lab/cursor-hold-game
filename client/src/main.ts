@@ -30,8 +30,17 @@ class MainApp {
       console.log('[MainApp] Setting up interactions...');
       this.setupInteractions();
       
-      console.log('[MainApp] Starting game engine...');
-      this.gameEngine.start();
+      // Инициализация PixiJS (асинхронно)
+      alert('Initializing PixiJS...');
+      console.log('[MainApp] Initializing GameEngine...');
+      this.gameEngine.init('canvasContainer').then(() => {
+        console.log('[MainApp] GameEngine initialized!');
+        this.gameEngine.start();
+        alert('PixiJS initialized! Ready to play.');
+      }).catch((error) => {
+        alert('PixiJS init ERROR: ' + error);
+        console.error('[MainApp] GameEngine init ERROR:', error);
+      });
       
       alert('MainApp constructor FINISHED!');
       console.log('[MainApp] Constructor finished!');

@@ -12,13 +12,21 @@ export class GameEngine {
     this.app = new PIXI.Application();
     this.ticker = this.app.ticker;
 
-    // Инициализация canvas
+    console.log('[GameEngine] Constructor called with containerId:', containerId);
+  }
+
+  /**
+   * Инициализировать PixiJS (асинхронно)
+   */
+  async init(containerId: string): Promise<void> {
+    console.log('[GameEngine] Initializing PixiJS...');
+    
     const container = document.getElementById(containerId);
     if (!container) {
       throw new Error(`Container element with id "${containerId}" not found`);
     }
 
-    this.app.init({
+    await this.app.init({
       backgroundColor: 0x1a1a1a,
       width: window.innerWidth,
       height: window.innerHeight,
@@ -27,13 +35,16 @@ export class GameEngine {
       resolution: Math.min(window.devicePixelRatio, 2),
     });
 
+    console.log('[GameEngine] PixiJS initialized, appending canvas...');
+    
     // Добавляем canvas в контейнер
     container.appendChild(this.app.canvas);
+    
+    console.log('[GameEngine] Canvas appended');
   }
 
   /**
    * Добавить обновление на тикер
-   * @param updateFn - функция обновления (dt передаётся автоматически)
    */
   addTickerUpdate(updateFn: (dt: number) => void): void {
     this.ticker.add((ticker) => {
