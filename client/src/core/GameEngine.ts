@@ -1,41 +1,37 @@
 /**
  * GameEngine.ts
- * Основной движок игры - только PixiJS и тикер
+ * Core engine managing PixiJS Application and Ticker
  */
 
 import * as PIXI from 'pixi.js';
 
+export interface GameEngineOptions {
+  width?: number;
+  height?: number;
+  backgroundColor?: number;
+  antialias?: boolean;
+}
+
 export class GameEngine {
   private app: PIXI.Application;
   private ticker: PIXI.Ticker;
+  private callbackWrappers: Map<(deltaTime: number) => void, (ticker: PIXI.Ticker) => void> = new Map();
 
-  constructor() {
+  constructor(options: GameEngineOptions = {}) {
     this.app = new PIXI.Application();
     this.ticker = new PIXI.Ticker();
-  }
-
-  async init(): Promise<void> {
-    await this.app.init({
-      backgroundColor: 0x0f0f23, // Dark blue background
-      antialias: false, // For crisp pixel art
-      autoDensity: true,
+    
+    // Initialize with default options
+    const defaultOptions: GameEngineOptions = {
       width: window.innerWidth,
       height: window.innerHeight,
-      resolution: window.devicePixelRatio || 1,
-    });
-
-    // Add retro filters
-    // Note: These filters would need to be imported from appropriate packages
-    // const pixelateFilter = new PixelateFilter();
-    // pixelateFilter.size = new PIXI.Point(4, 4);
-
-    // const noiseFilter = new NoiseFilter();
-    // noiseFilter.noise = 0.1;
-    // noiseFilter.seed = Math.random();
-
-    // const bloomFilter = new BloomFilter();
+      backgroundColor: 0x0f0f23, // Dark blue background
+      antialias: false, // For crisp pixel art
+    };
     
-    // this.app.stage.filters = [pixelateFilter, noiseFilter, bloomFilter] as any;
+    const mergedOptions = { ...defaultOptions, ...options };
+    
+    this.app.init(mergedOptions);
   }
 
   get application(): PIXI.Application {
@@ -50,6 +46,10 @@ export class GameEngine {
     return this.app.stage;
   }
 
+  get tickerInstance(): PIXI.Ticker {
+    return this.ticker;
+  }
+
   start(): void {
     this.ticker.start();
   }
@@ -59,11 +59,18 @@ export class GameEngine {
   }
 
   addTickerCallback(callback: (deltaTime: number) => void): void {
-    this.ticker.add(callback);
+    // In PixiJS v8, ticker callback receives Ticker object, not deltaTime directly
+    const wrapper = (ticker: PIXI.Ticker) => callback(ticker.deltaTime);
+    this.callbackWrappers.set(callback, wrapper);
+    this.ticker.add(wrapper);
   }
 
   removeTickerCallback(callback: (deltaTime: number) => void): void {
-    this.ticker.remove(callback);
+    const wrapper = this.callbackWrappers.get(callback);
+    if (wrapper) {
+      this.ticker.remove(wrapper);
+      this.callbackWrappers.delete(callback);
+    }
   }
 
   resize(width: number, height: number): void {

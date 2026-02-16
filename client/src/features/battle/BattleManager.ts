@@ -1,88 +1,124 @@
 /**
  * BattleManager.ts
- * Управление состоянием битвы вирусов
+ * Manages battle state machine: idle | preparing | running | ended
  */
 
-import { BattleState, createIdleState } from './BattleState';
+export interface VirusParams {
+  aggression: number;
+  mutation: number;
+  speed: number;
+  defense: number;
+  reproduction: number;
+  stealth: number;
+  virulence: number;
+  resilience: number;
+  mobility: number;
+  intellect: number;
+  contagiousness: number;
+  lethality: number;
+}
 
-export interface BattleCallbacks {
+export type BattleState =
+  | { type: 'idle' }
+  | { type: 'preparing'; params: VirusParams; startTime: number }
+  | { type: 'running'; startTime: number }
+  | { type: 'ended'; winner: 'A' | 'B' | 'draw' };
+
+export interface BattleEvents {
   onStateChanged?: (newState: BattleState) => void;
   onBattleStarted?: () => void;
   onBattleEnded?: (winner: 'A' | 'B' | 'draw') => void;
-  onTick?: (tick: number) => void;
 }
 
 export class BattleManager {
-  private state: BattleState = createIdleState();
-  private callbacks: BattleCallbacks = {};
-  private tickInterval: number | null = null;
+  private state: BattleState = { type: 'idle' };
+  private events: BattleEvents = {};
 
-  setState(newState: BattleState): void {
-    const prevState = this.state;
-    this.state = newState;
+  constructor(events: BattleEvents = {}) {
+    this.events = events;
+  }
 
-    if (this.callbacks.onStateChanged) {
-      this.callbacks.onStateChanged(newState);
-    }
-
-    // Trigger specific callbacks based on state transitions
-    if (prevState.type !== 'running' && newState.type === 'running') {
-      if (this.callbacks.onBattleStarted) {
-        this.callbacks.onBattleStarted();
-      }
-      this.startTicking();
-    } else if (prevState.type === 'running' && newState.type !== 'running') {
-      if (this.callbacks.onBattleEnded && newState.type === 'ended') {
-        this.callbacks.onBattleEnded(newState.winner);
-      }
-      this.stopTicking();
-    }
+  setEvents(events: BattleEvents): void {
+    this.events = events;
   }
 
   getState(): BattleState {
     return this.state;
   }
 
-  startBattle(): void {
-    const startTime = Date.now();
-    this.setState({ type: 'running', startTime, tick: 0 });
-  }
+  setState(newState: BattleState): void {
+    const prevState = this.state;
+    this.state = newState;
 
-  endBattle(winner: 'A' | 'B' | 'draw'): void {
-    this.setState({ type: 'ended', winner });
-  }
+    if (this.events.onStateChanged) {
+      this.events.onStateChanged(newState);
+    }
 
-  private startTicking(): void {
-    if (this.tickInterval) return;
-
-    this.tickInterval = window.setInterval(() => {
-      if (this.state.type === 'running') {
-        const newTick = this.state.tick + 1;
-        this.setState({ 
-          type: 'running', 
-          startTime: this.state.startTime, 
-          tick: newTick 
-        });
-        
-        if (this.callbacks.onTick) {
-          this.callbacks.onTick(newTick);
-        }
+    // Trigger specific events based on state transitions
+    if (prevState.type !== newState.type) {
+      if (newState.type === 'running' && prevState.type === 'preparing' && this.events.onBattleStarted) {
+        this.events.onBattleStarted();
       }
-    }, 1000); // 1 second per tick
-  }
-
-  private stopTicking(): void {
-    if (this.tickInterval) {
-      clearInterval(this.tickInterval);
-      this.tickInterval = null;
+      
+      if (newState.type === 'ended' && this.events.onBattleEnded) {
+        this.events.onBattleEnded(newState.winner);
+      }
     }
   }
 
-  setCallbacks(callbacks: BattleCallbacks): void {
-    this.callbacks = { ...this.callbacks, ...callbacks };
+  startPreparation(params: VirusParams): void {
+    this.setState({
+      type: 'preparing',
+      params,
+      startTime: Date.now()
+    });
+  }
+
+  startBattle(): void {
+    if (this.state.type === 'preparing') {
+      this.setState({
+        type: 'running',
+        startTime: Date.now()
+      });
+    }
+  }
+
+  endBattle(winner: 'A' | 'B' | 'draw'): void {
+    this.setState({
+      type: 'ended',
+      winner
+    });
+  }
+
+  reset(): void {
+    this.setState({ type: 'idle' });
+  }
+
+  isIdle(): boolean {
+    return this.state.type === 'idle';
+  }
+
+  isPreparing(): boolean {
+    return this.state.type === 'preparing';
+  }
+
+  isRunning(): boolean {
+    return this.state.type === 'running';
+  }
+
+  isEnded(): boolean {
+    return this.state.type === 'ended';
+  }
+
+  getParams(): VirusParams | null {
+    if (this.state.type === 'preparing') {
+      return this.state.params;
+    }
+    return null;
   }
 
   destroy(): void {
-    this.stopTicking();
+    this.state = { type: 'idle' };
+    this.events = {};
   }
 }

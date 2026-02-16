@@ -1,323 +1,194 @@
 /**
  * UIController.ts
- * Управление пользовательским интерфейсом
+ * Main UI controller for room management and chat
  */
 
-import { GameStateManager } from './GameStateManager';
+import { ChatManager } from '../features/chat/ChatManager';
 
-export interface UICallbacks {
+export interface UIEvents {
   onCreateRoom?: () => void;
   onJoinRoom?: (roomId: string) => void;
   onLeaveRoom?: () => void;
-  onSendMessage?: (message: string) => void;
-  onIncreaseParameter?: (param: string) => void;
-  onDecreaseParameter?: (param: string) => void;
-  onToggleReady?: (isReady: boolean) => void;
 }
 
 export class UIController {
-  // DOM elements
-  private appContainer: HTMLElement;
-  private landingScreen: HTMLElement;
-  private gameScreen: HTMLElement;
-  private roomIdInput: HTMLInputElement;
-  private createRoomBtn: HTMLButtonElement;
-  private joinRoomBtn: HTMLButtonElement;
-  private leaveRoomBtn: HTMLButtonElement;
-  private playerNameInput: HTMLInputElement;
-  private playerNameDisplay: HTMLElement;
-  private playerCountDisplay: HTMLElement;
-  private currentRoomIdDisplay: HTMLElement;
-  private chatInput: HTMLInputElement;
-  private chatSendBtn: HTMLButtonElement;
-  private chatMessages: HTMLElement;
-  private sidebar: HTMLElement;
-  private menuBtn: HTMLButtonElement;
-  private closeSidebarBtn: HTMLButtonElement;
-  private readyBtn: HTMLButtonElement;
-  private pointsRemainingDisplay: HTMLElement;
-  private paramCells: NodeListOf<Element>;
-  private leftSidebar: HTMLElement;
-  private leftMenuBtn: HTMLButtonElement;
-  private closeLeftSidebarBtn: HTMLButtonElement;
-  private connectionStatus: HTMLElement;
+  private uiElements: {
+    landingScreen: HTMLElement;
+    gameScreen: HTMLElement;
+    createRoomBtn: HTMLButtonElement;
+    roomIdInput: HTMLInputElement;
+    joinRoomBtn: HTMLButtonElement;
+    leaveRoomBtn: HTMLButtonElement;
+    currentRoomId: HTMLElement;
+    playerCount: HTMLElement;
+    chatContainer: HTMLElement;
+    chatMessages: HTMLElement;
+    chatInput: HTMLInputElement;
+    chatSendBtn: HTMLButtonElement;
+  };
 
-  private callbacks: UICallbacks = {};
+  private chatManager: ChatManager;
+  private events: UIEvents = {};
 
-  constructor(private gameStateManager: GameStateManager) {
-    // Initialize DOM elements
-    this.appContainer = document.getElementById('app')!;
-    this.landingScreen = document.getElementById('landingScreen')!;
-    this.gameScreen = document.getElementById('gameScreen')!;
-    this.roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
-    this.createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
-    this.joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
-    this.leaveRoomBtn = document.getElementById('leaveRoomBtn') as HTMLButtonElement;
-    this.playerNameInput = document.getElementById('playerNameInput') as HTMLInputElement;
-    this.playerNameDisplay = document.getElementById('playerName')!;
-    this.playerCountDisplay = document.getElementById('playerCount')!;
-    this.currentRoomIdDisplay = document.getElementById('currentRoomId')!;
-    this.chatInput = document.getElementById('chat-input') as HTMLInputElement;
-    this.chatSendBtn = document.getElementById('chat-send-btn') as HTMLButtonElement;
-    this.chatMessages = document.getElementById('chat-messages')!;
-    this.sidebar = document.getElementById('sidebar')!;
-    this.menuBtn = document.getElementById('menuBtn') as HTMLButtonElement;
-    this.closeSidebarBtn = document.getElementById('closeSidebarBtn') as HTMLButtonElement;
-    this.readyBtn = document.getElementById('readyBtn') as HTMLButtonElement;
-    this.pointsRemainingDisplay = document.getElementById('points-remaining')!;
-    this.paramCells = document.querySelectorAll('.param-cell');
-    this.leftSidebar = document.getElementById('leftSidebar')!;
-    this.leftMenuBtn = document.getElementById('leftMenuBtn') as HTMLButtonElement;
-    this.closeLeftSidebarBtn = document.getElementById('closeLeftSidebarBtn') as HTMLButtonElement;
-    this.connectionStatus = document.getElementById('connectionStatus')!;
-
+  constructor(events: UIEvents = {}) {
+    this.events = events;
+    this.chatManager = new ChatManager('chat-messages', 'chat-input', 'chat-send-btn');
+    this.uiElements = this.initializeUIElements();
     this.setupEventListeners();
-    this.updateParamDisplays();
+    this.showLandingScreen();
+  }
+
+  private initializeUIElements(): {
+    landingScreen: HTMLElement;
+    gameScreen: HTMLElement;
+    createRoomBtn: HTMLButtonElement;
+    roomIdInput: HTMLInputElement;
+    joinRoomBtn: HTMLButtonElement;
+    leaveRoomBtn: HTMLButtonElement;
+    currentRoomId: HTMLElement;
+    playerCount: HTMLElement;
+    chatContainer: HTMLElement;
+    chatMessages: HTMLElement;
+    chatInput: HTMLInputElement;
+    chatSendBtn: HTMLButtonElement;
+  } {
+    // Get all required UI elements
+    const landingScreen = document.getElementById('landingScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
+    const roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
+    const joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
+    const leaveRoomBtn = document.getElementById('leaveRoomBtn') as HTMLButtonElement;
+    const currentRoomId = document.getElementById('currentRoomId');
+    const playerCount = document.getElementById('playerCount');
+    const chatContainer = document.getElementById('chat-container');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatInput = document.getElementById('chat-input');
+    const chatSendBtn = document.getElementById('chat-send-btn');
+
+    // Check if all required elements exist
+    if (!landingScreen || !gameScreen || !createRoomBtn || !roomIdInput || !joinRoomBtn || 
+        !leaveRoomBtn || !currentRoomId || !playerCount || !chatContainer || 
+        !chatMessages || !chatInput || !chatSendBtn) {
+      throw new Error('Missing required UI elements');
+    }
+
+    return {
+      landingScreen,
+      gameScreen,
+      createRoomBtn,
+      roomIdInput,
+      joinRoomBtn,
+      leaveRoomBtn,
+      currentRoomId,
+      playerCount,
+      chatContainer,
+      chatMessages,
+      chatInput,
+      chatSendBtn
+    };
   }
 
   private setupEventListeners(): void {
-    // Button handlers
-    this.createRoomBtn.addEventListener('click', () => {
-      if (this.callbacks.onCreateRoom) this.callbacks.onCreateRoom();
-    });
-
-    this.joinRoomBtn.addEventListener('click', () => {
-      const roomId = this.roomIdInput.value.trim();
-      if (roomId && this.callbacks.onJoinRoom) this.callbacks.onJoinRoom(roomId);
-    });
-
-    this.leaveRoomBtn.addEventListener('click', () => {
-      if (this.callbacks.onLeaveRoom) this.callbacks.onLeaveRoom();
-    });
-
-    // Virus parameter handlers
-    this.paramCells.forEach(cell => {
-      const param = cell.getAttribute('data-param');
-      if (param) {
-        cell.addEventListener('click', () => {
-          if (this.callbacks.onIncreaseParameter) this.callbacks.onIncreaseParameter(param);
-        });
-
-        // Handlers for emoji and name (decrease parameter)
-        const emojiEl = cell.querySelector('.param-emoji');
-        const nameEl = cell.querySelector('.param-name');
-        
-        if (emojiEl) {
-          emojiEl.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (this.callbacks.onDecreaseParameter) this.callbacks.onDecreaseParameter(param);
-          });
-        }
-        
-        if (nameEl) {
-          nameEl.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (this.callbacks.onDecreaseParameter) this.callbacks.onDecreaseParameter(param);
-          });
-        }
+    // Room creation
+    this.uiElements.createRoomBtn.addEventListener('click', () => {
+      if (this.events.onCreateRoom) {
+        this.events.onCreateRoom();
       }
     });
 
-    // Ready button handler
-    this.readyBtn.addEventListener('click', () => {
-      if (this.callbacks.onToggleReady) this.callbacks.onToggleReady(!this.gameStateManager.isReady);
+    // Room joining
+    this.uiElements.joinRoomBtn.addEventListener('click', () => {
+      const roomId = this.uiElements.roomIdInput.value.trim();
+      if (roomId && this.events.onJoinRoom) {
+        this.events.onJoinRoom(roomId);
+      }
     });
 
-    // Chat handlers
-    this.chatSendBtn.addEventListener('click', () => {
-      const message = this.chatInput.value.trim();
-      if (message && this.callbacks.onSendMessage) this.callbacks.onSendMessage(message);
-    });
-
-    this.chatInput.addEventListener('keypress', (e) => {
+    // Allow Enter key to join room
+    this.uiElements.roomIdInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
-        const message = this.chatInput.value.trim();
-        if (message && this.callbacks.onSendMessage) this.callbacks.onSendMessage(message);
+        const roomId = this.uiElements.roomIdInput.value.trim();
+        if (roomId && this.events.onJoinRoom) {
+          this.events.onJoinRoom(roomId);
+        }
       }
     });
 
-    // Sidebar handlers
-    this.menuBtn.addEventListener('click', () => {
-      this.sidebar.classList.add('active');
+    // Leave room
+    this.uiElements.leaveRoomBtn.addEventListener('click', () => {
+      if (this.events.onLeaveRoom) {
+        this.events.onLeaveRoom();
+      }
     });
 
-    this.closeSidebarBtn.addEventListener('click', () => {
-      this.sidebar.classList.remove('active');
-    });
-
-    this.leftMenuBtn.addEventListener('click', () => {
-      this.leftSidebar.classList.add('active');
-    });
-
-    this.closeLeftSidebarBtn.addEventListener('click', () => {
-      this.leftSidebar.classList.remove('active');
-    });
-  }
-
-  setCallbacks(callbacks: UICallbacks): void {
-    this.callbacks = { ...this.callbacks, ...callbacks };
-  }
-
-  updatePlayerCount(count: number, max: number): void {
-    this.playerCountDisplay.textContent = `${count}/${max}`;
-  }
-
-  updateCurrentRoomId(roomId: string): void {
-    this.currentRoomIdDisplay.textContent = roomId;
-  }
-
-  updatePlayerName(playerId: string, name: string): void {
-    if (playerId === this.gameStateManager.currentPlayerId) {
-      this.playerNameDisplay.textContent = name;
-    }
-  }
-
-  updateReadyButton(isReady: boolean): void {
-    this.readyBtn.textContent = isReady ? 'UNREADY' : 'READY';
-    this.readyBtn.style.backgroundColor = isReady ? '#00ff00' : '#ff00ff'; // Green if ready, magenta if not
-  }
-
-  updatePointsDisplay(remaining: number): void {
-    this.pointsRemainingDisplay.textContent = remaining.toString();
-  }
-
-  updateParamDisplay(param: string, value: number): void {
-    const paramValueEl = document.getElementById(`param-${param}`);
-    if (paramValueEl) {
-      paramValueEl.textContent = value.toString();
-    }
-  }
-
-  private updateParamDisplays(): void {
-    const paramNames = [
-      'aggression', 'mutation', 'speed', 'defense', 
-      'reproduction', 'stealth', 'virulence', 'resilience', 
-      'mobility', 'intellect', 'contagiousness', 'lethality'
-    ];
-
-    paramNames.forEach(param => {
-      this.updateParamDisplay(param, this.gameStateManager.getParamValue(param));
-    });
-  }
-
-  showGameScreen(): void {
-    this.landingScreen.classList.add('hidden');
-    this.gameScreen.classList.remove('hidden');
+    // Chat functionality is handled by ChatManager
   }
 
   showLandingScreen(): void {
-    this.gameScreen.classList.add('hidden');
-    this.landingScreen.classList.remove('hidden');
+    this.uiElements.landingScreen.classList.remove('hidden');
+    this.uiElements.gameScreen.classList.add('hidden');
   }
 
-  addChatMessage(senderName: string, message: string, timestamp: number): void {
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('chat-message');
+  showGameScreen(): void {
+    this.uiElements.landingScreen.classList.add('hidden');
+    this.uiElements.gameScreen.classList.remove('hidden');
+  }
+
+  updateRoomInfo(roomId: string): void {
+    this.uiElements.currentRoomId.textContent = roomId;
     
-    const timeString = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    messageElement.innerHTML = `<strong>[${timeString}] ${senderName}:</strong> ${message}`;
-    
-    this.chatMessages.appendChild(messageElement);
-    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    // Add click to copy functionality
+    this.uiElements.currentRoomId.onclick = () => {
+      navigator.clipboard.writeText(roomId).then(() => {
+        // Show temporary "COPIED!" message
+        const originalText = this.uiElements.currentRoomId.textContent;
+        this.uiElements.currentRoomId.textContent = 'COPIED!';
+        
+        setTimeout(() => {
+          this.uiElements.currentRoomId.textContent = originalText;
+        }, 2000);
+      });
+    };
   }
 
-  updateConnectionStatus(status: 'connected' | 'disconnected' | 'connecting'): void {
-    this.connectionStatus.className = `connection-status ${status}`;
+  updatePlayerCount(count: number, maxPlayers: number = 2): void {
+    this.uiElements.playerCount.textContent = `${count}/${maxPlayers}`;
   }
 
-  showError(message: string): void {
-    // Create an error message element
-    let errorEl = document.getElementById('errorMessage');
-    if (!errorEl) {
-      errorEl = document.createElement('div');
-      errorEl.id = 'errorMessage';
-      errorEl.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: #ff0000;
-        color: white;
-        padding: 15px 25px;
-        border: 2px solid #ffff00;
-        border-radius: 0;
-        font-family: 'Courier New', monospace;
-        font-size: 1rem;
-        z-index: 1000;
-        text-align: center;
-      `;
-      document.body.appendChild(errorEl);
-    }
-
-    errorEl.textContent = message;
-
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-      if (errorEl && errorEl.parentNode) {
-        errorEl.parentNode.removeChild(errorEl);
-      }
-    }, 5000);
+  setRoomIdInput(roomId: string): void {
+    this.uiElements.roomIdInput.value = roomId;
   }
 
-  clearChat(): void {
-    this.chatMessages.innerHTML = '';
+  clearRoomInfo(): void {
+    this.uiElements.currentRoomId.textContent = '';
+    this.uiElements.playerCount.textContent = '0/2';
   }
 
-  clearInputs(): void {
-    this.roomIdInput.value = '';
-    this.chatInput.value = '';
+  enableRoomActions(enabled: boolean): void {
+    this.uiElements.createRoomBtn.disabled = !enabled;
+    this.uiElements.joinRoomBtn.disabled = !enabled;
+    this.uiElements.roomIdInput.disabled = !enabled;
   }
 
-  focusChatInput(): void {
-    this.chatInput.focus();
-  }
-
-  disableParameterAdjustments(): void {
-    this.paramCells.forEach(cell => {
-      cell.classList.add('disabled');
-      (cell as HTMLElement).style.pointerEvents = 'none';
-      (cell as HTMLElement).style.opacity = '0.5';
-    });
-  }
-
-  enableParameterAdjustments(): void {
-    this.paramCells.forEach(cell => {
-      cell.classList.remove('disabled');
-      (cell as HTMLElement).style.pointerEvents = 'auto';
-      (cell as HTMLElement).style.opacity = '1';
-    });
+  enableLeaveRoom(enabled: boolean): void {
+    this.uiElements.leaveRoomBtn.disabled = !enabled;
   }
 
   destroy(): void {
-    // Remove event listeners
-    this.createRoomBtn.removeEventListener('click', () => {});
-    this.joinRoomBtn.removeEventListener('click', () => {});
-    this.leaveRoomBtn.removeEventListener('click', () => {});
-    this.chatSendBtn.removeEventListener('click', () => {});
-    this.chatInput.removeEventListener('keypress', () => {});
-    this.menuBtn.removeEventListener('click', () => {});
-    this.closeSidebarBtn.removeEventListener('click', () => {});
-    this.leftMenuBtn.removeEventListener('click', () => {});
-    this.closeLeftSidebarBtn.removeEventListener('click', () => {});
-    this.readyBtn.removeEventListener('click', () => {});
-
-    // Remove parameter handlers
-    this.paramCells.forEach(cell => {
-      const param = cell.getAttribute('data-param');
-      if (param) {
-        cell.removeEventListener('click', () => {});
-        
-        const emojiEl = cell.querySelector('.param-emoji');
-        const nameEl = cell.querySelector('.param-name');
-        
-        if (emojiEl) {
-          emojiEl.removeEventListener('click', () => {});
-        }
-        
-        if (nameEl) {
-          nameEl.removeEventListener('click', () => {});
-        }
-      }
-    });
+    // Clean up event listeners
+    this.uiElements.createRoomBtn.replaceWith(this.uiElements.createRoomBtn.cloneNode(true));
+    this.uiElements.joinRoomBtn.replaceWith(this.uiElements.joinRoomBtn.cloneNode(true));
+    this.uiElements.leaveRoomBtn.replaceWith(this.uiElements.leaveRoomBtn.cloneNode(true));
+    this.uiElements.roomIdInput.replaceWith(this.uiElements.roomIdInput.cloneNode(true));
+    
+    // Re-reference the cloned elements to maintain functionality
+    this.uiElements.createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
+    this.uiElements.joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
+    this.uiElements.leaveRoomBtn = document.getElementById('leaveRoomBtn') as HTMLButtonElement;
+    this.uiElements.roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
+    
+    // Destroy chat manager
+    this.chatManager.destroy();
   }
 }

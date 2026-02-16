@@ -23,22 +23,6 @@ export interface NetworkCallbacks {
   onDisconnected?: () => void;
 }
 
-export interface NetworkCallbacks {
-  onPlayerJoined?: (playerId: string, player: PlayerSchema) => void;
-  onPlayerLeft?: (playerId: string) => void;
-  onPlayerUpdated?: (playerId: string, player: PlayerSchema) => void;
-  onObjectAdded?: (objectId: string, obj: DraggableObjectSchema) => void;
-  onObjectRemoved?: (objectId: string) => void;
-  onObjectUpdated?: (objectId: string, obj: DraggableObjectSchema) => void;
-  onVirusParamsUpdated?: (playerId: string, params: { [key: string]: number }) => void;
-  onVirusBattleStarted?: (message: string) => void;
-  onVirusBattleEnded?: (message: string) => void;
-  onVirusTick?: (tick: number, message: string) => void;
-  onCursorUpdate?: (playerId: string, x: number, y: number) => void;
-  onError?: (error: any) => void;
-  onDisconnected?: () => void;
-}
-
 export class NetworkManager {
   private client: Client;
   private room: Room | null = null;

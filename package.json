@@ -8,7 +8,8 @@
     "build:client": "cd client && npm run build",
     "build:server": "cd server && npm run build",
     "start": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "test": "npm run test --workspaces"
+    "test": "npm run test --workspaces",
+    "prepare": "husky install"
   },
   "keywords": [
     "game",
@@ -25,7 +26,12 @@
     "client",
     "server"
   ],
+  "lint-staged": {
+    "*.{ts,tsx}": ["tsc --noEmit"]
+  },
   "devDependencies": {
-    "concurrently": "^8.2.0"
+    "concurrently": "^8.2.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^13.0.0"
   }
 }
