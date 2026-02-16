@@ -73,11 +73,15 @@ class MainApp {
       try {
         await this.networkManager.joinRoom(roomId);
         console.log('[MainApp] Joined room successfully');
+        
         this.uiController.setView('room');
+        
+        // Показываем ID комнаты сразу
+        this.uiController.showCreatedRoomId(roomId);
+        
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
-          this.uiController.updateRoomIdFromRoom(room);
         }
         this.uiController.setPlayerName('Player 2');
       } catch (error) {
