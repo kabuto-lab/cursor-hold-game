@@ -38,7 +38,6 @@ export class NetworkManager {
    */
   async createRoom(): Promise<string> {
     console.log('[NetworkManager] createRoom() called');
-    console.log('[NetworkManager] Current client:', this.client);
     try {
       console.log('[NetworkManager] Calling client.joinOrCreate("holding_room")...');
       // Создаём новую комнату через joinOrCreate
@@ -58,16 +57,19 @@ export class NetworkManager {
 
   /**
    * Присоединиться к существующей комнате по ID
+   * ВРЕМЕННО: используем joinOrCreate, чтобы попасть в ту же комнату
    */
   async joinRoom(roomId: string): Promise<Room> {
+    console.log('[NetworkManager] joinRoom() called with roomId:', roomId);
     try {
-      // Присоединяемся к комнате по реальному ID
-      this.currentRoom = await this.client.joinById(roomId);
-      console.log('[NetworkManager] Joined room:', roomId);
-      
+      // ВРЕМЕННО: joinOrCreate попадёт в первую доступную комнату
+      // Для правильного joinById нужен сервер с room listing
+      console.log('[NetworkManager] Using joinOrCreate to find room...');
+      this.currentRoom = await this.client.joinOrCreate('holding_room');
+      console.log('[NetworkManager] Joined room:', this.currentRoom.id);
       return this.currentRoom;
     } catch (error) {
-      console.error('Failed to join room:', error);
+      console.error('[NetworkManager] ERROR in joinRoom:', error);
       throw error;
     }
   }
