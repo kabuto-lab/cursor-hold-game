@@ -14,6 +14,13 @@ export class CursorManager {
   // Хранилище позиций удалённых курсоров: playerId -> {x, y}
   private remoteCursors: Map<string, { x: number; y: number }> = new Map();
 
+  // Позиция локального курсора (для отладки)
+  private localPosition: { x: number; y: number } = { x: 0, y: 0 };
+
+  // Callback для обновления UI
+  public onLocalCursorUpdate?: (x: number, y: number) => void;
+  public onRemoteCursorUpdate?: (playerId: string, x: number, y: number) => void;
+
   constructor(inputManager: InputManager, networkManager: NetworkManager) {
     this.inputManager = inputManager;
     this.networkManager = networkManager;
@@ -33,6 +40,11 @@ export class CursorManager {
       if (data.playerId && typeof data.x === 'number' && typeof data.y === 'number') {
         this.remoteCursors.set(data.playerId, { x: data.x, y: data.y });
         console.log('[CursorManager] Updated cursor for playerId:', data.playerId, 'Total cursors:', this.remoteCursors.size);
+        
+        // Вызываем callback для рендерера
+        if (this.onRemoteCursorUpdate) {
+          this.onRemoteCursorUpdate(data.playerId, data.x, data.y);
+        }
       }
     });
   }
@@ -57,8 +69,14 @@ export class CursorManager {
    */
   private sendCursorUpdate(): void {
     const pos = this.inputManager.getMousePosition();
+    this.localPosition = { x: pos.x, y: pos.y };
     console.log('[CursorManager] Sending cursor update:', pos);
     this.networkManager.sendCursorUpdate(pos.x, pos.y);
+
+    // Вызываем callback для UI
+    if (this.onLocalCursorUpdate) {
+      this.onLocalCursorUpdate(pos.x, pos.y);
+    }
   }
 
   /**
@@ -73,6 +91,13 @@ export class CursorManager {
    */
   getAllRemoteCursors(): Map<string, { x: number; y: number }> {
     return new Map(this.remoteCursors);
+  }
+
+  /**
+   * Получить локальную позицию курсора
+   */
+  getLocalPosition(): { x: number; y: number } {
+    return { ...this.localPosition };
   }
 
   /**

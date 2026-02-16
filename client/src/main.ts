@@ -5,6 +5,7 @@ import { UIController } from './ui/UIController';
 import { ChatManager } from './chat/ChatManager';
 import { CursorManager } from './features/cursor/CursorManager';
 import { CursorRenderer } from './features/cursor/CursorRenderer';
+import { CursorDebugUI } from './features/cursor/CursorDebugUI';
 
 console.log('[MainApp] main.ts loaded');
 
@@ -15,6 +16,7 @@ class MainApp {
   private uiController!: UIController;
   private chatManager!: ChatManager;
   private cursorManager!: CursorManager;
+  private cursorDebugUI!: CursorDebugUI;
 
   constructor() {
     console.log('[MainApp] Constructor started...');
@@ -44,6 +46,18 @@ class MainApp {
         this.cursorManager = new CursorManager(this.inputManager, this.networkManager);
         console.log('[MainApp] Creating CursorRenderer...');
         new CursorRenderer(this.gameEngine.app!.stage, this.cursorManager);
+        console.log('[MainApp] Creating CursorDebugUI...');
+        this.cursorDebugUI = new CursorDebugUI();
+
+        // Подключаем UI к CursorManager
+        this.cursorManager.onLocalCursorUpdate = (x, y) => {
+          this.cursorDebugUI.updatePlayer1(x, y);
+        };
+
+        // Для обновления координат второго игрока
+        this.cursorManager.onRemoteCursorUpdate = (_playerId, x, y) => {
+          this.cursorDebugUI.updatePlayer2(x, y);
+        };
         
         console.log('[MainApp] Cursor system initialized!');
         this.gameEngine.start();

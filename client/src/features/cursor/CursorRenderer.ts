@@ -8,7 +8,7 @@ import { CursorManager } from './CursorManager';
 export class CursorRenderer {
   private stage: PIXI.Container;
   private cursorManager: CursorManager;
-  private cursorGraphics: Map<string, PIXI.Graphics> = new Map();
+  private cursors: Map<string, PIXI.Graphics> = new Map();
   private cursorPositions: Map<string, { x: number; y: number }> = new Map();
   private readonly lerpFactor: number = 0.3; // Коэффициент интерполяции
 
@@ -16,6 +16,14 @@ export class CursorRenderer {
     this.stage = stage;
     this.cursorManager = cursorManager;
 
+    console.log('[CursorRenderer] Initialized on stage');
+
+    // Подписываемся на обновления от менеджера
+    this.cursorManager.onRemoteCursorUpdate = (playerId, x, y) => {
+      this.updateCursor(playerId, x, y);
+    };
+
+    console.log('[CursorRenderer] startRendering called');
     this.startRendering();
   }
 
@@ -37,14 +45,15 @@ export class CursorRenderer {
   /**
    * Создать Graphics для курсора игрока
    */
-  private createCursorGraphics(playerId: string): PIXI.Graphics {
+  private createCursor(playerId: string): PIXI.Graphics {
     console.log('[CursorRenderer] Creating cursor for playerId:', playerId);
+    
     const graphics = new PIXI.Graphics();
     const color = this.generateColorFromId(playerId);
 
-    // Круг 15px
+    // Круг 15px (радиус 7.5)
     graphics.circle(0, 0, 7.5);
-    graphics.fill({ color });
+    graphics.fill({ color, alpha: 0.9 });
 
     // Стрелка (треугольник)
     const arrowSize = 8;
@@ -52,13 +61,19 @@ export class CursorRenderer {
     graphics.lineTo(-arrowSize / 2, -10 - arrowSize);
     graphics.lineTo(arrowSize / 2, -10 - arrowSize);
     graphics.closePath();
-    graphics.fill({ color });
+    graphics.fill({ color, alpha: 0.9 });
 
     // Белая обводка для видимости
     graphics.stroke({ width: 2, color: 0xFFFFFF });
 
+    // КРИТИЧЕСКИЕ настройки видимости
+    graphics.visible = true;
+    graphics.alpha = 1;
+    graphics.eventMode = 'none'; // Не блокирует клики
+
     this.stage.addChild(graphics);
     console.log('[CursorRenderer] Graphics created and added to stage. Stage children count:', this.stage.children.length);
+    
     return graphics;
   }
 
@@ -66,11 +81,11 @@ export class CursorRenderer {
    * Обновить или создать курсор для игрока
    */
   private updateCursor(playerId: string, targetX: number, targetY: number): void {
-    let graphics = this.cursorGraphics.get(playerId);
+    let graphics = this.cursors.get(playerId);
 
     if (!graphics) {
-      graphics = this.createCursorGraphics(playerId);
-      this.cursorGraphics.set(playerId, graphics);
+      graphics = this.createCursor(playerId);
+      this.cursors.set(playerId, graphics);
       // Инициализируем текущую позицию целевой
       this.cursorPositions.set(playerId, { x: targetX, y: targetY });
       console.log('[CursorRenderer] New cursor created for playerId:', playerId, 'at position:', targetX, targetY);
@@ -88,6 +103,8 @@ export class CursorRenderer {
       // Обновляем текущую позицию
       currentPos.x = newX;
       currentPos.y = newY;
+
+      console.log('[CursorRenderer] Updated cursor:', playerId, 'to', newX, newY);
     }
   }
 
@@ -95,12 +112,13 @@ export class CursorRenderer {
    * Удалить курсор игрока
    */
   private removeCursor(playerId: string): void {
-    const graphics = this.cursorGraphics.get(playerId);
+    const graphics = this.cursors.get(playerId);
     if (graphics) {
       this.stage.removeChild(graphics);
       graphics.destroy({ children: true });
-      this.cursorGraphics.delete(playerId);
+      this.cursors.delete(playerId);
       this.cursorPositions.delete(playerId);
+      console.log('[CursorRenderer] Removed cursor for playerId:', playerId);
     }
   }
 
@@ -108,7 +126,6 @@ export class CursorRenderer {
    * Запустить цикл рендеринга
    */
   private startRendering(): void {
-    console.log('[CursorRenderer] startRendering called');
     const renderLoop = () => {
       const remoteCursors = this.cursorManager.getAllRemoteCursors();
       const activePlayerIds = new Set(remoteCursors.keys());
@@ -119,7 +136,7 @@ export class CursorRenderer {
       }
 
       // Удаляем курсоры игроков, которые больше не активны
-      for (const playerId of this.cursorGraphics.keys()) {
+      for (const playerId of this.cursors.keys()) {
         if (!activePlayerIds.has(playerId)) {
           this.removeCursor(playerId);
         }
@@ -134,7 +151,7 @@ export class CursorRenderer {
    * Очистить все курсоры
    */
   clear(): void {
-    for (const playerId of this.cursorGraphics.keys()) {
+    for (const playerId of this.cursors.keys()) {
       this.removeCursor(playerId);
     }
   }
