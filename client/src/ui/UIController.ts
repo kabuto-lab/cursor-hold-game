@@ -80,9 +80,13 @@ export class UIController {
    * Обработчик клика на "Create Room"
    */
   private onCreateRoomClick(): void {
+    console.log('[UIController] Create Room button clicked!');
     // Вызываем callback для создания комнаты (без параметров)
     if (this.onCreateRoom) {
+      console.log('[UIController] Calling onCreateRoom callback...');
       this.onCreateRoom();
+    } else {
+      console.error('[UIController] onCreateRoom callback is NOT set!');
     }
   }
 

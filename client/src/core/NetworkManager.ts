@@ -36,17 +36,21 @@ export class NetworkManager {
    * Возвращает реальный ID комнаты от Colyseus
    */
   async createRoom(): Promise<string> {
+    console.log('[NetworkManager] createRoom() called');
+    console.log('[NetworkManager] Current client:', this.client);
     try {
+      console.log('[NetworkManager] Calling client.joinOrCreate("holding_room")...');
       // Создаём новую комнату через joinOrCreate
       this.currentRoom = await this.client.joinOrCreate('holding_room');
-      
+      console.log('[NetworkManager] Room object received:', this.currentRoom);
+
       // Получаем roomId из state комнаты
       const roomId = this.currentRoom.state?.roomId || this.currentRoom.id;
       console.log('[NetworkManager] Room created:', roomId);
-      
+
       return roomId;
     } catch (error) {
-      console.error('Failed to create room:', error);
+      console.error('[NetworkManager] ERROR in createRoom:', error);
       throw error;
     }
   }

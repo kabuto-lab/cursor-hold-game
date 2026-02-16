@@ -12,18 +12,28 @@ class MainApp {
   private chatManager: ChatManager;
 
   constructor() {
+    console.log('[MainApp] Constructor started...');
     // Инициализация всех модулей
+    console.log('[MainApp] Creating GameEngine...');
     this.gameEngine = new GameEngine('canvasContainer');
+    console.log('[MainApp] Creating NetworkManager...');
     this.networkManager = new NetworkManager();
+    console.log('[MainApp] Creating InputManager...');
     this.inputManager = new InputManager();
+    console.log('[MainApp] Creating UIController...');
     this.uiController = new UIController();
+    console.log('[MainApp] Creating ChatManager...');
     this.chatManager = new ChatManager();
 
+    console.log('[MainApp] Setting up interactions...');
     // Настройка взаимодействия между модулями
     this.setupInteractions();
 
+    console.log('[MainApp] Starting game engine...');
     // Запуск игры
     this.gameEngine.start();
+    
+    console.log('[MainApp] Constructor finished!');
   }
 
   /**
@@ -38,56 +48,61 @@ class MainApp {
    * Настройка взаимодействия между модулями
    */
   private setupInteractions(): void {
+    console.log('[MainApp] Setting up interactions...');
+    
     // Обработка создания комнаты
     this.uiController.onCreateRoom = async () => {
+      console.log('[MainApp] onCreateRoom called! Starting room creation...');
       try {
-        // Создаём комнату через NetworkManager
-        await this.networkManager.createRoom();
+        console.log('[MainApp] Calling networkManager.createRoom()...');
+        const roomId = await this.networkManager.createRoom();
+        console.log('[MainApp] Room created with ID:', roomId);
 
-        // Переключаемся в комнату
+        console.log('[MainApp] Switching to room view...');
         this.uiController.setView('room');
 
-        // Подключаем чат к комнате и показываем ID
+        console.log('[MainApp] Getting current room...');
         const room = this.networkManager.getCurrentRoom();
         if (room) {
+          console.log('[MainApp] Attaching chat to room...');
           this.chatManager.attachToRoom(room);
+          console.log('[MainApp] Updating room ID display...');
           this.uiController.updateRoomIdFromRoom(room);
+        } else {
+          console.error('[MainApp] Current room is null after createRoom!');
         }
 
-        // Устанавливаем имя игрока (временно фиктивное)
+        console.log('[MainApp] Setting player name...');
         this.uiController.setPlayerName('Player 1');
 
-        // Подписываемся на обновления состояния комнаты
+        console.log('[MainApp] Setting up room state listener...');
         this.setupRoomStateListener();
       } catch (error) {
-        console.error('Failed to create room:', error);
+        console.error('[MainApp] ERROR in onCreateRoom:', error);
         alert('Failed to create room. Please try again.');
       }
     };
 
     // Обработка присоединения к комнате
     this.uiController.onJoinRoom = async (roomId) => {
+      console.log('[MainApp] onJoinRoom called with roomId:', roomId);
       try {
-        // Присоединяемся к комнате
+        console.log('[MainApp] Calling networkManager.joinRoom()...');
         await this.networkManager.joinRoom(roomId);
+        console.log('[MainApp] Joined room successfully');
 
-        // Переключаемся в комнату
         this.uiController.setView('room');
 
-        // Подключаем чат к комнате и показываем ID
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
           this.uiController.updateRoomIdFromRoom(room);
         }
 
-        // Устанавливаем имя игрока (временно фиктивное)
         this.uiController.setPlayerName('Player 2');
-
-        // Подписываемся на обновления состояния комнаты
         this.setupRoomStateListener();
       } catch (error) {
-        console.error('Failed to join room:', error);
+        console.error('[MainApp] ERROR in onJoinRoom:', error);
         alert('Failed to join room. Invalid room ID or connection error.');
       }
     };
