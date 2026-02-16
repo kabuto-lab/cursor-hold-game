@@ -10,10 +10,11 @@ export class NetworkManager {
   private currentRoom: Room | null = null;
   private readonly serverUrl: string;
 
-  constructor(serverUrl: string = (import.meta as any).env?.VITE_SERVER_URL || 'ws://localhost:2567') {
-    this.serverUrl = serverUrl;
+  constructor(serverUrl?: string) {
+    // HARDCODE: для теста используем прод-сервер
+    this.serverUrl = serverUrl || 'wss://cursor-hold-game-server.onrender.com';
     this.client = new Client(this.serverUrl);
-    
+
     console.log('[NetworkManager] Server URL:', this.serverUrl);
   }
 

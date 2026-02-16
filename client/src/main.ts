@@ -4,6 +4,10 @@ import { InputManager } from './core/InputManager';
 import { UIController } from './ui/UIController';
 import { ChatManager } from './chat/ChatManager';
 
+// === DEBUG: main.ts загружен ===
+console.log('=== MAIN.TS LOADED ===');
+console.log('window.addEventListener load registering...');
+
 class MainApp {
   private gameEngine: GameEngine;
   private networkManager: NetworkManager;
@@ -129,6 +133,11 @@ class MainApp {
 }
 
 // Запуск приложения при загрузке страницы
+console.log('window.addEventListener("load") registering callback...');
 window.addEventListener('load', () => {
+  console.log('=== LOAD EVENT FIRED ===');
+  console.log('Creating new MainApp()...');
   new MainApp();
+  console.log('MainApp() created!');
 });
+console.log('window.addEventListener("load") callback registered');
