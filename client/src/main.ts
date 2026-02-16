@@ -1,29 +1,40 @@
 import { GameEngine } from './core/GameEngine';
 import { NetworkManager } from './core/NetworkManager';
+import { InputManager } from './core/InputManager';
 import { UIController } from './ui/UIController';
 import { ChatManager } from './chat/ChatManager';
+import { CursorManager } from './features/cursor/CursorManager';
+import { CursorRenderer } from './features/cursor/CursorRenderer';
 
 console.log('[MainApp] main.ts loaded');
 
 class MainApp {
   private gameEngine!: GameEngine;
   private networkManager!: NetworkManager;
+  private inputManager!: InputManager;
   private uiController!: UIController;
   private chatManager!: ChatManager;
+  private cursorManager!: CursorManager;
 
   constructor() {
     console.log('[MainApp] Constructor started...');
-    
+
     try {
       console.log('[MainApp] Creating GameEngine...');
       this.gameEngine = new GameEngine();
       console.log('[MainApp] Creating NetworkManager...');
       this.networkManager = new NetworkManager();
+      console.log('[MainApp] Creating InputManager...');
+      this.inputManager = new InputManager();
       console.log('[MainApp] Creating UIController...');
       this.uiController = new UIController();
       console.log('[MainApp] Creating ChatManager...');
       this.chatManager = new ChatManager();
-      
+      console.log('[MainApp] Creating CursorManager...');
+      this.cursorManager = new CursorManager(this.inputManager, this.networkManager);
+      console.log('[MainApp] Creating CursorRenderer...');
+      new CursorRenderer(this.gameEngine.app!.stage, this.cursorManager);
+
       console.log('[MainApp] Setting up interactions...');
       this.setupInteractions();
       

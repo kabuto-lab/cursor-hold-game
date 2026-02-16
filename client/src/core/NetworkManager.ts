@@ -147,4 +147,13 @@ export class NetworkManager {
     }
     return null;
   }
+
+  /**
+   * Отправить обновление позиции курсора
+   */
+  sendCursorUpdate(x: number, y: number): void {
+    if (this.currentRoom) {
+      this.currentRoom.send('updateCursor', { x, y });
+    }
+  }
 }
