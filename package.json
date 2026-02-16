@@ -9,7 +9,6 @@
     "build:server": "cd server && npm run build",
     "start": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "test": "npm run test --workspaces",
-    "prepare": "husky install"
   },
   "keywords": [
     "game",
