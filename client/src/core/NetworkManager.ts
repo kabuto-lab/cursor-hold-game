@@ -161,6 +161,13 @@ export class NetworkManager {
   }
 
   /**
+   * Получить sessionId текущей комнаты
+   */
+  getSessionId(): string | null {
+    return this.currentRoom?.sessionId || null;
+  }
+
+  /**
    * Настроить обработчики сообщений комнаты
    */
   private setupRoomMessageHandlers(): void {

@@ -315,9 +315,21 @@ export class HoldingRoom extends Room<RoomState> {
       if (player && typeof data.x === 'number' && typeof data.y === 'number') {
         player.cursorX = data.x;
         player.cursorY = data.y;
-        
+
         // Broadcast cursor update to other players
         this.broadcast('cursorUpdate', {
+          playerId: client.sessionId,
+          x: data.x,
+          y: data.y
+        }, { except: client });
+      }
+    });
+
+    // Handle follower updates (new simplified cursor system)
+    this.onMessage('followerUpdate', (client, data) => {
+      if (typeof data.x === 'number' && typeof data.y === 'number') {
+        // Broadcast follower position to other players only
+        this.broadcast('followerUpdate', {
           playerId: client.sessionId,
           x: data.x,
           y: data.y

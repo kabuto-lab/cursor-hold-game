@@ -11,6 +11,9 @@ export class InputManager {
     rightButton: boolean;
   };
 
+  // Callback для обновления позиции мыши (для follower circle)
+  public onMouseMove?: (x: number, y: number) => void;
+
   constructor() {
     this.keyboardState = new Map();
     this.mouseState = {
@@ -40,6 +43,11 @@ export class InputManager {
     window.addEventListener('mousemove', (e) => {
       this.mouseState.x = e.clientX;
       this.mouseState.y = e.clientY;
+      
+      // Вызываем callback для follower circle
+      if (this.onMouseMove) {
+        this.onMouseMove(e.clientX, e.clientY);
+      }
     });
 
     window.addEventListener('mousedown', (e) => {

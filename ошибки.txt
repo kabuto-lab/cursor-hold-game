@@ -1,538 +1,105 @@
 ================================================================================
-CURSOR HOLD — ПОЛНАЯ ДИАГНОСТИКА ПРОЕКТА
+CURSOR HOLD — FOLLOWER CIRCLES (НОВАЯ РЕАЛИЗАЦИЯ)
 ================================================================================
 Дата: 2026-02-16
-Версия: v26 (с курсорами)
-Проблема: Курсоры не видны после создания комнаты
+Версия: v27 (follower circles — упрощённая версия)
 
 ================================================================================
-СИМПТОМЫ
+КОНЦЕПЦИЯ
 ================================================================================
 
-1. Create Room работает — ID комнаты появляется
-2. Join Room работает — второй игрок подключается
-3. НО курсоры не видны (ни свой, ни чужой)
+У создателя комнаты (первый игрок) появляется КРАСНЫЙ круг, который следует
+за его мышью → но отображается ТОЛЬКО у второго игрока
 
-ВАЖНО: По архитектуре СВОЙ курсор НЕ должен рендериться (игрок видит только чужой)
+У второго игрока появляется СИНИЙ круг, который следует за его мышью →
+но отображается ТОЛЬКО у первого игрока (создателя)
 
-================================================================================
-ПОЛНАЯ СТРУКТУРА ПРОЕКТА
-================================================================================
-
-C:\__Qwen1\TOVCH\
-├── package.json                          # Корневой package.json
-├── commit_changes.bat                    # Скрипт коммита
-├── README.md                             # Документация
-├── инструкция_по_запуску.txt             # Инструкция
-├── описание_проекта.txt                  # Описание
-├── ошибки.txt                            # Этот файл
-├── состояние_проекта.txt                 # Состояние
-├── сравнение.txt                         # Сравнение версий
-├── структура.txt                         # Структура
-├── ядумал.txt                            # Заметки
-├── КОНТЕКСТ_ДЛЯ_QWEN.txt                 # Контекст для AI
-├── .gitignore                            # Git ignore
-├── .husky/                               # Git hooks
-├── .qwen/                                # Qwen настройки
-├── client/                               # Клиент (Vite + PixiJS v8)
-│   ├── package.json                      # Client dependencies
-│   ├── index.html                        # HTML + CSS
-│   ├── tsconfig.json                     # TypeScript config
-│   ├── vite.config.ts                    # Vite config
-│   └── src/
-│       ├── main.ts                       # Точка входа
-│       ├── core/
-│       │   ├── GameEngine.ts             # Pixi Application
-│       │   ├── NetworkManager.ts         # Colyseus клиент
-│       │   └── InputManager.ts           # Мышь/клавиатура
-│       ├── features/
-│       │   ├── cursor/                   # ← НОВАЯ ФУНКЦИЯ
-│       │   │   ├── CursorManager.ts      # Логика курсоров
-│       │   │   └── CursorRenderer.ts     # Рендер курсоров
-│       │   ├── battle/
-│       │   │   ├── BattleManager.ts
-│       │   │   ├── BattleRenderer.ts
-│       │   │   └── VirusParamsUI.ts
-│       │   └── chat/
-│       │       └── ChatManager.ts
-│       ├── ui/
-│       │   └── UIController.ts
-│       ├── chat/
-│       │   └── ChatManager.ts
-│       └── types/
-│           ├── pixi-extend.d.ts
-│           ├── pixi-filters.d.ts
-│           └── schema.ts
-└── server/                               # Сервер (Colyseus)
-    ├── package.json                      # Server dependencies
-    ├── tsconfig.json                     # TypeScript config
-    └── src/
-        ├── index.ts                      # Точка входа
-        └── rooms/
-            ├── HoldingRoom.ts            # Игровая комната
-            └── schema.ts                 # Schema типы
+Эффект: «погоня за курсором» с запаздыванием (lerp 0.15)
+Никто не видит свой собственный круг
 
 ================================================================================
-ФАЙЛЫ КУРСОРОВ (features/cursor)
+УДАЛЁННЫЕ ФАЙЛЫ (СТАРАЯ РЕАЛИЗАЦИЯ)
 ================================================================================
 
-=== client/src/features/cursor/CursorManager.ts ===
+❌ client/src/features/cursor/CursorManager.ts
+❌ client/src/features/cursor/CursorRenderer.ts
+❌ client/src/features/cursor/CursorDebugUI.ts
 
-import { InputManager } from '../../core/InputManager';
-import { NetworkManager } from '../../core/NetworkManager';
+================================================================================
+НОВЫЕ ФАЙЛЫ
+================================================================================
 
-export class CursorManager {
-  private inputManager: InputManager;
-  private networkManager: NetworkManager;
-  private lastSendTime: number = 0;
-  private readonly sendInterval: number = 33;
-
-  private remoteCursors: Map<string, { x: number; y: number }> = new Map();
-
-  constructor(inputManager: InputManager, networkManager: NetworkManager) {
-    this.inputManager = inputManager;
-    this.networkManager = networkManager;
-    this.setupNetworkListeners();
-    this.startSending();
-  }
-
-  private setupNetworkListeners(): void {
-    this.networkManager.onMessage('cursorUpdate', (data: { playerId: string; x: number; y: number }) => {
-      if (data.playerId && typeof data.x === 'number' && typeof data.y === 'number') {
-        this.remoteCursors.set(data.playerId, { x: data.x, y: data.y });
-      }
-    });
-  }
-
-  private startSending(): void {
-    const sendLoop = () => {
-      const now = Date.now();
-      if (now - this.lastSendTime >= this.sendInterval) {
-        this.sendCursorUpdate();
-        this.lastSendTime = now;
-      }
-      requestAnimationFrame(sendLoop);
-    };
-    requestAnimationFrame(sendLoop);
-  }
-
-  private sendCursorUpdate(): void {
-    const pos = this.inputManager.getMousePosition();
-    this.networkManager.sendCursorUpdate(pos.x, pos.y);
-  }
-
-  getRemoteCursor(playerId: string): { x: number; y: number } | null {
-    return this.remoteCursors.get(playerId) || null;
-  }
-
-  getAllRemoteCursors(): Map<string, { x: number; y: number }> {
-    return new Map(this.remoteCursors);
-  }
-
-  removeRemoteCursor(playerId: string): void {
-    this.remoteCursors.delete(playerId);
-  }
-
-  clearRemoteCursors(): void {
-    this.remoteCursors.clear();
-  }
-}
-
-=== client/src/features/cursor/CursorRenderer.ts ===
-
-import * as PIXI from 'pixi.js';
-import { CursorManager } from './CursorManager';
-
-export class CursorRenderer {
-  private stage: PIXI.Container;
-  private cursorManager: CursorManager;
-  private cursorGraphics: Map<string, PIXI.Graphics> = new Map();
-  private cursorPositions: Map<string, { x: number; y: number }> = new Map();
-  private readonly lerpFactor: number = 0.3;
-
-  constructor(stage: PIXI.Container, cursorManager: CursorManager) {
-    this.stage = stage;
-    this.cursorManager = cursorManager;
-    this.startRendering();
-  }
-
-  private generateColorFromId(playerId: string): number {
-    let hash = 0;
-    for (let i = 0; i < playerId.length; i++) {
-      hash = playerId.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const r = ((hash >> 16) & 0x7F) + 128;
-    const g = ((hash >> 8) & 0x7F) + 128;
-    const b = (hash & 0x7F) + 128;
-    return (r << 16) + (g << 8) + b;
-  }
-
-  private createCursorGraphics(playerId: string): PIXI.Graphics {
-    const graphics = new PIXI.Graphics();
-    const color = this.generateColorFromId(playerId);
-
-    // Круг 15px (радиус 7.5)
-    graphics.circle(0, 0, 7.5);
-    graphics.fill({ color });
-
-    // Стрелка
-    const arrowSize = 8;
-    graphics.moveTo(0, -10);
-    graphics.lineTo(-arrowSize / 2, -10 - arrowSize);
-    graphics.lineTo(arrowSize / 2, -10 - arrowSize);
-    graphics.closePath();
-    graphics.fill({ color });
-
-    graphics.stroke({ width: 2, color: 0xFFFFFF });
-
-    this.stage.addChild(graphics);
-    return graphics;
-  }
-
-  private updateCursor(playerId: string, targetX: number, targetY: number): void {
-    let graphics = this.cursorGraphics.get(playerId);
-
-    if (!graphics) {
-      graphics = this.createCursorGraphics(playerId);
-      this.cursorGraphics.set(playerId, graphics);
-      this.cursorPositions.set(playerId, { x: targetX, y: targetY });
-    }
-
-    const currentPos = this.cursorPositions.get(playerId);
-    if (currentPos) {
-      const newX = currentPos.x + (targetX - currentPos.x) * this.lerpFactor;
-      const newY = currentPos.y + (targetY - currentPos.y) * this.lerpFactor;
-
-      graphics.x = newX;
-      graphics.y = newY;
-
-      currentPos.x = newX;
-      currentPos.y = newY;
-    }
-  }
-
-  private removeCursor(playerId: string): void {
-    const graphics = this.cursorGraphics.get(playerId);
-    if (graphics) {
-      this.stage.removeChild(graphics);
-      graphics.destroy({ children: true });
-      this.cursorGraphics.delete(playerId);
-      this.cursorPositions.delete(playerId);
-    }
-  }
-
-  private startRendering(): void {
-    const renderLoop = () => {
-      const remoteCursors = this.cursorManager.getAllRemoteCursors();
-      const activePlayerIds = new Set(remoteCursors.keys());
-
-      for (const [playerId, pos] of remoteCursors.entries()) {
-        this.updateCursor(playerId, pos.x, pos.y);
-      }
-
-      for (const playerId of this.cursorGraphics.keys()) {
-        if (!activePlayerIds.has(playerId)) {
-          this.removeCursor(playerId);
-        }
-      }
-
-      requestAnimationFrame(renderLoop);
-    };
-    requestAnimationFrame(renderLoop);
-  }
-
-  clear(): void {
-    for (const playerId of this.cursorGraphics.keys()) {
-      this.removeCursor(playerId);
-    }
-  }
-}
+✅ client/src/features/follower/FollowerCircle.ts
 
 ================================================================================
 ИЗМЕНЁННЫЕ ФАЙЛЫ
 ================================================================================
 
-=== client/src/main.ts ===
+📝 client/src/main.ts
+   - Добавлен import FollowerCircle
+   - Добавлено поле: private followerCircle!: FollowerCircle
+   - Создание FollowerCircle после инициализации PixiJS
+   - Подключение inputManager.onMouseMove к followerCircle.updateLocalPosition()
+   - Вызов followerCircle.onRoomJoined() при create/join комнаты
 
-import { GameEngine } from './core/GameEngine';
-import { NetworkManager } from './core/NetworkManager';
-import { InputManager } from './core/InputManager';
-import { UIController } from './ui/UIController';
-import { ChatManager } from './chat/ChatManager';
-import { CursorManager } from './features/cursor/CursorManager';
-import { CursorRenderer } from './features/cursor/CursorRenderer';
+📝 client/src/core/InputManager.ts
+   - Добавлено поле: public onMouseMove?: (x: number, y: number) => void
+   - Вызов onMouseMove в обработчике mousemove
 
-class MainApp {
-  private gameEngine!: GameEngine;
-  private networkManager!: NetworkManager;
-  private inputManager!: InputManager;
-  private uiController!: UIController;
-  private chatManager!: ChatManager;
-  private cursorManager!: CursorManager;
+📝 client/src/core/NetworkManager.ts
+   - Добавлен метод: getSessionId(): string | null
 
-  constructor() {
-    this.gameEngine = new GameEngine();
-    this.networkManager = new NetworkManager();
-    this.inputManager = new InputManager();
-    this.uiController = new UIController();
-    this.chatManager = new ChatManager();
-
-    this.setupInteractions();
-
-    this.gameEngine.init('canvasContainer').then(() => {
-      console.log('[MainApp] GameEngine initialized!');
-      
-      // Создаём курсоры ПОСЛЕ инициализации PixiJS
-      this.cursorManager = new CursorManager(this.inputManager, this.networkManager);
-      new CursorRenderer(this.gameEngine.app!.stage, this.cursorManager);
-      
-      console.log('[MainApp] Cursor system initialized!');
-      this.gameEngine.start();
-    }).catch((error) => {
-      console.error('[MainApp] GameEngine init ERROR:', error);
-    });
-  }
-
-  private setupInteractions(): void {
-    this.uiController.onCreateRoom = async () => {
-      const roomId = await this.networkManager.createRoom();
-      this.uiController.setView('room');
-      this.uiController.showCreatedRoomId(roomId);
-      const room = this.networkManager.getCurrentRoom();
-      if (room) { this.chatManager.attachToRoom(room); }
-      this.uiController.setPlayerName('Player 1');
-    };
-
-    this.uiController.onJoinRoom = async (roomId) => {
-      await this.networkManager.joinRoom(roomId);
-      this.uiController.setView('room');
-      this.uiController.showCreatedRoomId(roomId);
-      const room = this.networkManager.getCurrentRoom();
-      if (room) { this.chatManager.attachToRoom(room); }
-      this.uiController.setPlayerName('Player 2');
-    };
-  }
-}
-
-window.addEventListener('load', () => {
-  new MainApp();
-});
-
-=== client/src/core/NetworkManager.ts ===
-
-import { Client } from 'colyseus.js';
-import { Room } from 'colyseus.js';
-
-export class NetworkManager {
-  private client: Client;
-  private currentRoom: Room | null = null;
-  private readonly serverUrl: string;
-
-  constructor(serverUrl?: string) {
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    this.serverUrl = serverUrl || (isLocalhost ? 'ws://localhost:2567' : 'wss://cursor-hold-game-server.onrender.com');
-    this.client = new Client(this.serverUrl);
-  }
-
-  async createRoom(): Promise<string> {
-    this.currentRoom = await this.client.joinOrCreate('holding_room');
-    const roomId = this.currentRoom.state?.roomId || this.currentRoom.id;
-    this.setupRoomMessageHandlers();
-    return roomId;
-  }
-
-  async joinRoom(roomId: string): Promise<Room> {
-    this.currentRoom = await this.client.joinById(roomId);
-    this.setupRoomMessageHandlers();
-    return this.currentRoom;
-  }
-
-  onMessage(messageType: string, callback: (data: any) => void): void {
-    if (this.currentRoom) {
-      this.currentRoom.onMessage(messageType, (data) => {
-        callback(data);
-      });
-    } else {
-      console.warn('No active room to listen to messages from');
-    }
-  }
-
-  private setupRoomMessageHandlers(): void {
-    if (!this.currentRoom) return;
-    console.log('[NetworkManager] setupRoomMessageHandlers called, sessionId:', this.currentRoom.sessionId);
-  }
-
-  sendCursorUpdate(x: number, y: number): void {
-    if (this.currentRoom) {
-      this.currentRoom.send('updateCursor', { x, y });
-    }
-  }
-}
-
-=== client/src/core/InputManager.ts ===
-
-export class InputManager {
-  private keyboardState: Map<string, boolean>;
-  private mouseState: { x: number; y: number; leftButton: boolean; rightButton: boolean };
-
-  constructor() {
-    this.keyboardState = new Map();
-    this.mouseState = { x: 0, y: 0, leftButton: false, rightButton: false };
-    this.setupEventListeners();
-  }
-
-  private setupEventListeners(): void {
-    window.addEventListener('mousemove', (e) => {
-      this.mouseState.x = e.clientX;
-      this.mouseState.y = e.clientY;
-    });
-    // ... keyboard and mouse buttons
-  }
-
-  getMousePosition(): { x: number; y: number } {
-    return { x: this.mouseState.x, y: this.mouseState.y };
-  }
-}
-
-=== client/src/core/GameEngine.ts ===
-
-import * as PIXI from 'pixi.js';
-
-export class GameEngine {
-  app: PIXI.Application | null = null;
-  private ticker: PIXI.Ticker | null = null;
-
-  async init(containerId: string): Promise<void> {
-    this.app = new PIXI.Application();
-    await this.app.init({
-      backgroundColor: 0x1a1a1a,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      antialias: true,
-      autoDensity: true,
-      resolution: Math.min(window.devicePixelRatio, 2),
-    });
-    this.ticker = this.app.ticker;
-    this.app.canvas.style.pointerEvents = 'none';
-    document.getElementById(containerId)!.appendChild(this.app.canvas);
-  }
-
-  start(): void {
-    if (this.ticker) { this.ticker.start(); }
-  }
-}
-
-=== server/src/rooms/HoldingRoom.ts (cursor handling) ===
-
-this.onMessage('updateCursor', (client, data) => {
-  const player = this.state.players.get(client.sessionId);
-  if (player && typeof data.x === 'number' && typeof data.y === 'number') {
-    player.cursorX = data.x;
-    player.cursorY = data.y;
-
-    this.broadcast('cursorUpdate', {
-      playerId: client.sessionId,
-      x: data.x,
-      y: data.y
-    }, { except: client });
-  }
-});
+📝 server/src/rooms/HoldingRoom.ts
+   - Добавлен обработчик: this.onMessage('followerUpdate', ...)
 
 ================================================================================
-ПРОБЛЕМА: ПОЧЕМУ КУРСОРЫ НЕ ВИДНЫ?
+АРХИТЕКТУРА НОВОЙ СИСТЕМЫ
 ================================================================================
 
-ГЛАВНАЯ ПРИЧИНА: CursorRenderer получает stage ДО того, как canvas добавлен в DOM
+client/src/features/follower/FollowerCircle.ts
+──────────────────────────────────────────────
+- Один класс вместо трёх (упрощение)
+- Красный круг (0xff0000) для создателя
+- Синий круг (0x0000ff) для присоединившегося
+- Интерполяция с lerp = 0.15 (запаздывание)
+- Отправка позиции каждые ~50 мс (Math.random() < 0.1 при 60fps)
+- Свой круг скрыт (graphics.visible = false)
 
-ПОСЛЕДОВАТЕЛЬНОСТЬ СОБЫТИЙ:
-1. main.ts: gameEngine.init('canvasContainer') — асинхронно
-2. main.ts: cursorManager = new CursorManager() — СРАЗУ (ошибка!)
-3. main.ts: cursorRenderer = new CursorRenderer(stage) — СРАЗУ (ошибка!)
-4. PixiJS завершает init() — canvas добавляется в DOM
-
-ИСПРАВЛЕНИЕ:CursorManager и CursorRenderer должны создаваться ВНУТРИ .then() 
-после gameEngine.init()
-
-================================================================================
-ТЕКУЩАЯ ПОСЛЕДОВАТЕЛЬНОСТЬ (main.ts)
-================================================================================
-
-this.gameEngine.init('canvasContainer').then(() => {
-  console.log('[MainApp] GameEngine initialized!');
-  
-  // Создаём курсоры ПОСЛЕ инициализации PixiJS
-  this.cursorManager = new CursorManager(this.inputManager, this.networkManager);
-  new CursorRenderer(this.gameEngine.app!.stage, this.cursorManager);
-  
-  console.log('[MainApp] Cursor system initialized!');
-  this.gameEngine.start();
-});
-
-ЭТО ДОЛЖНО РАБОТАТЬ! Но если нет — проверяем логи.
+Сервер (HoldingRoom.ts)
+───────────────────────
+- Обработчик 'followerUpdate'
+- Broadcast другим игрокам ({ except: client })
 
 ================================================================================
-ЛОГИ ДЛЯ ДИАГНОСТИКИ
+КАК ЭТО РАБОТАЕТ (ПОШАГОВО)
 ================================================================================
 
-Открыть консоль браузера (F12) и искать:
+1. ИГРОК 1 (СОЗДАТЕЛЬ):
+   - Нажимает "CREATE ROOM"
+   - Вызывается: followerCircle.onRoomJoined(true, sessionId)
+   - isCreator = true, localPlayerId = sessionId
+   - При движении мыши: updateLocalPosition(x, y)
+   - Отправка на сервер: 'followerUpdate' { x, y }
+   - Сервер рассылает ИГРОКУ 2: 'followerUpdate' { playerId: sessionId, x, y }
+   - Игрок 2 создаёт красный круг для sessionId
 
-[MainApp] GameEngine initialized!
-[MainApp] Creating CursorManager...
-[MainApp] Creating CursorRenderer...
-[MainApp] Cursor system initialized!
+2. ИГРОК 2 (ПРИСОЕДИНИВШИЙСЯ):
+   - Вводит ID комнаты, нажимает "JOIN ROOM"
+   - Вызывается: followerCircle.onRoomJoined(false, sessionId)
+   - isCreator = false, localPlayerId = sessionId
+   - При движении мыши: updateLocalPosition(x, y)
+   - Отправка на сервер: 'followerUpdate' { x, y }
+   - Сервер рассылает ИГРОКУ 1: 'followerUpdate' { playerId: sessionId, x, y }
+   - Игрок 1 создаёт синий круг для sessionId
 
-[NetworkManager] Room created: <ID>
-[CursorManager] setupNetworkListeners called
-[CursorRenderer] startRendering called
-
-Если курсоры не видны, проверить:
-- Есть ли graphics на stage: console.log(stage.children)
-- Приходят ли cursorUpdate: добавить лог в setupNetworkListeners()
-- Правильные ли координаты: добавить лог в sendCursorUpdate()
-
-================================================================================
-ВОЗМОЖНЫЕ ПРИЧИНЫ И РЕШЕНИЯ
-================================================================================
-
-1. КУРСОРЫ НЕ СОЗДАЮТСЯ
-   → Проверить: console.log(stage.children.length)
-   → Должно быть > 0 после подключения второго игрока
-
-2. КУРСОРЫ СОЗДАЮТСЯ, НО НЕ ВИДНЫ
-   → Проверить z-index canvas (должен быть < 100)
-   → Проверить, не перекрывает ли sidebar
-
-3. КООРДИНАТЫ НЕВЕРНЫЕ
-   → InputManager использует clientX/Y (относительно окна)
-   → PixiJS использует координаты canvas
-   → Нужно преобразование: canvas.getBoundingClientRect()
-
-4. СЕТЬ НЕ РАБОТАЕТ
-   → Проверить: сервер запущен на порту 2567
-   → Проверить: оба клиента в одной комнате
+3. ВИЗУАЛИЗАЦИЯ:
+   - Каждый тик (PIXI.Ticker.shared): update(deltaTime)
+   - Интерполяция: currentX += (targetX - currentX) * 0.15 * delta
+   - graphics.position.set(currentX, currentY)
+   - Если playerId === localPlayerId → graphics.visible = false
 
 ================================================================================
-КАК ПРОВЕРИТЬ (ПОШАГОВО)
-================================================================================
-
-1. ОТКРЫТЬ КОНСОЛЬ (F12)
-2. СОЗДАТЬ КОМНАТУ
-3. ВВЕСТИ В КОНСОЛИ:
-   
-   // Проверка stage
-   const app = window.pixiApp; // если доступно
-   console.log('Stage children:', app?.stage.children.length);
-   
-   // Проверка курсоров
-   console.log('Remote cursors:', cursorManager?.getAllRemoteCursors());
-
-4. ОТКРЫТЬ ВТОРОЕ ОКНО
-5. ВОЙТИ В КОМНАТУ
-6. ДВИГАТЬ МЫШЬЮ
-7. СМОТРЕТЬ ЛОГИ В ПЕРВОМ ОКНЕ
-
-================================================================================
-ИНСТРУКЦИЯ ПО ЗАПУСКУ
+ИНСТРУКЦИЯ ПО ТЕСТИРОВАНИЮ
 ================================================================================
 
 1. ОТКРЫТЬ ДВЕ КОНСОЛИ
@@ -546,33 +113,105 @@ this.gameEngine.init('canvasContainer').then(() => {
   npm run dev:client
 
 2. ОТКРЫТЬ БРАУЗЕР: http://localhost:5173
-3. НАЖАТЬ "CREATE ROOM"
-4. ОТКРЫТЬ ВТОРОЕ ОКНО (инкогнито)
-5. ВВЕСТИ ID → "JOIN ROOM"
-6. ДВИГАТЬ МЫШЬЮ
+3. НАЖАТЬ "CREATE ROOM" (Игрок 1)
+4. ОТКРЫТЬ ВТОРОЕ ОКНО (инкогнито): http://localhost:5173
+5. ВВЕСТИ ID КОМНАТЫ → НАЖАТЬ "JOIN ROOM" (Игрок 2)
+6. ДВИГАТЬ МЫШЬЮ ВО ВТОРОМ ОКНЕ:
+   - В первом окне должен появиться КРАСНЫЙ круг (следует за мышью второго)
+7. ДВИГАТЬ МЫШЬЮ В ПЕРВОМ ОКНЕ:
+   - Во втором окне должен появиться СИНИЙ круг (следует за мышью первого)
 
 ================================================================================
-ДЕБАГ КОД (ДОБАВИТЬ В CursorRenderer.ts)
+ЛОГИ ДЛЯ ПРОВЕРКИ
 ================================================================================
 
-Добавить логи для диагностики:
+В консоли браузера (оба окна):
 
-private createCursorGraphics(playerId: string): PIXI.Graphics {
-  console.log('[CursorRenderer] Creating cursor for playerId:', playerId);
-  const graphics = new PIXI.Graphics();
-  // ... остальной код
-  console.log('[CursorRenderer] Graphics created, adding to stage');
-  console.log('[CursorRenderer] Stage children count:', this.stage.children.length);
-  return graphics;
-}
+[MainApp] GameEngine initialized!
+[MainApp] Creating FollowerCircle...
+[FollowerCircle] Initialized on stage
+[MainApp] Follower system initialized!
 
-private setupNetworkListeners(): void {
-  console.log('[CursorManager] setupNetworkListeners called');
-  this.networkManager.onMessage('cursorUpdate', (data) => {
-    console.log('[CursorManager] Received cursorUpdate:', data);
-    // ... остальной код
-  });
-}
+При создании/присоединении:
+[FollowerCircle] Local player set: abc123xyz, isCreator: true/false
+
+При движении мыши (отправка ~20 раз в секунду):
+(логов нет, чтобы не спамить)
+
+При получении обновления от другого игрока:
+(логов нет, круг просто движется)
+
+================================================================================
+ВОЗМОЖНЫЕ ПРОБЛЕМЫ И РЕШЕНИЯ
+================================================================================
+
+1. КРУГИ НЕ ВИДНЫ
+   → Проверить консоль: есть ли "[FollowerCircle] Created follower graphics"
+   → Проверить zIndex: graphics.zIndex = 1000
+   → Проверить alpha: graphics.alpha = 0.8
+
+2. КРУГИ ДВИЖУТСЯ СЛИШКОМ БЫСТРО (БЕЗ ЗАПАЗДЫВАНИЯ)
+   → Уменьшить lerp в update(): const lerp = 0.15 → 0.05
+
+3. КРУГИ ДВИЖУТСЯ СЛИШКОМ МЕДЛЕННО
+   → Увеличить lerp: const lerp = 0.15 → 0.3
+
+4. ОТСУТСТВУЕТ getSessionId()
+   → Проверить NetworkManager.ts: метод добавлен после getState()
+
+5. onMouseMove НЕ ВЫЗЫВАЕТСЯ
+   → Проверить InputManager.ts: callback вызывается в mousemove обработчике
+
+================================================================================
+ПАРАМЕТРЫ ДЛЯ НАСТРОЙКИ
+================================================================================
+
+FollowerCircle.ts, строка ~85:
+  g.drawCircle(0, 0, 15);           // Радиус круга (15px)
+
+FollowerCircle.ts, строка ~87:
+  g.stroke({ width: 3, color: 0xffffff });  // Белая обводка 3px
+
+FollowerCircle.ts, строка ~88:
+  g.alpha = 0.8;                    // Прозрачность (0.0 - 1.0)
+
+FollowerCircle.ts, строка ~98:
+  const lerp = 0.15;                // Коэффициент интерполяции
+                                    // Меньше = больше запаздывание
+
+FollowerCircle.ts, строка ~47:
+  if (Math.random() < 0.1)          // Частота отправки (~50 мс при 60fps)
+                                    // 0.1 = ~6 раз в секунду
+                                    // 0.2 = ~12 раз в секунду
+
+FollowerCircle.ts, строка ~61:
+  color: playerId === 'creator' ? 0xff0000 : 0x0000ff
+                                    // Красный для создателя, синий для joiner
+
+================================================================================
+СРАВНЕНИЕ: СТАРАЯ vs НОВАЯ РЕАЛИЗАЦИЯ
+================================================================================
+
+| Характеристика        | Старая (Cursor*)          | Новая (FollowerCircle)    |
+|-----------------------|---------------------------|---------------------------|
+| Файлов                | 3 файла                   | 1 файл                    |
+| Сложность             | Высокая (callbacks, UI)   | Низкая (всё в одном)      |
+| Debug UI              | Есть (координаты)         | Нет (упрощено)            |
+| Цвет курсора          | Генерация из playerId     | Красный/Синий фиксировано |
+| Видимость             | Свой не виден             | Свой не виден             |
+| Интерполяция          | lerp 0.3                  | lerp 0.15 (больше задержка)|
+| Отправка позиции      | Каждые 33 мс              | ~50 мс (random < 0.1)     |
+| PixiJS ticker         | requestAnimationFrame     | PIXI.Ticker.shared        |
+
+================================================================================
+СЛЕДУЮЩИЕ ШАГИ (ОПЦИОНАЛЬНО)
+================================================================================
+
+⬜ Добавить визуальный эффект "шлейфа" за кругом
+⬜ Добавить звук при "ловле" круга (когда курсор близко)
+⬜ Сделать размер круга зависимым от расстояния до курсора
+⬜ Добавить частицы при движении круга
+⬜ Разделить на 2 файла (FollowerManager + FollowerRenderer)
 
 ================================================================================
 КОНЕЦ ФАЙЛА

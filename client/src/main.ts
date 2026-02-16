@@ -3,9 +3,7 @@ import { NetworkManager } from './core/NetworkManager';
 import { InputManager } from './core/InputManager';
 import { UIController } from './ui/UIController';
 import { ChatManager } from './chat/ChatManager';
-import { CursorManager } from './features/cursor/CursorManager';
-import { CursorRenderer } from './features/cursor/CursorRenderer';
-import { CursorDebugUI } from './features/cursor/CursorDebugUI';
+import { FollowerCircle } from './features/follower/FollowerCircle';
 
 console.log('[MainApp] main.ts loaded');
 
@@ -15,8 +13,7 @@ class MainApp {
   private inputManager!: InputManager;
   private uiController!: UIController;
   private chatManager!: ChatManager;
-  private cursorManager!: CursorManager;
-  private cursorDebugUI!: CursorDebugUI;
+  private followerCircle!: FollowerCircle;
 
   constructor() {
     console.log('[MainApp] Constructor started...');
@@ -36,30 +33,21 @@ class MainApp {
       console.log('[MainApp] Setting up interactions...');
       this.setupInteractions();
 
-      // Инициализация PixiJS (асинхронно) — потом создаём курсоры
+      // Инициализация PixiJS (асинхронно) — потом создаём follower circles
       console.log('[MainApp] Initializing GameEngine...');
       this.gameEngine.init('canvasContainer').then(() => {
         console.log('[MainApp] GameEngine initialized!');
         
-        // Создаём CursorManager и CursorRenderer ПОСЛЕ инициализации PixiJS
-        console.log('[MainApp] Creating CursorManager...');
-        this.cursorManager = new CursorManager(this.inputManager, this.networkManager);
-        console.log('[MainApp] Creating CursorRenderer...');
-        new CursorRenderer(this.gameEngine.app!.stage, this.cursorManager);
-        console.log('[MainApp] Creating CursorDebugUI...');
-        this.cursorDebugUI = new CursorDebugUI();
-
-        // Подключаем UI к CursorManager
-        this.cursorManager.onLocalCursorUpdate = (x, y) => {
-          this.cursorDebugUI.updatePlayer1(x, y);
-        };
-
-        // Для обновления координат второго игрока
-        this.cursorManager.onRemoteCursorUpdate = (_playerId, x, y) => {
-          this.cursorDebugUI.updatePlayer2(x, y);
-        };
+        // Создаём FollowerCircle ПОСЛЕ инициализации PixiJS
+        console.log('[MainApp] Creating FollowerCircle...');
+        this.followerCircle = new FollowerCircle(this.gameEngine.app!.stage, this.networkManager);
         
-        console.log('[MainApp] Cursor system initialized!');
+        // Подключаем InputManager к FollowerCircle
+        this.inputManager.onMouseMove = (x, y) => {
+          this.followerCircle.updateLocalPosition(x, y);
+        };
+
+        console.log('[MainApp] Follower system initialized!');
         this.gameEngine.start();
       }).catch((error) => {
         console.error('[MainApp] GameEngine init ERROR:', error);
@@ -94,6 +82,8 @@ class MainApp {
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
+          // Устанавливаем follower circle для создателя
+          this.followerCircle.onRoomJoined(true, this.networkManager.getSessionId()!);
         }
         this.uiController.setPlayerName('Player 1');
       } catch (error) {
@@ -121,6 +111,8 @@ class MainApp {
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
+          // Устанавливаем follower circle для присоединившегося
+          this.followerCircle.onRoomJoined(false, this.networkManager.getSessionId()!);
         }
         this.uiController.setPlayerName('Player 2');
       } catch (error) {
