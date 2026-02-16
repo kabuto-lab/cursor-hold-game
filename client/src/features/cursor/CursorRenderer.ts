@@ -41,8 +41,8 @@ export class CursorRenderer {
     const graphics = new PIXI.Graphics();
     const color = this.generateColorFromId(playerId);
 
-    // Круг 12px
-    graphics.circle(0, 0, 6);
+    // Круг 15px
+    graphics.circle(0, 0, 7.5);
     graphics.fill({ color });
 
     // Стрелка (треугольник)
