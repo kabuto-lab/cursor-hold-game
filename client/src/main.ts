@@ -4,6 +4,7 @@ import { InputManager } from './core/InputManager';
 import { UIController } from './ui/UIController';
 import { ChatManager } from './chat/ChatManager';
 import { FollowerCircle } from './features/follower/FollowerCircle';
+import { FollowerUI } from './features/follower/FollowerUI';
 
 console.log('[MainApp] main.ts loaded');
 
@@ -14,6 +15,7 @@ class MainApp {
   private uiController!: UIController;
   private chatManager!: ChatManager;
   private followerCircle!: FollowerCircle;
+  private followerUI!: FollowerUI;
 
   constructor() {
     console.log('[MainApp] Constructor started...');
@@ -42,9 +44,22 @@ class MainApp {
         console.log('[MainApp] Creating FollowerCircle...');
         this.followerCircle = new FollowerCircle(this.gameEngine.app!.stage, this.networkManager);
         
+        // Создаём UI для координат
+        console.log('[MainApp] Creating FollowerUI...');
+        this.followerUI = new FollowerUI();
+        
         // Подключаем InputManager к FollowerCircle
         this.inputManager.onMouseMove = (x, y) => {
           this.followerCircle.updateLocalPosition(x, y);
+        };
+        
+        // Подключаем UI к FollowerCircle
+        this.followerCircle.onFollowerUpdate = (playerId, x, y) => {
+          if (playerId === 'creator') {
+            this.followerUI.updateCreator(x, y);
+          } else {
+            this.followerUI.updateJoiner(x, y);
+          }
         };
 
         console.log('[MainApp] Follower system initialized!');

@@ -16,6 +16,9 @@ export class FollowerCircle {
   private localPlayerId: string | null = null;
   private isCreator: boolean = false;
 
+  // Callbacks для UI
+  public onFollowerUpdate?: (playerId: string, x: number, y: number) => void;
+
   constructor(
     private stage: PIXI.Container,
     private networkManager: NetworkManager
@@ -43,6 +46,15 @@ export class FollowerCircle {
     // Отправляем свою позицию серверу (каждые ~50 мс — можно регулировать)
     if (Math.random() < 0.1) { // ~50 мс при 60 fps
       this.networkManager.sendToRoom('followerUpdate', { x, y });
+    }
+
+    // Обновляем UI для локального игрока
+    if (this.onFollowerUpdate) {
+      if (this.isCreator) {
+        this.onFollowerUpdate('creator', x, y);
+      } else {
+        this.onFollowerUpdate('joiner', x, y);
+      }
     }
 
     // Если мы joiner — обновляем свой круг у создателя (но свой не рисуем)
@@ -73,6 +85,16 @@ export class FollowerCircle {
 
     follower.targetX = x;
     follower.targetY = y;
+
+    // Обновляем UI для удалённого игрока
+    if (this.onFollowerUpdate) {
+      if (playerId === 'creator' || this.isCreator) {
+        // Если это создатель или мы создатель — обновляем creator
+        this.onFollowerUpdate('creator', x, y);
+      } else {
+        this.onFollowerUpdate('joiner', x, y);
+      }
+    }
 
     // Создаём графику, если ещё нет
     if (!follower.graphics) {
