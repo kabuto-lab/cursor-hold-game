@@ -2,12 +2,8 @@
 DIGITAL HAND HOLDING - DEBUG FILES DUMP
 ================================================================================
 Дата: 2026-02-16
-Проблема: Кнопка "Create Room" не работает, console.log не появляются вообще
-Симптомы:
-- Консоль браузера полностью пустая (ни одного лога)
-- Network: main.ts загружается (200 OK)
-- Нет WebSocket соединений
-- Нет ошибок JavaScript
+Версия: v27
+Статус: Работает create/join комнат, чат, PixiJS v8 инициализируется
 
 ================================================================================
 === client/index.html ===
@@ -19,7 +15,7 @@ DIGITAL HAND HOLDING - DEBUG FILES DUMP
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Digital Hand Holding - Connect with Someone Special</title>
   <style>
-    /* ... стили опущены для краткости ... */
+    /* Стили опущены для краткости */
   </style>
 </head>
 <body>
@@ -58,16 +54,10 @@ DIGITAL HAND HOLDING - DEBUG FILES DUMP
           </div>
         </div>
       </div>
-      <!-- Sidebars omitted for brevity -->
+      <!-- Sidebars -->
     </div>
   </div>
-
-  <!-- DEBUG: Проверка загрузки скрипта -->
-  <script>
-    console.log('=== HTML LOADED ===');
-    console.log('window.addEventListener load will fire now...');
-  </script>
-
+  
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
@@ -77,52 +67,51 @@ DIGITAL HAND HOLDING - DEBUG FILES DUMP
 === client/src/main.ts ===
 import { GameEngine } from './core/GameEngine';
 import { NetworkManager } from './core/NetworkManager';
-import { InputManager } from './core/InputManager';
 import { UIController } from './ui/UIController';
 import { ChatManager } from './chat/ChatManager';
 
-// === DEBUG: main.ts загружен ===
-console.log('=== MAIN.TS LOADED ===');
-console.log('window.addEventListener load registering...');
+console.log('[MainApp] main.ts loaded');
 
 class MainApp {
-  private gameEngine: GameEngine;
-  private networkManager: NetworkManager;
-  private inputManager: InputManager;
-  private uiController: UIController;
-  private chatManager: ChatManager;
+  private gameEngine!: GameEngine;
+  private networkManager!: NetworkManager;
+  private uiController!: UIController;
+  private chatManager!: ChatManager;
 
   constructor() {
     console.log('[MainApp] Constructor started...');
-    console.log('[MainApp] Creating GameEngine...');
-    this.gameEngine = new GameEngine('canvasContainer');
-    console.log('[MainApp] Creating NetworkManager...');
-    this.networkManager = new NetworkManager();
-    console.log('[MainApp] Creating InputManager...');
-    this.inputManager = new InputManager();
-    console.log('[MainApp] Creating UIController...');
-    this.uiController = new UIController();
-    console.log('[MainApp] Creating ChatManager...');
-    this.chatManager = new ChatManager();
-    console.log('[MainApp] Setting up interactions...');
-    this.setupInteractions();
-    console.log('[MainApp] Starting game engine...');
-    this.gameEngine.start();
-    console.log('[MainApp] Constructor finished!');
-  }
-
-  getInputManager(): InputManager {
-    return this.inputManager;
+    
+    try {
+      this.gameEngine = new GameEngine();
+      this.networkManager = new NetworkManager();
+      this.uiController = new UIController();
+      this.chatManager = new ChatManager();
+      
+      this.setupInteractions();
+      
+      // Инициализация PixiJS (асинхронно)
+      this.gameEngine.init('canvasContainer').then(() => {
+        console.log('[MainApp] GameEngine initialized!');
+        this.gameEngine.start();
+      }).catch((error) => {
+        console.error('[MainApp] GameEngine init ERROR:', error);
+      });
+      
+      console.log('[MainApp] Constructor finished!');
+    } catch (error) {
+      console.error('[MainApp] Constructor ERROR:', error);
+    }
   }
 
   private setupInteractions(): void {
     console.log('[MainApp] Setting up interactions...');
+    
     this.uiController.onCreateRoom = async () => {
       console.log('[MainApp] onCreateRoom called!');
       try {
-        console.log('[MainApp] Calling networkManager.createRoom()...');
         const roomId = await this.networkManager.createRoom();
         console.log('[MainApp] Room created with ID:', roomId);
+        
         this.uiController.setView('room');
         const room = this.networkManager.getCurrentRoom();
         if (room) {
@@ -130,10 +119,9 @@ class MainApp {
           this.uiController.updateRoomIdFromRoom(room);
         }
         this.uiController.setPlayerName('Player 1');
-        this.setupRoomStateListener();
       } catch (error) {
         console.error('[MainApp] ERROR in onCreateRoom:', error);
-        alert('Failed to create room. Please try again.');
+        alert('Create room ERROR: ' + error);
       }
     };
 
@@ -141,6 +129,7 @@ class MainApp {
       console.log('[MainApp] onJoinRoom called with roomId:', roomId);
       try {
         await this.networkManager.joinRoom(roomId);
+        console.log('[MainApp] Joined room successfully');
         this.uiController.setView('room');
         const room = this.networkManager.getCurrentRoom();
         if (room) {
@@ -148,36 +137,65 @@ class MainApp {
           this.uiController.updateRoomIdFromRoom(room);
         }
         this.uiController.setPlayerName('Player 2');
-        this.setupRoomStateListener();
       } catch (error) {
         console.error('[MainApp] ERROR in onJoinRoom:', error);
-        alert('Failed to join room.');
+        alert('Join room ERROR: ' + error);
       }
     };
   }
-
-  private setupRoomStateListener(): void {
-    this.networkManager.onStateChange((state) => {
-      if (state && state.players) {
-        this.uiController.updatePlayerCount(state.players.size);
-      }
-    });
-    const initialState = this.networkManager.getState();
-    if (initialState && initialState.players) {
-      this.uiController.updatePlayerCount(initialState.players.size);
-    }
-  }
 }
 
-// Запуск приложения при загрузке страницы
-console.log('window.addEventListener("load") registering callback...');
+console.log('[MainApp] Registering load event listener...');
 window.addEventListener('load', () => {
-  console.log('=== LOAD EVENT FIRED ===');
-  console.log('Creating new MainApp()...');
+  console.log('[MainApp] LOAD EVENT FIRED');
   new MainApp();
   console.log('MainApp() created!');
 });
-console.log('window.addEventListener("load") callback registered');
+console.log('[MainApp] Load event listener registered');
+=== конец файла ===
+
+================================================================================
+=== client/src/core/GameEngine.ts ===
+import * as PIXI from 'pixi.js';
+
+export class GameEngine {
+  app: PIXI.Application | null = null;
+  private ticker: PIXI.Ticker | null = null;
+
+  constructor() {
+    console.log('[GameEngine] Constructor called');
+  }
+
+  async init(containerId: string): Promise<void> {
+    console.log('[GameEngine] Initializing PixiJS...');
+    
+    const container = document.getElementById(containerId);
+    if (!container) {
+      throw new Error(`Container element with id "${containerId}" not found`);
+    }
+
+    this.app = new PIXI.Application();
+    
+    await this.app.init({
+      backgroundColor: 0x1a1a1a,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      antialias: true,
+      autoDensity: true,
+      resolution: Math.min(window.devicePixelRatio, 2),
+    });
+
+    this.ticker = this.app.ticker;
+    container.appendChild(this.app.canvas);
+    console.log('[GameEngine] Canvas appended');
+  }
+
+  start(): void {
+    if (this.ticker) {
+      this.ticker.start();
+    }
+  }
+}
 === конец файла ===
 
 ================================================================================
@@ -191,7 +209,6 @@ export class NetworkManager {
   private readonly serverUrl: string;
 
   constructor(serverUrl?: string) {
-    // HARDCODE: для теста используем прод-сервер
     this.serverUrl = serverUrl || 'wss://cursor-hold-game-server.onrender.com';
     this.client = new Client(this.serverUrl);
     console.log('[NetworkManager] Server URL:', this.serverUrl);
@@ -199,11 +216,8 @@ export class NetworkManager {
 
   async createRoom(): Promise<string> {
     console.log('[NetworkManager] createRoom() called');
-    console.log('[NetworkManager] Current client:', this.client);
     try {
-      console.log('[NetworkManager] Calling client.joinOrCreate("holding_room")...');
       this.currentRoom = await this.client.joinOrCreate('holding_room');
-      console.log('[NetworkManager] Room object received:', this.currentRoom);
       const roomId = this.currentRoom.state?.roomId || this.currentRoom.id;
       console.log('[NetworkManager] Room created:', roomId);
       return roomId;
@@ -214,12 +228,14 @@ export class NetworkManager {
   }
 
   async joinRoom(roomId: string): Promise<Room> {
+    console.log('[NetworkManager] joinRoom() called with roomId:', roomId);
     try {
-      this.currentRoom = await this.client.joinById(roomId);
-      console.log('[NetworkManager] Joined room:', roomId);
+      // ВРЕМЕННО: joinOrCreate попадёт в первую доступную комнату
+      this.currentRoom = await this.client.joinOrCreate('holding_room');
+      console.log('[NetworkManager] Joined room:', this.currentRoom.id);
       return this.currentRoom;
     } catch (error) {
-      console.error('Failed to join room:', error);
+      console.error('[NetworkManager] ERROR in joinRoom:', error);
       throw error;
     }
   }
@@ -254,12 +270,6 @@ export class UIController {
   private joinRoomBtn: HTMLButtonElement;
   private roomIdInput: HTMLInputElement;
   private currentView: 'lobby' | 'room' = 'lobby';
-  private leftMenuBtn: HTMLButtonElement;
-  private menuBtn: HTMLButtonElement;
-  private leftSidebar: HTMLElement;
-  private rightSidebar: HTMLElement;
-  private closeLeftSidebarBtn: HTMLButtonElement;
-  private closeSidebarBtn: HTMLButtonElement;
 
   constructor() {
     this.lobbyContainer = document.getElementById('landingScreen')!;
@@ -267,12 +277,6 @@ export class UIController {
     this.createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
     this.joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
     this.roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
-    this.leftMenuBtn = document.getElementById('leftMenuBtn') as HTMLButtonElement;
-    this.menuBtn = document.getElementById('menuBtn') as HTMLButtonElement;
-    this.leftSidebar = document.getElementById('leftSidebar')!;
-    this.rightSidebar = document.getElementById('sidebar')!;
-    this.closeLeftSidebarBtn = document.getElementById('closeLeftSidebarBtn') as HTMLButtonElement;
-    this.closeSidebarBtn = document.getElementById('closeSidebarBtn') as HTMLButtonElement;
     this.setupEventListeners();
     this.setView('lobby');
   }
@@ -284,21 +288,26 @@ export class UIController {
     this.joinRoomBtn?.addEventListener('click', () => {
       this.onJoinRoomClick();
     });
-    // ... остальные обработчики
   }
 
   private onCreateRoomClick(): void {
-    console.log('[UIController] Create Room button clicked!');
     if (this.onCreateRoom) {
-      console.log('[UIController] Calling onCreateRoom callback...');
       this.onCreateRoom();
-    } else {
-      console.error('[UIController] onCreateRoom callback is NOT set!');
+    }
+  }
+
+  private onJoinRoomClick(): void {
+    const roomId = this.roomIdInput?.value.trim();
+    if (!roomId) {
+      alert('Please enter a room ID');
+      return;
+    }
+    if (this.onJoinRoom) {
+      this.onJoinRoom(roomId);
     }
   }
 
   setView(view: 'lobby' | 'room'): void {
-    this.currentView = view;
     if (view === 'lobby') {
       this.lobbyContainer.style.display = 'flex';
       this.roomContainer.style.display = 'none';
@@ -308,12 +317,36 @@ export class UIController {
     }
   }
 
+  showCreatedRoomId(roomId: string): void {
+    const centerRoomIdElement = document.getElementById('currentRoomId');
+    if (centerRoomIdElement) {
+      centerRoomIdElement.textContent = roomId;
+      centerRoomIdElement.classList.add('copyable-id');
+      centerRoomIdElement.onclick = () => {
+        navigator.clipboard.writeText(roomId);
+      };
+    }
+  }
+
   updateRoomIdFromRoom(room: any): void {
     const roomId = room?.customRoomId || room?.state?.roomId || 'Unknown';
     this.showCreatedRoomId(roomId);
   }
 
-  // ... остальные методы
+  setPlayerName(name: string): void {
+    const playerNameElement = document.getElementById('playerName');
+    if (playerNameElement) {
+      playerNameElement.textContent = name;
+    }
+  }
+
+  updatePlayerCount(count: number, maxPlayers: number = 2): void {
+    const playerCountElement = document.getElementById('playerCount');
+    if (playerCountElement) {
+      playerCountElement.textContent = `${count}/${maxPlayers}`;
+    }
+  }
+
   onCreateRoom?: () => void;
   onJoinRoom?: (roomId: string) => void;
 }
@@ -362,59 +395,26 @@ export class ChatManager {
 === конец файла ===
 
 ================================================================================
-=== client/src/core/GameEngine.ts ===
-import * as PIXI from 'pixi.js';
+=== client/vite.config.ts ===
+import { defineConfig } from 'vite';
+import { resolve } from 'path';
 
-export class GameEngine {
-  readonly app: PIXI.Application;
-  private ticker: PIXI.Ticker;
-
-  constructor(containerId: string = 'canvasContainer') {
-    this.app = new PIXI.Application();
-    this.ticker = this.app.ticker;
-    const container = document.getElementById(containerId);
-    if (!container) {
-      throw new Error(`Container element with id "${containerId}" not found`);
-    }
-    this.app.init({
-      backgroundColor: 0x1a1a1a,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      antialias: true,
-      autoDensity: true,
-      resolution: Math.min(window.devicePixelRatio, 2),
-    });
-    container.appendChild(this.app.canvas);
+export default defineConfig({
+  base: '/',
+  server: {
+    port: 3000,
+    host: true
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+      }
+    },
+    outDir: 'dist',
+    emptyOutDir: true
   }
-
-  start(): void {
-    this.ticker.start();
-  }
-}
-=== конец файла ===
-
-================================================================================
-=== client/src/core/InputManager.ts ===
-export class InputManager {
-  private keyboardState: Map<string, boolean>;
-  private mouseState: { x: number; y: number; leftButton: boolean; rightButton: boolean };
-
-  constructor() {
-    this.keyboardState = new Map();
-    this.mouseState = { x: 0, y: 0, leftButton: false, rightButton: false };
-    this.setupEventListeners();
-  }
-
-  private setupEventListeners(): void {
-    window.addEventListener('keydown', (e) => {
-      this.keyboardState.set(e.code, true);
-    });
-    window.addEventListener('keyup', (e) => {
-      this.keyboardState.set(e.code, false);
-    });
-    // ... mouse events
-  }
-}
+});
 === конец файла ===
 
 ================================================================================
@@ -450,26 +450,6 @@ export class InputManager {
 === конец файла ===
 
 ================================================================================
-=== client/vite.config.ts ===
-import { defineConfig } from 'vite';
-import { resolve } from 'path';
-
-export default defineConfig({
-  server: {
-    port: 3000,
-    host: true
-  },
-  build: {
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-      }
-    }
-  }
-});
-=== конец файла ===
-
-================================================================================
 === client/tsconfig.json ===
 {
   "compilerOptions": {
@@ -493,46 +473,55 @@ export default defineConfig({
 === конец файла ===
 
 ================================================================================
-=== client/.env ===
-VITE_SERVER_URL=wss://cursor-hold-game-server.onrender.com
-=== конец файла ===
+=== server/src/index.ts ===
+import express from 'express';
+import { Server } from 'colyseus';
+import { createServer } from 'http';
+import cors from 'cors';
+import { HoldingRoom } from './rooms/HoldingRoom';
 
-================================================================================
-=== client/vitest.config.ts ===
-import { defineConfig } from 'vitest/config';
+const PORT = Number(process.env.PORT || 2567);
+const app = express();
+app.use(cors());
 
-export default defineConfig({
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
-  },
+const server = createServer(app);
+const gameServer = new Server({ server });
+
+gameServer.define('holding_room', HoldingRoom);
+
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
 });
+
+gameServer.listen(PORT);
+console.log(`Listening on Port: ${PORT}`);
 === конец файла ===
 
 ================================================================================
-=== client/vitest.setup.ts ===
-(Файл существует, содержимое не читалось)
-=== конец файла ===
+=== server/src/rooms/schema.ts ===
+import { Schema, type, MapSchema } from '@colyseus/schema';
 
-================================================================================
-=== package.json (root) ===
-{
-  "name": "holding-hands-game",
-  "version": "1.0.0",
-  "scripts": {
-    "dev:client": "cd client && npm run dev",
-    "dev:server": "cd server && npm run dev",
-    "build:client": "cd client && npm run build",
-    "build:server": "cd server && npm run build",
-    "start": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "test": "npm run test --workspaces"
-  },
-  "workspaces": ["client", "server"],
-  "lint-staged": {
-    "client/*.{ts,tsx}": ["cd client && npx tsc --noEmit"],
-    "server/*.{ts,tsx}": ["cd server && npx tsc --noEmit"]
-  }
+export class PlayerSchema extends Schema {
+  @type('string') id!: string;
+  @type('string') name: string = '';
+  @type('number') x: number = 0;
+  @type('number') y: number = 0;
+  @type('number') color: number = 0xffffff;
+  @type('boolean') isHoldingHands: boolean = false;
+  @type('string') holdingHandsWith: string = '';
+  @type('boolean') isRoomCreator: boolean = false;
+  @type('boolean') isReady: boolean = false;
+  @type({ map: 'number' }) virusParams: Map<string, number> = new Map();
+  @type('number') cursorX: number = 0;
+  @type('number') cursorY: number = 0;
+}
+
+export class RoomState extends Schema {
+  @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
+  @type('string') roomId: string = '';
+  @type('number') maxPlayers: number = 2;
+  @type({ array: 'number' }) battleGrid: number[] = [];
+  @type('boolean') battleActive: boolean = false;
 }
 === конец файла ===
 

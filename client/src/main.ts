@@ -3,9 +3,7 @@ import { NetworkManager } from './core/NetworkManager';
 import { UIController } from './ui/UIController';
 import { ChatManager } from './chat/ChatManager';
 
-// === DEBUG: main.ts загружен ===
-alert('main.ts LOADED! Creating MainApp...');
-console.log('=== MAIN.TS LOADED ===');
+console.log('[MainApp] main.ts loaded');
 
 class MainApp {
   private gameEngine!: GameEngine;
@@ -14,7 +12,6 @@ class MainApp {
   private chatManager!: ChatManager;
 
   constructor() {
-    alert('MainApp constructor started');
     console.log('[MainApp] Constructor started...');
     
     try {
@@ -31,21 +28,16 @@ class MainApp {
       this.setupInteractions();
       
       // Инициализация PixiJS (асинхронно)
-      alert('Initializing PixiJS...');
       console.log('[MainApp] Initializing GameEngine...');
       this.gameEngine.init('canvasContainer').then(() => {
         console.log('[MainApp] GameEngine initialized!');
         this.gameEngine.start();
-        alert('PixiJS initialized! Ready to play.');
       }).catch((error) => {
-        alert('PixiJS init ERROR: ' + error);
         console.error('[MainApp] GameEngine init ERROR:', error);
       });
       
-      alert('MainApp constructor FINISHED!');
       console.log('[MainApp] Constructor finished!');
     } catch (error) {
-      alert('MainApp constructor ERROR: ' + error);
       console.error('[MainApp] Constructor ERROR:', error);
     }
   }
@@ -54,33 +46,32 @@ class MainApp {
     console.log('[MainApp] Setting up interactions...');
     
     this.uiController.onCreateRoom = async () => {
-      alert('onCreateRoom called!');
       console.log('[MainApp] onCreateRoom called!');
       try {
         console.log('[MainApp] Calling networkManager.createRoom()...');
         const roomId = await this.networkManager.createRoom();
-        alert('Room created: ' + roomId);
         console.log('[MainApp] Room created with ID:', roomId);
-        
+
         this.uiController.setView('room');
+        
+        // Показываем ID комнаты сразу
+        this.uiController.showCreatedRoomId(roomId);
+        
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
-          this.uiController.updateRoomIdFromRoom(room);
         }
         this.uiController.setPlayerName('Player 1');
       } catch (error) {
-        alert('Create room ERROR: ' + error);
         console.error('[MainApp] ERROR in onCreateRoom:', error);
+        alert('Create room ERROR: ' + error);
       }
     };
 
     this.uiController.onJoinRoom = async (roomId) => {
-      alert('onJoinRoom called with: ' + roomId);
       console.log('[MainApp] onJoinRoom called with roomId:', roomId);
       try {
         await this.networkManager.joinRoom(roomId);
-        alert('Joined room!');
         console.log('[MainApp] Joined room successfully');
         this.uiController.setView('room');
         const room = this.networkManager.getCurrentRoom();
@@ -90,24 +81,21 @@ class MainApp {
         }
         this.uiController.setPlayerName('Player 2');
       } catch (error) {
-        alert('Join room ERROR: ' + error);
         console.error('[MainApp] ERROR in onJoinRoom:', error);
+        alert('Join room ERROR: ' + error);
       }
     };
   }
 }
 
 // Запуск приложения при загрузке страницы
-alert('Registering load event listener...');
-console.log('window.addEventListener("load") registering callback...');
+console.log('[MainApp] Registering load event listener...');
 
 window.addEventListener('load', () => {
-  alert('LOAD EVENT FIRED! Creating MainApp...');
-  console.log('=== LOAD EVENT FIRED ===');
+  console.log('[MainApp] LOAD EVENT FIRED');
   console.log('Creating new MainApp()...');
   new MainApp();
   console.log('MainApp() created!');
 });
 
-console.log('window.addEventListener("load") callback registered');
-alert('Load event listener registered. Wait for load event...');
+console.log('[MainApp] Load event listener registered');
