@@ -1,416 +1,110 @@
 ================================================================================
-CURSOR HOLD — ПРОБЛЕМА: БУРГЕР КНОПКИ (☰) НЕ ВИДНЫ ПОСЛЕ СОЗДАНИЯ КОМНАТЫ
+CURSOR HOLD — ИНСТРУКЦИЯ ПО ЗАПУСКУ
 ================================================================================
 Дата: 2026-02-16
-Версия: v6
-Статус: Кнопки не видны после 6 итераций исправлений
+Версия: v26 (с курсорами)
 
 ================================================================================
-СИМПТОМЫ
+ПРОБЛЕМА: "CREATE ROOM" НЕ РАБОТАЕТ
 ================================================================================
 
-1. Кнопки #leftMenuBtn и #menuBtn определены в HTML
-2. CSS имеет z-index: 200 для кнопок
-3. setView('room') вызывается корректно (подтверждено логами)
-4. gameScreen.style.display = 'flex' (подтверждено логами)
-5. НО кнопки ВСЁ РАВНО не видны после создания комнаты
+ПРИЧИНА: Клиент пытался подключиться к удалённому серверу (Render), а не к локальному.
+
+РЕШЕНИЕ: NetworkManager теперь автоматически определяет:
+  - localhost → ws://localhost:2567
+  - production → wss://cursor-hold-game-server.onrender.com
 
 ================================================================================
-ЛОГИ ИЗ КОНСОЛИ (ПОДТВЕРЖДЕНИЕ ЧТО КОД РАБОТАЕТ)
+КАК ЗАПУСТИТЬ (ЛОКАЛЬНО)
 ================================================================================
 
-[MainApp] LOAD EVENT FIRED
-[MainApp] Constructor started...
-[UIController] setView called with: lobby
-[MainApp] onCreateRoom called!
-[NetworkManager] Room created: slHYfNFiu
-[MainApp] Calling setView(room)...
-[UIController] setView called with: room
-[UIController] Showing game screen, hiding landing screen
-[UIController] gameScreen display: flex
-[MainApp] setView(room) completed
+1. ОТКРЫТЬ ДВЕ КОНСОЛИ
 
-ВЫВОД: JavaScript работает корректно. Проблема в CSS или DOM.
+Консоль 1 — сервер:
+  cd C:\__Qwen1\TOVCH
+  npm run dev:server
 
-================================================================================
-ФАЙЛЫ ДЛЯ АНАЛИЗА
-================================================================================
+Консоль 2 — клиент:
+  cd C:\__Qwen1\TOVCH
+  npm run dev:client
 
-================================================================================
-1. client/index.html (HTML + CSS кнопок и canvas)
-================================================================================
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cursor Hold — Multiplayer Game</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-primary: #0a0a0a;
-      --bg-secondary: #171717;
-      --bg-tertiary: #262626;
-      --text-primary: #ffffff;
-      --text-secondary: #a3a3a3;
-      --border: #404040;
-      --accent: #3b82f6;
-      --radius: 6px;
-    }
+2. ОТКРЫТЬ БРАУЗЕР
+  http://localhost:5173
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+3. НАЖАТЬ "CREATE ROOM"
+  - Должен появиться ID комнаты (например: slHYfNFiu)
+  - Если ошибка — проверь, что сервер запущен на порту 2567
 
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
-      overflow: hidden;
-      height: 100vh;
-    }
+4. ОТКРЫТЬ ВТОРОЕ ОКНО (инкогнито)
+  http://localhost:5173
+  Ввести ID комнаты → "JOIN ROOM"
 
-    .screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-
-    .hidden { display: none !important; }
-
-    .version-badge {
-      position: absolute;
-      top: 20px; left: 20px;
-      background: var(--bg-tertiary);
-      color: var(--text-secondary);
-      padding: 4px 12px;
-      border-radius: var(--radius);
-      font-size: 0.75rem;
-    }
-
-    /* === CANVAS === */
-    #canvasContainer {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    /* === БУРГЕР КНОПКИ === */
-    .menu-btn {
-      position: fixed;
-      top: 16px;
-      z-index: 200;
-      background: var(--bg-tertiary);
-      border: 1px solid var(--border);
-      color: var(--text-primary);
-      padding: 8px 12px;
-      border-radius: var(--radius);
-      cursor: pointer;
-      font-size: 1.25rem;
-      transition: background-color 0.15s ease;
-    }
-    .menu-btn:hover { background: var(--border); }
-    #leftMenuBtn { left: 16px; }
-    #menuBtn { right: 16px; }
-
-    /* === SIDEBARS === */
-    .sidebar {
-      position: fixed;
-      top: 0;
-      width: 320px;
-      height: 100%;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border);
-      z-index: 100;
-      transition: transform 0.2s ease;
-      display: flex;
-      flex-direction: column;
-    }
-    .left-sidebar { left: 0; transform: translateX(-100%); }
-    .left-sidebar.active { transform: translateX(0); }
-    .right-sidebar { right: 0; transform: translateX(100%); }
-    .right-sidebar.active { transform: translateX(0); }
-  </style>
-</head>
-<body>
-  <div id="app">
-    <div class="version-badge">v6</div>
-
-    <!-- Landing Screen -->
-    <div id="landingScreen" class="screen">
-      <h1>Cursor Hold</h1>
-      <p>Multiplayer collaborative game</p>
-      <button id="createRoomBtn" class="btn">Create Room</button>
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <input type="text" id="roomIdInput" placeholder="Enter room ID">
-        <button id="joinRoomBtn" class="btn btn-secondary">Join</button>
-      </div>
-    </div>
-
-    <!-- Game Screen -->
-    <div id="gameScreen" class="screen hidden">
-      <div id="canvasContainer"></div>
-
-      <!-- === БУРГЕР КНОПКИ — HTML === -->
-      <button id="leftMenuBtn" class="menu-btn">☰</button>
-      <button id="menuBtn" class="menu-btn">☰</button>
-
-      <!-- Center panel, sidebars, etc. -->
-    </div>
-  </div>
-
-  <script type="module" src="/src/main.ts"></script>
-</body>
-</html>
-=== КОНЕЦ HTML ===
+5. ПРОВЕРИТЬ КУРСОРЫ
+  - Двигай мышью в первом окне
+  - Во втором окне должен двигаться цветной курсор (круг 15px + стрелка)
 
 ================================================================================
-2. client/src/main.ts (логика создания комнаты)
-================================================================================
-import { GameEngine } from './core/GameEngine';
-import { NetworkManager } from './core/NetworkManager';
-import { UIController } from './ui/UIController';
-import { ChatManager } from './chat/ChatManager';
-
-console.log('[MainApp] main.ts loaded');
-
-class MainApp {
-  private gameEngine!: GameEngine;
-  private networkManager!: NetworkManager;
-  private uiController!: UIController;
-  private chatManager!: ChatManager;
-
-  constructor() {
-    console.log('[MainApp] Constructor started...');
-    this.gameEngine = new GameEngine();
-    this.networkManager = new NetworkManager();
-    this.uiController = new UIController();
-    this.chatManager = new ChatManager();
-    this.setupInteractions();
-    this.gameEngine.init('canvasContainer').then(() => {
-      this.gameEngine.start();
-    });
-    console.log('[MainApp] Constructor finished!');
-  }
-
-  private setupInteractions(): void {
-    this.uiController.onCreateRoom = async () => {
-      console.log('[MainApp] onCreateRoom called!');
-      try {
-        const roomId = await this.networkManager.createRoom();
-        console.log('[MainApp] Room created with ID:', roomId);
-
-        // Ждём следующего тика, чтобы DOM был готов
-        await new Promise(resolve => setTimeout(resolve, 0));
-
-        console.log('[MainApp] Calling setView(room)...');
-        this.uiController.setView('room');
-        console.log('[MainApp] setView(room) completed');
-
-        this.uiController.showCreatedRoomId(roomId);
-        const room = this.networkManager.getCurrentRoom();
-        if (room) { this.chatManager.attachToRoom(room); }
-        this.uiController.setPlayerName('Player 1');
-      } catch (error) {
-        console.error('[MainApp] ERROR in onCreateRoom:', error);
-      }
-    };
-
-    this.uiController.onJoinRoom = async (roomId) => {
-      console.log('[MainApp] onJoinRoom called with roomId:', roomId);
-      try {
-        await this.networkManager.joinRoom(roomId);
-        console.log('[MainApp] Joined room successfully');
-
-        await new Promise(resolve => setTimeout(resolve, 0));
-
-        console.log('[MainApp] Calling setView(room)...');
-        this.uiController.setView('room');
-        console.log('[MainApp] setView(room) completed');
-
-        this.uiController.showCreatedRoomId(roomId);
-        const room = this.networkManager.getCurrentRoom();
-        if (room) { this.chatManager.attachToRoom(room); }
-        this.uiController.setPlayerName('Player 2');
-      } catch (error) {
-        console.error('[MainApp] ERROR in onJoinRoom:', error);
-      }
-    };
-  }
-}
-
-window.addEventListener('load', () => {
-  console.log('[MainApp] LOAD EVENT FIRED');
-  new MainApp();
-  console.log('MainApp() created!');
-});
-=== КОНЕЦ main.ts ===
-
-================================================================================
-3. client/src/ui/UIController.ts (setView логика)
-================================================================================
-export class UIController {
-  private lobbyContainer: HTMLElement;
-  private roomContainer: HTMLElement;
-  private createRoomBtn: HTMLButtonElement;
-  private joinRoomBtn: HTMLButtonElement;
-  private roomIdInput: HTMLInputElement;
-  private currentView: 'lobby' | 'room' = 'lobby';
-  private leftMenuBtn: HTMLButtonElement;
-  private menuBtn: HTMLButtonElement;
-  private leftSidebar: HTMLElement;
-  private rightSidebar: HTMLElement;
-  private closeLeftSidebarBtn: HTMLButtonElement;
-  private closeSidebarBtn: HTMLButtonElement;
-
-  constructor() {
-    this.lobbyContainer = document.getElementById('landingScreen')!;
-    this.roomContainer = document.getElementById('gameScreen')!;
-    this.createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
-    this.joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
-    this.roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
-    this.leftMenuBtn = document.getElementById('leftMenuBtn') as HTMLButtonElement;
-    this.menuBtn = document.getElementById('menuBtn') as HTMLButtonElement;
-    this.leftSidebar = document.getElementById('leftSidebar')!;
-    this.rightSidebar = document.getElementById('sidebar')!;
-    this.closeLeftSidebarBtn = document.getElementById('closeLeftSidebarBtn') as HTMLButtonElement;
-    this.closeSidebarBtn = document.getElementById('closeSidebarBtn') as HTMLButtonElement;
-
-    this.setupEventListeners();
-    this.setView('lobby');
-  }
-
-  private setupEventListeners(): void {
-    this.createRoomBtn?.addEventListener('click', () => { this.onCreateRoomClick(); });
-    this.joinRoomBtn?.addEventListener('click', () => { this.onJoinRoomClick(); });
-    this.leftMenuBtn?.addEventListener('click', () => { this.toggleLeftSidebar(); });
-    this.menuBtn?.addEventListener('click', () => { this.toggleRightSidebar(); });
-    this.closeLeftSidebarBtn?.addEventListener('click', () => { this.closeLeftSidebar(); });
-    this.closeSidebarBtn?.addEventListener('click', () => { this.closeRightSidebar(); });
-  }
-
-  private onCreateRoomClick(): void {
-    if (this.onCreateRoom) { this.onCreateRoom(); }
-  }
-
-  private onJoinRoomClick(): void {
-    const roomId = this.roomIdInput?.value.trim();
-    if (!roomId) { alert('Please enter a room ID'); return; }
-    if (this.onJoinRoom) { this.onJoinRoom(roomId); }
-  }
-
-  setView(view: 'lobby' | 'room'): void {
-    console.log('[UIController] setView called with:', view);
-    this.currentView = view;
-
-    if (view === 'lobby') {
-      console.log('[UIController] Showing landing screen, hiding game screen');
-      this.lobbyContainer.style.display = 'flex';
-      this.roomContainer.style.display = 'none';
-    } else {
-      console.log('[UIController] Showing game screen, hiding landing screen');
-      this.lobbyContainer.style.display = 'none';
-      this.roomContainer.style.display = 'flex';
-      console.log('[UIController] gameScreen display:', this.roomContainer.style.display);
-    }
-  }
-
-  showCreatedRoomId(roomId: string): void {
-    const el = document.getElementById('currentRoomId');
-    if (el) { el.textContent = roomId; }
-    const leftEl = document.getElementById('leftRoomId');
-    if (leftEl) { leftEl.textContent = roomId; }
-  }
-
-  setPlayerName(name: string): void {
-    const el = document.getElementById('playerName');
-    if (el) { el.textContent = name; }
-  }
-
-  toggleLeftSidebar(): void { this.leftSidebar.classList.toggle('active'); }
-  closeLeftSidebar(): void { this.leftSidebar.classList.remove('active'); }
-  toggleRightSidebar(): void { this.rightSidebar.classList.toggle('active'); }
-  closeRightSidebar(): void { this.rightSidebar.classList.remove('active'); }
-
-  onCreateRoom?: () => void;
-  onJoinRoom?: (roomId: string) => void;
-}
-=== КОНЕЦ UIController ===
-
-================================================================================
-4. client/src/core/GameEngine.ts (PixiJS canvas создание)
-================================================================================
-import * as PIXI from 'pixi.js';
-
-export class GameEngine {
-  app: PIXI.Application | null = null;
-  private ticker: PIXI.Ticker | null = null;
-
-  constructor() {
-    console.log('[GameEngine] Constructor called');
-  }
-
-  async init(containerId: string): Promise<void> {
-    console.log('[GameEngine] Initializing PixiJS...');
-    const container = document.getElementById(containerId);
-    if (!container) {
-      throw new Error(`Container element with id "${containerId}" not found`);
-    }
-    this.app = new PIXI.Application();
-    await this.app.init({
-      backgroundColor: 0x1a1a1a,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      antialias: true,
-      autoDensity: true,
-      resolution: Math.min(window.devicePixelRatio, 2),
-    });
-    this.ticker = this.app.ticker;
-    container.appendChild(this.app.canvas);
-    console.log('[GameEngine] Canvas appended');
-  }
-
-  start(): void {
-    if (this.ticker) { this.ticker.start(); }
-  }
-}
-=== КОНЕЦ GameEngine ===
-
-================================================================================
-ВОПРОСЫ К GROK AI
+ЛОГИ ДЛЯ ДИАГНОСТИКИ
 ================================================================================
 
-1. **Почему кнопки .menu-btn не видны после setView('room')?**
-   - CSS имеет z-index: 200 для кнопок
-   - canvas имеет z-index: 1
-   - setView устанавливает display: flex
-   - Логии подтверждают что код выполняется
+Открыть консоль браузера (F12) и искать:
 
-2. **Какие есть возможные причины?**
-   - CSS специфичность перебивает?
-   - Canvas динамически перекрывает?
-   - Проблема с pointer-events?
-   - Другая причина?
+[NetworkManager] Server URL: ws://localhost:2567
+[NetworkManager] createRoom() called
+[NetworkManager] Calling client.joinOrCreate("holding_room")...
+[NetworkManager] Room created: <ID>
+[NetworkManager] setupRoomMessageHandlers called, sessionId: <SESSION>
 
-3. **Дай готовый код для исправления** (файл + строки + что заменить)
-
-4. **Как протестировать** что фикс работает?
+Если видишь ошибку:
+  "Failed to create room: ..." → сервер не запущен или порт неверный
 
 ================================================================================
-ИСТОРИЯ ПОПЫТОК (v1-v6)
+ВОЗМОЖНЫЕ ОШИБКИ И ФИКСЫ
 ================================================================================
 
-v1: Добавлены alert() для дебага
-v2: Исправлен PixiJS init() на async/await
-v3: Добавлен setTimeout(0) перед setView()
-v4: Добавлены логи в setView()
-v5: Обновлена версия + entity.md
-v6: Изменён z-index canvas на 1 + pointer-events: none
+1. "Failed to create room: request failed with status code 404"
+   → Сервер не запущен. Запусти: npm run dev:server
 
-НИ ОДНА ПОПЫТКА НЕ СРАБОТАЛА.
+2. "Failed to create room: Connection closed"
+   → Порт 2567 занят. Проверь: netstat -ano | findstr 2567
+
+3. "WebSocket connection failed"
+   → Брандмауэр блокирует. Разреши Node.js доступ.
+
+4. Курсоры не видны
+   → Проверь консоль на ошибки 'cursorUpdate'
+   → Убедись, что оба клиента в одной комнате
+
+5. "Cannot find module 'colyseus.js'"
+   → Запусти: npm install
+
+================================================================================
+СТРУКТУРА ФАЙЛОВ (CURSOR FEATURE)
+================================================================================
+
+client/src/
+├── features/cursor/
+│   ├── CursorManager.ts      # Отправка/получение позиций (каждые 33 мс)
+│   └── CursorRenderer.ts     # Рендер курсоров (Graphics, lerp-интерполяция)
+├── core/
+│   ├── NetworkManager.ts     # +sendCursorUpdate(), авто-выбор сервера
+│   ├── InputManager.ts       # Мышь (getMousePosition)
+│   └── GameEngine.ts         # PixiJS Application
+└── main.ts                   # new CursorManager(...), new CursorRenderer(...)
+
+server/src/rooms/
+└── HoldingRoom.ts            # onMessage('updateCursor') → broadcast
+
+================================================================================
+ВИЗУАЛ КУРСОРА
+================================================================================
+
+- Круг: радиус 7.5px (диаметр 15px)
+- Стрелка: треугольник 8px
+- Цвет: генерируется из playerId (детерминированно)
+- Обводка: белая 2px
+- Интерполяция: lerp 0.3 (плавное движение)
+- Свой курсор: НЕ рендерится (видны только чужие)
 
 ================================================================================
 КОНЕЦ ФАЙЛА

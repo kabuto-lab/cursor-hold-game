@@ -11,8 +11,9 @@ export class NetworkManager {
   private readonly serverUrl: string;
 
   constructor(serverUrl?: string) {
-    // HARDCODE: прод-сервер на Render
-    this.serverUrl = serverUrl || 'wss://cursor-hold-game-server.onrender.com';
+    // Локальный сервер для разработки, прод-сервер для production
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    this.serverUrl = serverUrl || (isLocalhost ? 'ws://localhost:2567' : 'wss://cursor-hold-game-server.onrender.com');
     this.client = new Client(this.serverUrl);
 
     console.log('[NetworkManager] Server URL:', this.serverUrl);
@@ -48,9 +49,14 @@ export class NetworkManager {
       const roomId = this.currentRoom.state?.roomId || this.currentRoom.id;
       console.log('[NetworkManager] Room created:', roomId);
 
+      // Подписываемся на сообщения комнаты после создания
+      this.setupRoomMessageHandlers();
+
       return roomId;
-    } catch (error) {
-      console.error('[NetworkManager] ERROR in createRoom:', error);
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('[NetworkManager] ERROR in createRoom:', errorMsg);
+      alert('Failed to create room: ' + errorMsg + '\\n\\nMake sure the server is running on port 2567.');
       throw error;
     }
   }
@@ -64,9 +70,15 @@ export class NetworkManager {
       // Присоединяемся к комнате по ID через joinById
       this.currentRoom = await this.client.joinById(roomId);
       console.log('[NetworkManager] Joined room:', this.currentRoom.id);
+
+      // Подписываемся на сообщения комнаты после присоединения
+      this.setupRoomMessageHandlers();
+
       return this.currentRoom;
-    } catch (error) {
-      console.error('[NetworkManager] ERROR in joinRoom:', error);
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('[NetworkManager] ERROR in joinRoom:', errorMsg);
+      alert('Failed to join room: ' + errorMsg + '\\n\\nCheck the room ID and make sure the server is running.');
       throw error;
     }
   }
@@ -146,6 +158,15 @@ export class NetworkManager {
       return this.currentRoom.state;
     }
     return null;
+  }
+
+  /**
+   * Настроить обработчики сообщений комнаты
+   */
+  private setupRoomMessageHandlers(): void {
+    if (!this.currentRoom) return;
+
+    console.log('[NetworkManager] setupRoomMessageHandlers called, sessionId:', this.currentRoom.sessionId);
   }
 
   /**
