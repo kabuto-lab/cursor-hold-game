@@ -8,10 +8,10 @@ import { PlayerSchema } from '../types/schema';
 
 export interface NetworkCallbacks {
   onPlayerJoined?: (playerId: string, player: PlayerSchema) => void;
-  onPlayerLeft?: (playerId: string) => void;
+  onPlayerLeft?: (_playerId: string) => void;
   onPlayerUpdated?: (playerId: string, player: PlayerSchema) => void;
-  onChatMessage?: (message: string) => void;
-  onError?: (error: any) => void;
+  onChatMessage?: (_message: string) => void;
+  onError?: (error: unknown) => void;
   onDisconnected?: () => void;
 }
 
@@ -62,7 +62,7 @@ export class NetworkManager {
     // State change handler
     this.room.onStateChange.once(() => {
       // Initialize players from state
-      this.room.state.players.forEach((player, playerId) => {
+      this.room!.state.players.forEach((player: PlayerSchema, playerId: string) => {
         if (this.callbacks.onPlayerJoined) {
           this.callbacks.onPlayerJoined(playerId, player);
         }
@@ -70,19 +70,19 @@ export class NetworkManager {
     });
 
     // Player events
-    this.room.state.players.onAdd((player, playerId) => {
+    this.room.state.players.onAdd((player: PlayerSchema, playerId: string) => {
       if (this.callbacks.onPlayerJoined) {
         this.callbacks.onPlayerJoined(playerId, player);
       }
     });
 
-    this.room.state.players.onRemove((player, playerId) => {
+    this.room.state.players.onRemove((_player: PlayerSchema, playerId: string) => {
       if (this.callbacks.onPlayerLeft) {
         this.callbacks.onPlayerLeft(playerId);
       }
     });
 
-    this.room.state.players.onChange((player, playerId) => {
+    this.room.state.players.onChange((player: PlayerSchema, playerId: string) => {
       if (this.callbacks.onPlayerUpdated) {
         this.callbacks.onPlayerUpdated(playerId, player);
       }

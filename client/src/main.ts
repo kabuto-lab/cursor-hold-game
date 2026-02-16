@@ -62,18 +62,18 @@ class Application {
 
     // UI events - these would need to be connected differently in a real implementation
     // For now, we'll add event listeners directly to the DOM elements
-    const createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
-    const joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
-    const leaveRoomBtn = document.getElementById('leaveRoomBtn') as HTMLButtonElement;
-    const roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
-    const chatInput = document.getElementById('chat-input') as HTMLInputElement;
-    const chatSendBtn = document.getElementById('chat-send-btn') as HTMLButtonElement;
+    const createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement | null;
+    const joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement | null;
+    const leaveRoomBtn = document.getElementById('leaveRoomBtn') as HTMLButtonElement | null;
+    const roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement | null;
+    const chatInput = document.getElementById('chat-input') as HTMLInputElement | null;
+    const chatSendBtn = document.getElementById('chat-send-btn') as HTMLButtonElement | null;
 
     if (createRoomBtn) {
       createRoomBtn.onclick = () => this.handleCreateRoom();
     }
 
-    if (joinRoomBtn) {
+    if (joinRoomBtn && roomIdInput) {
       joinRoomBtn.onclick = () => {
         const roomId = roomIdInput.value.trim();
         if (roomId) {
@@ -86,7 +86,7 @@ class Application {
       leaveRoomBtn.onclick = () => this.handleLeaveRoom();
     }
 
-    if (chatSendBtn) {
+    if (chatSendBtn && chatInput) {
       chatSendBtn.onclick = () => {
         const message = chatInput.value.trim();
         if (message) {
@@ -100,7 +100,7 @@ class Application {
       chatInput.onkeypress = (e) => {
         if (e.key === 'Enter') {
           const message = chatInput.value.trim();
-          if (message) {
+          if (message && chatInput) {
             this.handleSendMessage(message);
             chatInput.value = '';
           }

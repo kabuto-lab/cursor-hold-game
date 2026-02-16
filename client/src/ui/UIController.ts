@@ -17,18 +17,18 @@ export class UIController {
 
   constructor() {
     // Get all required UI elements
-    const landingScreen = document.getElementById('landingScreen');
-    const gameScreen = document.getElementById('gameScreen');
-    const createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
-    const roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
-    const joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
-    const leaveRoomBtn = document.getElementById('leaveRoomBtn') as HTMLButtonElement;
-    const currentRoomId = document.getElementById('currentRoomId');
-    const playerCount = document.getElementById('playerCount');
-    const chatContainer = document.getElementById('chat-container');
-    const chatMessages = document.getElementById('chat-messages');
-    const chatInput = document.getElementById('chat-input');
-    const chatSendBtn = document.getElementById('chat-send-btn');
+    const landingScreen = document.getElementById('landingScreen') as HTMLElement | null;
+    const gameScreen = document.getElementById('gameScreen') as HTMLElement | null;
+    const createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement | null;
+    const roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement | null;
+    const joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement | null;
+    const leaveRoomBtn = document.getElementById('leaveRoomBtn') as HTMLButtonElement | null;
+    const currentRoomId = document.getElementById('currentRoomId') as HTMLElement | null;
+    const playerCount = document.getElementById('playerCount') as HTMLElement | null;
+    const chatContainer = document.getElementById('chat-container') as HTMLElement | null;
+    const chatMessages = document.getElementById('chat-messages') as HTMLElement | null;
+    const chatInput = document.getElementById('chat-input') as HTMLInputElement | null;
+    const chatSendBtn = document.getElementById('chat-send-btn') as HTMLButtonElement | null;
 
     if (!landingScreen || !gameScreen || !createRoomBtn || !roomIdInput || !joinRoomBtn || 
         !leaveRoomBtn || !currentRoomId || !playerCount || !chatContainer || 
@@ -37,18 +37,18 @@ export class UIController {
     }
 
     this.uiElements = {
-      landingScreen,
-      gameScreen,
-      createRoomBtn,
-      roomIdInput,
-      joinRoomBtn,
-      leaveRoomBtn,
-      currentRoomId,
-      playerCount,
-      chatContainer,
-      chatMessages,
-      chatInput,
-      chatSendBtn
+      landingScreen: landingScreen!,
+      gameScreen: gameScreen!,
+      createRoomBtn: createRoomBtn!,
+      roomIdInput: roomIdInput!,
+      joinRoomBtn: joinRoomBtn!,
+      leaveRoomBtn: leaveRoomBtn!,
+      currentRoomId: currentRoomId!,
+      playerCount: playerCount!,
+      chatContainer: chatContainer!,
+      chatMessages: chatMessages!,
+      chatInput: chatInput!,
+      chatSendBtn: chatSendBtn!
     };
 
     this.setupEventListeners();

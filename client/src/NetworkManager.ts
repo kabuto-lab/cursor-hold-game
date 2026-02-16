@@ -5,35 +5,32 @@
 
 import { Client, Room } from 'colyseus.js';
 import { PlayerSchema, DraggableObjectSchema } from './types/schema';
-import { GameStateManager } from './GameStateManager';
 
 export class NetworkManager {
   private client: Client;
   private room: Room | null = null;
-  private gameStateManager: GameStateManager;
   
   // Callbacks для обновления состояния
   onPlayerJoined?: (playerId: string, player: PlayerSchema) => void;
-  onPlayerLeft?: (playerId: string) => void;
+  onPlayerLeft?: (_playerId: string) => void;
   onPlayerUpdated?: (playerId: string, player: PlayerSchema) => void;
   onObjectAdded?: (objectId: string, obj: DraggableObjectSchema) => void;
-  onObjectRemoved?: (objectId: string) => void;
+  onObjectRemoved?: (_objectId: string) => void;
   onObjectUpdated?: (objectId: string, obj: DraggableObjectSchema) => void;
   onVirusParamsUpdated?: (playerId: string, params: { [key: string]: number }) => void;
-  onVirusBattleStarted?: (message: string) => void;
-  onVirusBattleEnded?: (message: string) => void;
-  onVirusTick?: (tick: number, message: string) => void;
+  onVirusBattleStarted?: (_message: string) => void;
+  onVirusBattleEnded?: (_message: string) => void;
+  onVirusTick?: (_tick: number, _message: string) => void;
   onCursorUpdate?: (playerId: string, x: number, y: number) => void;
-  onError?: (error: any) => void;
+  onError?: (error: unknown) => void;
   onDisconnected?: () => void;
 
-  constructor(gameStateManager: GameStateManager) {
-    this.gameStateManager = gameStateManager;
+  constructor() {
     // Используем тот же URL, что и в оригинальном коде
-    const serverUrl = window.location.protocol === 'https:' 
-      ? 'wss://cursor-hold-game-server.onrender.com' 
+    const serverUrl = window.location.protocol === 'https:'
+      ? 'wss://cursor-hold-game-server.onrender.com'
       : `ws://${window.location.hostname}:2567`;
-    
+
     this.client = new Client(serverUrl);
   }
 
@@ -71,51 +68,50 @@ export class NetworkManager {
     // Обработчики состояния комнаты
     this.room.onStateChange.once(() => {
       // Инициализация начального состояния
-      this.room?.state.players.forEach((player, playerId) => {
-        this.gameStateManager.addPlayer(playerId, player);
+      this.room!.state.players.forEach((player: PlayerSchema, playerId: string) => {
         if (playerId === this.room?.sessionId) {
-          this.gameStateManager.setCurrentPlayerId(playerId);
+          // Устанавливаем текущего игрока
+        }
+        if (this.onPlayerJoined) {
+          this.onPlayerJoined(playerId, player);
         }
       });
 
-      this.room?.state.objects.forEach((obj, objectId) => {
-        this.gameStateManager.addObject(objectId, obj);
+      this.room!.state.objects.forEach((obj: DraggableObjectSchema, objectId: string) => {
+        if (this.onObjectAdded) {
+          this.onObjectAdded(objectId, obj);
+        }
       });
     });
 
     // Обработчики добавления/удаления игроков
-    this.room.state.players.onAdd = (player, playerId) => {
-      this.gameStateManager.addPlayer(playerId, player);
+    this.room.state.players.onAdd = (player: PlayerSchema, playerId: string) => {
       if (this.onPlayerJoined) {
         this.onPlayerJoined(playerId, player);
       }
     };
 
-    this.room.state.players.onRemove = (player, playerId) => {
-      this.gameStateManager.removePlayer(playerId);
+    this.room.state.players.onRemove = (_player: PlayerSchema, playerId: string) => {
       if (this.onPlayerLeft) {
         this.onPlayerLeft(playerId);
       }
     };
 
     // Обработчики обновления игроков
-    this.room.state.players.onChange = (player, playerId) => {
-      this.gameStateManager.updatePlayer(playerId, player);
+    this.room.state.players.onChange = (player: PlayerSchema, playerId: string) => {
       if (this.onPlayerUpdated) {
         this.onPlayerUpdated(playerId, player);
       }
     };
 
     // Обработчики объектов
-    this.room.state.objects.onAdd = (obj, objectId) => {
-      this.gameStateManager.addObject(objectId, obj);
+    this.room.state.objects.onAdd = (obj: DraggableObjectSchema, objectId: string) => {
       if (this.onObjectAdded) {
         this.onObjectAdded(objectId, obj);
       }
     };
 
-    this.room.state.objects.onRemove = (obj, objectId) => {
-      this.gameStateManager.removeObject(objectId);
+    this.room.state.objects.onRemove = (_obj: DraggableObjectSchema, objectId: string) => {
       if (this.onObjectRemoved) {
         this.onObjectRemoved(objectId);
       }
@@ -125,29 +121,27 @@ export class NetworkManager {
     this.room.onMessage('updatePosition', (data: { playerId: string; x: number; y: number }) => {
       if (this.onPlayerUpdated) {
         // Обновляем позицию игрока в схеме
-        const player = this.gameStateManager.players.get(data.playerId);
+        const player = this.room?.state.players.get(data.playerId);
         if (player) {
           const updatedPlayer = { ...player, x: data.x, y: data.y };
-          this.gameStateManager.updatePlayer(data.playerId, updatedPlayer);
           this.onPlayerUpdated(data.playerId, updatedPlayer);
         }
       }
     });
 
-    this.room.onMessage('holdHands', (data: { player1Id: string; player2Id: string }) => {
+    this.room.onMessage('holdHands', (_data: { player1Id: string; player2Id: string }) => {
       // Обработка "держания за руки"
     });
 
-    this.room.onMessage('releaseHands', (data: { player1Id: string; player2Id: string }) => {
+    this.room.onMessage('releaseHands', (_data: { player1Id: string; player2Id: string }) => {
       // Обработка отпускания рук
     });
 
     this.room.onMessage('playerNameUpdated', (data: { playerId: string; name: string }) => {
       // Обновление имени игрока
-      const player = this.gameStateManager.players.get(data.playerId);
+      const player = this.room?.state.players.get(data.playerId);
       if (player) {
         const updatedPlayer = { ...player, name: data.name };
-        this.gameStateManager.updatePlayer(data.playerId, updatedPlayer);
         if (this.onPlayerUpdated) {
           this.onPlayerUpdated(data.playerId, updatedPlayer);
         }
@@ -162,14 +156,12 @@ export class NetworkManager {
     });
 
     this.room.onMessage('virusBattleStarted', (data: { message: string }) => {
-      this.gameStateManager.setBattleRunning(true);
       if (this.onVirusBattleStarted) {
         this.onVirusBattleStarted(data.message);
       }
     });
 
     this.room.onMessage('virusBattleEnded', (data: { message: string }) => {
-      this.gameStateManager.setBattleRunning(false);
       if (this.onVirusBattleEnded) {
         this.onVirusBattleEnded(data.message);
       }

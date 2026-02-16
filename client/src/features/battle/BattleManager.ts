@@ -1,7 +1,22 @@
 // BattleManager.ts - state machine
+export interface VirusParams {
+  aggression: number;
+  mutation: number;
+  speed: number;
+  defense: number;
+  reproduction: number;
+  stealth: number;
+  virulence: number;
+  resilience: number;
+  mobility: number;
+  intellect: number;
+  contagiousness: number;
+  lethality: number;
+}
+
 export type BattleState =
   | { type: 'idle' }
-  | { type: 'preparing'; params: any; startTime: number }
+  | { type: 'preparing'; params: VirusParams; startTime: number }
   | { type: 'running'; startTime: number }
   | { type: 'ended'; winner: 'A' | 'B' };
 
