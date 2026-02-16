@@ -11,7 +11,7 @@ export class NetworkManager {
   private readonly serverUrl: string;
 
   constructor(serverUrl?: string) {
-    // HARDCODE: для теста используем прод-сервер
+    // HARDCODE: прод-сервер на Render
     this.serverUrl = serverUrl || 'wss://cursor-hold-game-server.onrender.com';
     this.client = new Client(this.serverUrl);
 
