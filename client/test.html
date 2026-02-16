@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TEST PAGE</title>
+  <style>
+    body {
+      background: #0f0f23;
+      color: #00ff00;
+      font-family: monospace;
+      padding: 20px;
+    }
+    .log {
+      background: #000;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #00ff00;
+    }
+  </style>
+</head>
+<body>
+  <h1>TEST PAGE - JS LOADING CHECK</h1>
+  <div id="logContainer"></div>
+  
+  <script>
+    // Функция для логирования на страницу (гарантированно видно)
+    function log(msg) {
+      const div = document.createElement('div');
+      div.className = 'log';
+      div.textContent = new Date().toLocaleTimeString() + ': ' + msg;
+      document.getElementById('logContainer').appendChild(div);
+      console.log(msg);
+    }
+    
+    log('=== INLINE SCRIPT STARTED ===');
+    log('User agent: ' + navigator.userAgent);
+    log('Page loaded: ' + document.readyState);
+  </script>
+  
+  <script type="module">
+    log('=== MODULE SCRIPT STARTED ===');
+    
+    // Пробуем сделать простой import
+    log('Testing basic JS...');
+    log('2 + 2 = ' + (2 + 2));
+    
+    // Пробуем создать элемент
+    const btn = document.createElement('button');
+    btn.textContent = 'TEST BUTTON';
+    btn.onclick = () => log('BUTTON CLICKED!');
+    document.body.appendChild(btn);
+    
+    log('Button created. Click it to test events.');
+    
+    // Ждём load event
+    window.addEventListener('load', () => {
+      log('=== LOAD EVENT FIRED ===');
+      
+      const div = document.createElement('div');
+      div.className = 'log';
+      div.style.background = '#00ff00';
+      div.style.color = '#000';
+      div.textContent = 'LOAD EVENT SUCCESS!';
+      document.body.appendChild(div);
+    });
+    
+    log('Load event listener registered');
+  </script>
+  
+  <p>If you see this text and the button above, HTML is loading but module script may be failing.</p>
+  <p>Open browser console (F12) and check for errors.</p>
+</body>
+</html>
