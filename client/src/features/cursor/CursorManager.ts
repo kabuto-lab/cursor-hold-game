@@ -26,10 +26,13 @@ export class CursorManager {
    * Настроить сетевые слушатели
    */
   private setupNetworkListeners(): void {
+    console.log('[CursorManager] setupNetworkListeners called');
     // Слушаем обновления курсоров от других игроков
     this.networkManager.onMessage('cursorUpdate', (data: { playerId: string; x: number; y: number }) => {
+      console.log('[CursorManager] Received cursorUpdate:', data);
       if (data.playerId && typeof data.x === 'number' && typeof data.y === 'number') {
         this.remoteCursors.set(data.playerId, { x: data.x, y: data.y });
+        console.log('[CursorManager] Updated cursor for playerId:', data.playerId, 'Total cursors:', this.remoteCursors.size);
       }
     });
   }
@@ -54,6 +57,7 @@ export class CursorManager {
    */
   private sendCursorUpdate(): void {
     const pos = this.inputManager.getMousePosition();
+    console.log('[CursorManager] Sending cursor update:', pos);
     this.networkManager.sendCursorUpdate(pos.x, pos.y);
   }
 

@@ -38,6 +38,7 @@ export class CursorRenderer {
    * Создать Graphics для курсора игрока
    */
   private createCursorGraphics(playerId: string): PIXI.Graphics {
+    console.log('[CursorRenderer] Creating cursor for playerId:', playerId);
     const graphics = new PIXI.Graphics();
     const color = this.generateColorFromId(playerId);
 
@@ -57,6 +58,7 @@ export class CursorRenderer {
     graphics.stroke({ width: 2, color: 0xFFFFFF });
 
     this.stage.addChild(graphics);
+    console.log('[CursorRenderer] Graphics created and added to stage. Stage children count:', this.stage.children.length);
     return graphics;
   }
 
@@ -71,6 +73,7 @@ export class CursorRenderer {
       this.cursorGraphics.set(playerId, graphics);
       // Инициализируем текущую позицию целевой
       this.cursorPositions.set(playerId, { x: targetX, y: targetY });
+      console.log('[CursorRenderer] New cursor created for playerId:', playerId, 'at position:', targetX, targetY);
     }
 
     const currentPos = this.cursorPositions.get(playerId);
@@ -105,6 +108,7 @@ export class CursorRenderer {
    * Запустить цикл рендеринга
    */
   private startRendering(): void {
+    console.log('[CursorRenderer] startRendering called');
     const renderLoop = () => {
       const remoteCursors = this.cursorManager.getAllRemoteCursors();
       const activePlayerIds = new Set(remoteCursors.keys());
