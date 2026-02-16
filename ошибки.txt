@@ -1,68 +1,8 @@
 ================================================================================
 ОШИБКИ И КРИТИЧЕСКИЕ ФАЙЛЫ ДЛЯ ОТЛАДКИ
 ================================================================================
-
-Самые важные (обязательно)
---------------------------
-
-1. client/package.json
-   → сейчас именно этот файл определяет, что запускается при npm run build
-
-2. client/vite.config.ts (или vite.config.js, если есть)
-   → критично для понимания, куда vite кладёт билд и как он настроен
-
-3. client/tsconfig.json
-   → влияет на tsc и на то, почему могут быть скрытые ошибки типов
-
-4. client/index.html
-   → точка входа, откуда подключается main.ts и где находятся кнопки/формы
-
-5. client/src/main.ts
-   → точка входа приложения, где всё инициализируется
-
-6. client/src/ui/UIController.ts
-   → именно здесь должна быть логика кнопок Create Room / Join Room
-
-7. client/src/core/NetworkManager.ts
-   → логика создания/присоединения к комнате (Colyseus)
-
-
-Очень желательно (помогут увидеть полную картину)
--------------------------------------------------
-
-8. client/src/chat/ChatManager.ts
-   → если чат работает, а комнаты нет — это даст подсказку
-
-9. client/src/core/GameEngine.ts
-   → если используется в main.ts
-
-10. server/package.json
-    → чтобы понять, как запускается серверная часть (Colyseus)
-
-11. server/src/index.ts (или основной файл сервера)
-    → регистрация комнат, порт, CORS и т.д.
-
-12. server/src/rooms/HoldingRoom.ts (или аналогичный файл комнаты)
-    → логика комнаты на сервере (onCreate, onJoin, сообщения)
-
-13. server/src/rooms/schema.ts (или где определены схемы Colyseus)
-    → PlayerSchema, RoomState и т.д.
-
-
-Дополнительно (если есть)
--------------------------
-
-14. client/src/types/ (например schema.ts, types.d.ts)
-
-
-Что НЕ нужно скидывать (пока)
------------------------------
-
-- package.json в корне репозитория (root-level)
-- .gitignore, README.md, батники и текстовые инструкции
-- node_modules (никогда)
-- любые скомпилированные файлы (dist, build и т.д.)
-
+Дата: 2026-02-16
+Проблема: Кнопка "Create Room" не работает на Render.com
 
 ================================================================================
 СОДЕРЖИМОЕ ФАЙЛОВ (АКТУАЛЬНОЕ)
@@ -310,25 +250,10 @@ export default defineConfig({
       border: 3px solid #ff00ff;
     }
 
-    .corner-circle.top-left {
-      top: 10px;
-      left: 10px;
-    }
-
-    .corner-circle.top-right {
-      top: 10px;
-      right: 10px;
-    }
-
-    .corner-circle.bottom-left {
-      bottom: 10px;
-      left: 10px;
-    }
-
-    .corner-circle.bottom-right {
-      bottom: 10px;
-      right: 10px;
-    }
+    .corner-circle.top-left { top: 10px; left: 10px; }
+    .corner-circle.top-right { top: 10px; right: 10px; }
+    .corner-circle.bottom-left { bottom: 10px; left: 10px; }
+    .corner-circle.bottom-right { bottom: 10px; right: 10px; }
 
     .copyable-id {
       cursor: pointer;
@@ -336,9 +261,7 @@ export default defineConfig({
       transition: color 0.2s;
     }
 
-    .copyable-id:hover {
-      color: #00ffff;
-    }
+    .copyable-id:hover { color: #00ffff; }
 
     .copied-message {
       position: fixed;
@@ -361,6 +284,7 @@ export default defineConfig({
   <div id="app">
     <!-- Landing Screen -->
     <div id="landingScreen" class="screen">
+      <div style="font-size: 3rem; color: #ff00ff; font-family: 'Courier New', monospace; font-weight: bold; margin-bottom: 0.5rem;">1</div>
       <h1>DIGITAL HAND HOLDING</h1>
       <p>Connect with someone special in a virtual space</p>
 
@@ -375,16 +299,12 @@ export default defineConfig({
     <div id="gameScreen" class="screen hidden">
       <div id="canvasContainer"></div>
 
-      <!-- 4 желтых круга по углам -->
       <div class="corner-circle top-left"></div>
       <div class="corner-circle top-right"></div>
       <div class="corner-circle bottom-left"></div>
       <div class="corner-circle bottom-right"></div>
 
-      <!-- Left menu button -->
       <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
-
-      <!-- Menu button in top right corner -->
       <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
 
       <!-- Центральная панель с ID комнаты и чатом -->
@@ -437,99 +357,11 @@ export default defineConfig({
           <div class="setting-item">
             <h4>Virus Parameters (12 points total)</h4>
             <div id="virusParamsContainer">
-              <!-- Row 1 -->
-              <div class="param-row">
-                <div class="param-cell" data-param="aggression">
-                  <div class="param-emoji">⚔️</div>
-                  <div class="param-name">Aggression</div>
-                  <div class="param-value" id="param-aggression">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="mutation">
-                  <div class="param-emoji">🧬</div>
-                  <div class="param-name">Mutation</div>
-                  <div class="param-value" id="param-mutation">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="speed">
-                  <div class="param-emoji">⚡</div>
-                  <div class="param-name">Speed</div>
-                  <div class="param-value" id="param-speed">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-              </div>
-
-              <!-- Row 2 -->
-              <div class="param-row">
-                <div class="param-cell" data-param="defense">
-                  <div class="param-emoji">🛡️</div>
-                  <div class="param-name">Defense</div>
-                  <div class="param-value" id="param-defense">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="reproduction">
-                  <div class="param-emoji">🦠</div>
-                  <div class="param-name">Reproduction</div>
-                  <div class="param-value" id="param-reproduction">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="stealth">
-                  <div class="param-emoji">👻</div>
-                  <div class="param-name">Stealth</div>
-                  <div class="param-value" id="param-stealth">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-              </div>
-
-              <!-- Row 3 -->
-              <div class="param-row">
-                <div class="param-cell" data-param="virulence">
-                  <div class="param-emoji">☣️</div>
-                  <div class="param-name">Virulence</div>
-                  <div class="param-value" id="param-virulence">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="resilience">
-                  <div class="param-emoji">💪</div>
-                  <div class="param-name">Resilience</div>
-                  <div class="param-value" id="param-resilience">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="mobility">
-                  <div class="param-emoji">🚶</div>
-                  <div class="param-name">Mobility</div>
-                  <div class="param-value" id="param-mobility">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-              </div>
-
-              <!-- Row 4 -->
-              <div class="param-row">
-                <div class="param-cell" data-param="intellect">
-                  <div class="param-emoji">🧠</div>
-                  <div class="param-name">Intellect</div>
-                  <div class="param-value" id="param-intellect">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="contagiousness">
-                  <div class="param-emoji">🫁</div>
-                  <div class="param-name">Contagiousness</div>
-                  <div class="param-value" id="param-contagiousness">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="lethality">
-                  <div class="param-emoji">💀</div>
-                  <div class="param-name">Lethality</div>
-                  <div class="param-value" id="param-lethality">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-              </div>
+              <!-- Param rows omitted for brevity -->
             </div>
-
             <div class="points-summary">
               Points remaining: <span id="points-remaining">12</span>
             </div>
-
             <button id="randomizeBtn" class="btn no-border">RANDOMIZE</button>
             <button id="readyBtn" class="btn no-border">READY</button>
           </div>
@@ -573,9 +405,9 @@ class MainApp {
   }
 
   private setupInteractions(): void {
-    this.uiController.onCreateRoom = async (roomId) => {
+    this.uiController.onCreateRoom = async () => {
       try {
-        await this.networkManager.createRoom(roomId);
+        await this.networkManager.createRoom();
         this.uiController.setView('room');
 
         const room = this.networkManager.getCurrentRoom();
@@ -633,10 +465,6 @@ window.addEventListener('load', () => {
 --------------------------------------------------------------------------------
 6. client/src/ui/UIController.ts
 --------------------------------------------------------------------------------
-/**
- * Контроллер пользовательского интерфейса
- * Управляет переключением между lobby ↔ room и боковыми панелями
- */
 export class UIController {
   private lobbyContainer: HTMLElement;
   private roomContainer: HTMLElement;
@@ -703,9 +531,8 @@ export class UIController {
   }
 
   private onCreateRoomClick(): void {
-    const roomId = this.generateRoomId();
     if (this.onCreateRoom) {
-      this.onCreateRoom(roomId);
+      this.onCreateRoom();
     }
   }
 
@@ -788,10 +615,6 @@ export class UIController {
     this.leftSidebar.classList.toggle('active');
   }
 
-  openLeftSidebar(): void {
-    this.leftSidebar.classList.add('active');
-  }
-
   closeLeftSidebar(): void {
     this.leftSidebar.classList.remove('active');
   }
@@ -800,23 +623,15 @@ export class UIController {
     this.rightSidebar.classList.toggle('active');
   }
 
-  openRightSidebar(): void {
-    this.rightSidebar.classList.add('active');
-  }
-
   closeRightSidebar(): void {
     this.rightSidebar.classList.remove('active');
-  }
-
-  private generateRoomId(): string {
-    return Math.random().toString(36).substring(2, 10).toUpperCase();
   }
 
   getCurrentView(): 'lobby' | 'room' {
     return this.currentView;
   }
 
-  onCreateRoom?: (roomId: string) => void;
+  onCreateRoom?: () => void;
   onJoinRoom?: (roomId: string) => void;
 }
 
@@ -831,9 +646,10 @@ export class NetworkManager {
   private currentRoom: Room | null = null;
   private readonly serverUrl: string;
 
-  constructor(serverUrl: string = 'ws://localhost:2567') {
+  constructor(serverUrl: string = (import.meta as any).env?.VITE_SERVER_URL || 'ws://localhost:2567') {
     this.serverUrl = serverUrl;
     this.client = new Client(this.serverUrl);
+    console.log('[NetworkManager] Server URL:', this.serverUrl);
   }
 
   async connect(): Promise<void> {
@@ -846,12 +662,12 @@ export class NetworkManager {
     }
   }
 
-  async createRoom(roomId?: string): Promise<string> {
+  async createRoom(): Promise<string> {
     try {
-      const finalRoomId = roomId || this.generateRoomId();
-      this.currentRoom = await this.client.joinOrCreate('holding_room', { roomId: finalRoomId });
-      (this.currentRoom as any).customRoomId = finalRoomId;
-      return finalRoomId;
+      this.currentRoom = await this.client.joinOrCreate('holding_room');
+      const roomId = this.currentRoom.state?.roomId || this.currentRoom.id;
+      console.log('[NetworkManager] Room created:', roomId);
+      return roomId;
     } catch (error) {
       console.error('Failed to create room:', error);
       throw error;
@@ -860,8 +676,8 @@ export class NetworkManager {
 
   async joinRoom(roomId: string): Promise<Room> {
     try {
-      this.currentRoom = await this.client.joinOrCreate('holding_room', { roomId });
-      (this.currentRoom as any).customRoomId = roomId;
+      this.currentRoom = await this.client.joinById(roomId);
+      console.log('[NetworkManager] Joined room:', roomId);
       return this.currentRoom;
     } catch (error) {
       console.error('Failed to join room:', error);
@@ -869,13 +685,13 @@ export class NetworkManager {
     }
   }
 
-  async joinOrCreateRoom(roomName: string = 'holding_room'): Promise<Room> {
+  async getAvailableRooms(): Promise<any[]> {
     try {
-      this.currentRoom = await this.client.joinOrCreate(roomName);
-      return this.currentRoom;
+      const rooms = await this.client.getAvailableRooms('holding_room');
+      return rooms;
     } catch (error) {
-      console.error('Failed to join or create room:', error);
-      throw error;
+      console.error('Failed to get available rooms:', error);
+      return [];
     }
   }
 
@@ -923,10 +739,6 @@ export class NetworkManager {
       return this.currentRoom.state;
     }
     return null;
-  }
-
-  private generateRoomId(): string {
-    return Math.random().toString(36).substring(2, 10).toUpperCase();
   }
 }
 
@@ -996,53 +808,7 @@ export class ChatManager {
 }
 
 --------------------------------------------------------------------------------
-9. client/src/core/GameEngine.ts
---------------------------------------------------------------------------------
-import * as PIXI from 'pixi.js';
-
-export class GameEngine {
-  readonly app: PIXI.Application;
-  private ticker: PIXI.Ticker;
-
-  constructor(containerId: string = 'canvasContainer') {
-    this.app = new PIXI.Application();
-    this.ticker = this.app.ticker;
-
-    const container = document.getElementById(containerId);
-    if (!container) {
-      throw new Error(`Container element with id "${containerId}" not found`);
-    }
-
-    this.app.init({
-      backgroundColor: 0x1a1a1a,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      antialias: true,
-      autoDensity: true,
-      resolution: Math.min(window.devicePixelRatio, 2),
-    });
-
-    container.appendChild(this.app.canvas);
-  }
-
-  addTickerUpdate(updateFn: (dt: number) => void): void {
-    this.ticker.add((ticker) => {
-      const dt = ticker.deltaTime;
-      updateFn(dt);
-    });
-  }
-
-  start(): void {
-    this.ticker.start();
-  }
-
-  stop(): void {
-    this.ticker.stop();
-  }
-}
-
---------------------------------------------------------------------------------
-10. server/package.json
+9. server/package.json
 --------------------------------------------------------------------------------
 {
   "name": "@holding-hands/server",
@@ -1073,7 +839,7 @@ export class GameEngine {
 }
 
 --------------------------------------------------------------------------------
-11. server/src/index.ts
+10. server/src/index.ts
 --------------------------------------------------------------------------------
 import express from 'express';
 import { Server } from 'colyseus';
@@ -1113,7 +879,7 @@ process.on('SIGTERM', () => {
 });
 
 --------------------------------------------------------------------------------
-12. server/src/rooms/HoldingRoom.ts (сокращённо - ключевые методы)
+11. server/src/rooms/HoldingRoom.ts (первые 100 строк)
 --------------------------------------------------------------------------------
 import { Room, Client } from 'colyseus';
 import { RoomState, PlayerSchema, DraggableObjectSchema } from './schema';
@@ -1126,7 +892,21 @@ export class HoldingRoom extends Room<RoomState> {
     this.state.roomId = options.roomId || this.roomId;
     this.state.maxPlayers = 2;
 
-    // Chat messages
+    this.onMessage('updatePosition', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player) {
+        if (
+          typeof data.x === 'number' &&
+          typeof data.y === 'number' &&
+          data.x >= 0 && data.x <= 10000 &&
+          data.y >= 0 && data.y <= 10000
+        ) {
+          player.x = data.x;
+          player.y = data.y;
+        }
+      }
+    });
+
     this.onMessage('chatMessage', (client, data) => {
       const player = this.state.players.get(client.sessionId);
       if (player && typeof data.message === 'string' && data.message.trim().length > 0) {
@@ -1140,19 +920,7 @@ export class HoldingRoom extends Room<RoomState> {
       }
     });
 
-    // Cursor updates
-    this.onMessage('updateCursor', (client, data) => {
-      const player = this.state.players.get(client.sessionId);
-      if (player && typeof data.x === 'number' && typeof data.y === 'number') {
-        player.cursorX = data.x;
-        player.cursorY = data.y;
-        this.broadcast('cursorUpdate', {
-          playerId: client.sessionId,
-          x: data.x,
-          y: data.y
-        }, { except: client });
-      }
-    });
+    // ... остальные обработчики сообщений
   }
 
   onJoin(client: Client, options: any) {
@@ -1185,7 +953,6 @@ export class HoldingRoom extends Room<RoomState> {
 
   onLeave(client: Client, consented: boolean) {
     this.state.players.delete(client.sessionId);
-    this.releaseHoldsForPlayer(client.sessionId);
     console.log(`${client.sessionId} left room ${this.roomId}`);
   }
 
@@ -1201,29 +968,11 @@ export class HoldingRoom extends Room<RoomState> {
     return (r << 16) + (g << 8) + b;
   }
 
-  private releaseHoldsForPlayer(playerId: string) {
-    const player = this.state.players.get(playerId);
-    if (player && player.isHoldingHands) {
-      const otherPlayerId = player.holdingHandsWith;
-      const otherPlayer = this.state.players.get(otherPlayerId);
-      player.isHoldingHands = false;
-      player.holdingHandsWith = '';
-      if (otherPlayer) {
-        otherPlayer.isHoldingHands = false;
-        otherPlayer.holdingHandsWith = '';
-        this.broadcast('releaseHands', {
-          player1Id: playerId,
-          player2Id: otherPlayerId
-        });
-      }
-    }
-  }
-
-  // ... (virus battle simulation methods)
+  // ... остальные методы
 }
 
 --------------------------------------------------------------------------------
-13. server/src/rooms/schema.ts
+12. server/src/rooms/schema.ts
 --------------------------------------------------------------------------------
 import { Schema, type, MapSchema } from '@colyseus/schema';
 

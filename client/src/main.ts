@@ -14,7 +14,7 @@ class MainApp {
   constructor() {
     // Инициализация всех модулей
     this.gameEngine = new GameEngine('canvasContainer');
-    this.networkManager = new NetworkManager(process.env.SERVER_URL || 'ws://localhost:2567');
+    this.networkManager = new NetworkManager();
     this.inputManager = new InputManager();
     this.uiController = new UIController();
     this.chatManager = new ChatManager();
