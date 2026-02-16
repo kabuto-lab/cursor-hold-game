@@ -19,7 +19,7 @@ class MainApp {
     
     try {
       console.log('[MainApp] Creating GameEngine...');
-      this.gameEngine = new GameEngine('canvasContainer');
+      this.gameEngine = new GameEngine();
       console.log('[MainApp] Creating NetworkManager...');
       this.networkManager = new NetworkManager();
       console.log('[MainApp] Creating UIController...');

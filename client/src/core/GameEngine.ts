@@ -5,14 +5,11 @@ import * as PIXI from 'pixi.js';
  * Только рендер + ticker, без логики
  */
 export class GameEngine {
-  readonly app: PIXI.Application;
-  private ticker: PIXI.Ticker;
+  app: PIXI.Application | null = null;
+  private ticker: PIXI.Ticker | null = null;
 
-  constructor(containerId: string = 'canvasContainer') {
-    this.app = new PIXI.Application();
-    this.ticker = this.app.ticker;
-
-    console.log('[GameEngine] Constructor called with containerId:', containerId);
+  constructor() {
+    console.log('[GameEngine] Constructor called');
   }
 
   /**
@@ -26,6 +23,9 @@ export class GameEngine {
       throw new Error(`Container element with id "${containerId}" not found`);
     }
 
+    // Создаём и инициализируем приложение
+    this.app = new PIXI.Application();
+    
     await this.app.init({
       backgroundColor: 0x1a1a1a,
       width: window.innerWidth,
@@ -35,8 +35,12 @@ export class GameEngine {
       resolution: Math.min(window.devicePixelRatio, 2),
     });
 
-    console.log('[GameEngine] PixiJS initialized, appending canvas...');
+    console.log('[GameEngine] PixiJS initialized, getting ticker...');
     
+    // Получаем ticker после инициализации
+    this.ticker = this.app.ticker;
+    
+    console.log('[GameEngine] Appending canvas...');
     // Добавляем canvas в контейнер
     container.appendChild(this.app.canvas);
     
@@ -47,23 +51,34 @@ export class GameEngine {
    * Добавить обновление на тикер
    */
   addTickerUpdate(updateFn: (dt: number) => void): void {
-    this.ticker.add((ticker) => {
-      const dt = ticker.deltaTime;
-      updateFn(dt);
-    });
+    if (this.ticker) {
+      this.ticker.add((ticker) => {
+        const dt = ticker.deltaTime;
+        updateFn(dt);
+      });
+    } else {
+      console.error('[GameEngine] Ticker is null!');
+    }
   }
 
   /**
    * Запустить тикер
    */
   start(): void {
-    this.ticker.start();
+    if (this.ticker) {
+      this.ticker.start();
+      console.log('[GameEngine] Ticker started');
+    } else {
+      console.error('[GameEngine] Cannot start: ticker is null');
+    }
   }
 
   /**
    * Остановить тикер
    */
   stop(): void {
-    this.ticker.stop();
+    if (this.ticker) {
+      this.ticker.stop();
+    }
   }
 }
