@@ -13,7 +13,7 @@ class MainApp {
 
   constructor() {
     // Инициализация всех модулей
-    this.gameEngine = new GameEngine('game-canvas');
+    this.gameEngine = new GameEngine('canvasContainer');
     this.networkManager = new NetworkManager(process.env.SERVER_URL || 'ws://localhost:2567');
     this.inputManager = new InputManager();
     this.uiController = new UIController();
@@ -21,7 +21,7 @@ class MainApp {
 
     // Настройка взаимодействия между модулями
     this.setupInteractions();
-    
+
     // Запуск игры
     this.gameEngine.start();
   }

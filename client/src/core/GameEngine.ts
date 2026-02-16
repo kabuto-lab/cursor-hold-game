@@ -8,18 +8,17 @@ export class GameEngine {
   readonly app: PIXI.Application;
   private ticker: PIXI.Ticker;
 
-  constructor(canvasId: string) {
+  constructor(containerId: string = 'canvasContainer') {
     this.app = new PIXI.Application();
     this.ticker = this.app.ticker;
-    
+
     // Инициализация canvas
-    const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
-    if (!canvas) {
-      throw new Error(`Canvas element with id "${canvasId}" not found`);
+    const container = document.getElementById(containerId);
+    if (!container) {
+      throw new Error(`Container element with id "${containerId}" not found`);
     }
-    
+
     this.app.init({
-      view: canvas,
       backgroundColor: 0x1a1a1a,
       width: window.innerWidth,
       height: window.innerHeight,
@@ -27,6 +26,9 @@ export class GameEngine {
       autoDensity: true,
       resolution: Math.min(window.devicePixelRatio, 2),
     });
+
+    // Добавляем canvas в контейнер
+    container.appendChild(this.app.canvas);
   }
 
   /**
