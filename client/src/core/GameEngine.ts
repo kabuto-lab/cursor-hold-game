@@ -1,49 +1,26 @@
-/**
- * GameEngine.ts
- * Core engine managing PixiJS Application and Ticker
- */
-
+// GameEngine.ts - only PIXI.Application + ticker + basic resize
 import * as PIXI from 'pixi.js';
-
-export interface GameEngineOptions {
-  width?: number;
-  height?: number;
-  backgroundColor?: number;
-  antialias?: boolean;
-}
 
 export class GameEngine {
   private app: PIXI.Application;
   private ticker: PIXI.Ticker;
-  private callbackWrappers: Map<(deltaTime: number) => void, (ticker: PIXI.Ticker) => void> = new Map();
 
-  constructor(options: GameEngineOptions = {}) {
+  constructor() {
     this.app = new PIXI.Application();
     this.ticker = new PIXI.Ticker();
     
-    // Initialize with default options
-    const defaultOptions: GameEngineOptions = {
-      width: window.innerWidth,
-      height: window.innerHeight,
+    this.app.init({
       backgroundColor: 0x0f0f23, // Dark blue background
       antialias: false, // For crisp pixel art
-    };
-    
-    const mergedOptions = { ...defaultOptions, ...options };
-    
-    this.app.init(mergedOptions);
+      autoDensity: true,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      resolution: window.devicePixelRatio || 1,
+    });
   }
 
   get application(): PIXI.Application {
     return this.app;
-  }
-
-  get renderer(): PIXI.Renderer {
-    return this.app.renderer;
-  }
-
-  get stage(): PIXI.Container {
-    return this.app.stage;
   }
 
   get tickerInstance(): PIXI.Ticker {
@@ -60,17 +37,11 @@ export class GameEngine {
 
   addTickerCallback(callback: (deltaTime: number) => void): void {
     // In PixiJS v8, ticker callback receives Ticker object, not deltaTime directly
-    const wrapper = (ticker: PIXI.Ticker) => callback(ticker.deltaTime);
-    this.callbackWrappers.set(callback, wrapper);
-    this.ticker.add(wrapper);
+    this.ticker.add((ticker) => callback(ticker.deltaTime));
   }
 
   removeTickerCallback(callback: (deltaTime: number) => void): void {
-    const wrapper = this.callbackWrappers.get(callback);
-    if (wrapper) {
-      this.ticker.remove(wrapper);
-      this.callbackWrappers.delete(callback);
-    }
+    this.ticker.remove((ticker) => callback(ticker.deltaTime));
   }
 
   resize(width: number, height: number): void {

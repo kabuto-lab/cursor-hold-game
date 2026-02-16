@@ -1,65 +1,24 @@
 /**
- * main.ts
- * Entry point for the application
- * Orchestrates all components using composition
+ * main.ts - entry point with composition
  */
 
 import { GameEngine } from './core/GameEngine';
-import { InputManager } from './core/InputManager';
 import { NetworkManager } from './core/NetworkManager';
 import { UIController } from './ui/UIController';
-import { CursorManager, CursorData } from './features/cursor/CursorManager';
-import { CursorRenderer } from './features/cursor/CursorRenderer';
-import { BattleManager } from './features/battle/BattleManager';
-import { BattleRenderer } from './features/battle/BattleRenderer';
-import { VirusParamsUI } from './features/battle/VirusParamsUI';
 import { ChatManager } from './features/chat/ChatManager';
 
 class Application {
   private gameEngine: GameEngine;
-  private inputManager: InputManager;
   private networkManager: NetworkManager;
   private uiController: UIController;
-  private cursorManager: CursorManager;
-  private cursorRenderer: CursorRenderer;
-  private battleManager: BattleManager;
-  private battleRenderer: BattleRenderer;
-  private virusParamsUI: VirusParamsUI;
   private chatManager: ChatManager;
 
   constructor() {
     // Initialize core components
     this.gameEngine = new GameEngine();
-    this.inputManager = new InputManager(window);
     this.networkManager = new NetworkManager();
-
-    // Initialize UI controller
-    this.uiController = new UIController({
-      onCreateRoom: () => this.handleCreateRoom(),
-      onJoinRoom: (roomId) => this.handleJoinRoom(roomId),
-      onLeaveRoom: () => this.handleLeaveRoom()
-    });
-
-    // Initialize cursor components
-    this.cursorManager = new CursorManager();
-    this.cursorRenderer = new CursorRenderer(this.gameEngine.application);
-
-    // Initialize battle components
-    this.battleManager = new BattleManager();
-    this.battleRenderer = new BattleRenderer(this.gameEngine.application);
-
-    // Initialize virus params UI
-    this.virusParamsUI = new VirusParamsUI('virusParamsContainer', {
-      onReady: (params) => {
-        // Send params to server when ready
-        this.networkManager.updateVirusParams(params);
-        // Tell server we're ready
-        this.networkManager.setPlayerReady(true);
-      }
-    });
-
-    // Initialize chat manager
-    this.chatManager = new ChatManager('chat-messages', 'chat-input', 'chat-send-btn');
+    this.uiController = new UIController();
+    this.chatManager = new ChatManager();
 
     // Set up event listeners
     this.setupEventListeners();
@@ -69,38 +28,18 @@ class Application {
     // Network events
     this.networkManager.setCallbacks({
       onPlayerJoined: (playerId, player) => {
-        this.cursorManager.addOrUpdateCursor(player);
+        console.log(`Player joined: ${playerId}`, player);
         this.updatePlayerCount();
       },
       onPlayerLeft: (playerId) => {
-        this.cursorManager.removeCursor(playerId);
+        console.log(`Player left: ${playerId}`);
         this.updatePlayerCount();
       },
       onPlayerUpdated: (playerId, player) => {
-        this.cursorManager.addOrUpdateCursor(player);
-      },
-      onVirusParamsUpdated: (playerId, params) => {
-        // Handle virus params update from other players
-        console.log(`Virus params updated for player ${playerId}:`, params);
-      },
-      onVirusBattleStarted: (message) => {
-        console.log('Virus battle started:', message);
-        this.battleManager.startBattle();
-      },
-      onVirusBattleEnded: (message) => {
-        console.log('Virus battle ended:', message);
-        const winner = message.includes('A') ? 'A' : message.includes('B') ? 'B' : 'draw';
-        this.battleManager.endBattle(winner);
-      },
-      onVirusTick: (tick, message) => {
-        console.log(`Virus tick ${tick}:`, message);
-        // Update battle visualization
-      },
-      onCursorUpdate: (playerId, x, y) => {
-        this.cursorManager.updateCursorPosition(playerId, x, y);
+        console.log(`Player updated: ${playerId}`, player);
       },
       onChatMessage: (message) => {
-        this.chatManager.addMessage(message);
+        this.uiController.addChatMessage(message);
       },
       onError: (error) => {
         console.error('Network error:', error);
@@ -111,53 +50,63 @@ class Application {
       }
     });
 
-    // Cursor events
-    this.cursorManager.setEvents({
-      onCursorAdded: (cursor) => {
-        this.cursorRenderer.updateAllCursors(this.cursorManager.getAllCursors());
+    // Chat events
+    this.chatManager.setCallbacks({
+      onMessageReceived: (message) => {
+        this.uiController.addChatMessage(`${message.playerName}: ${message.message}`);
       },
-      onCursorUpdated: (cursor) => {
-        this.cursorRenderer.updateAllCursors(this.cursorManager.getAllCursors());
-      },
-      onCursorRemoved: (cursorId) => {
-        this.cursorRenderer.updateAllCursors(this.cursorManager.getAllCursors());
+      onMessageSent: (message) => {
+        console.log('Message sent:', message);
       }
     });
 
-    // Battle events
-    this.battleManager.setEvents({
-      onStateChanged: (newState) => {
-        this.battleRenderer.update(newState);
-        
-        // Update UI based on battle state
-        switch (newState.type) {
-          case 'idle':
-            this.virusParamsUI.setVisible(true);
-            break;
-          case 'preparing':
-            this.virusParamsUI.setVisible(true);
-            break;
-          case 'running':
-            this.virusParamsUI.setVisible(false);
-            break;
-          case 'ended':
-            this.virusParamsUI.setVisible(false);
-            break;
+    // UI events - these would need to be connected differently in a real implementation
+    // For now, we'll add event listeners directly to the DOM elements
+    const createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
+    const joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
+    const leaveRoomBtn = document.getElementById('leaveRoomBtn') as HTMLButtonElement;
+    const roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
+    const chatInput = document.getElementById('chat-input') as HTMLInputElement;
+    const chatSendBtn = document.getElementById('chat-send-btn') as HTMLButtonElement;
+
+    if (createRoomBtn) {
+      createRoomBtn.onclick = () => this.handleCreateRoom();
+    }
+
+    if (joinRoomBtn) {
+      joinRoomBtn.onclick = () => {
+        const roomId = roomIdInput.value.trim();
+        if (roomId) {
+          this.handleJoinRoom(roomId);
         }
-      }
-    });
+      };
+    }
 
-    // Input events
-    this.inputManager.setCallbacks({
-      onMouseMove: (x, y) => {
-        // Send cursor position to server
-        this.networkManager.updatePosition(x, y);
-      },
-      onClick: (x, y) => {
-        // Handle click events
-        console.log(`Click at (${x}, ${y})`);
-      }
-    });
+    if (leaveRoomBtn) {
+      leaveRoomBtn.onclick = () => this.handleLeaveRoom();
+    }
+
+    if (chatSendBtn) {
+      chatSendBtn.onclick = () => {
+        const message = chatInput.value.trim();
+        if (message) {
+          this.handleSendMessage(message);
+          chatInput.value = '';
+        }
+      };
+    }
+
+    if (chatInput) {
+      chatInput.onkeypress = (e) => {
+        if (e.key === 'Enter') {
+          const message = chatInput.value.trim();
+          if (message) {
+            this.handleSendMessage(message);
+            chatInput.value = '';
+          }
+        }
+      };
+    }
   }
 
   private async handleCreateRoom(): Promise<void> {
@@ -166,10 +115,6 @@ class Application {
       this.uiController.updateRoomInfo(roomId);
       this.uiController.showGameScreen();
       this.uiController.updatePlayerCount(1);
-      
-      // Enable input and start game loop
-      this.inputManager.initialize();
-      this.gameEngine.start();
       
       console.log(`Created room: ${roomId}`);
     } catch (error) {
@@ -184,12 +129,8 @@ class Application {
       this.uiController.showGameScreen();
       
       // Get initial player count
-      const playerCount = this.networkManager.getPlayerCount();
-      this.uiController.updatePlayerCount(playerCount);
-      
-      // Enable input and start game loop
-      this.inputManager.initialize();
-      this.gameEngine.start();
+      const count = this.networkManager.getPlayerCount();
+      this.uiController.updatePlayerCount(count);
       
       console.log(`Joined room: ${roomId}`);
     } catch (error) {
@@ -199,25 +140,20 @@ class Application {
 
   private async handleLeaveRoom(): Promise<void> {
     try {
-      await this.networkManager.leaveRoom();
+      this.networkManager.leaveRoom();
       this.uiController.showLandingScreen();
       this.uiController.clearRoomInfo();
-      
-      // Reset game state
-      this.cursorManager.destroy();
-      this.cursorRenderer.destroy();
-      this.battleManager.destroy();
-      this.battleRenderer.destroy();
-      this.virusParamsUI.destroy();
-      
-      // Stop input and game loop
-      this.inputManager.destroy();
-      this.gameEngine.stop();
       
       console.log('Left room');
     } catch (error) {
       console.error('Failed to leave room:', error);
     }
+  }
+
+  private handleSendMessage(message: string): void {
+    this.networkManager.sendChatMessage(message);
+    // Also add to local chat display
+    this.uiController.addChatMessage(`You: ${message}`);
   }
 
   private updatePlayerCount(): void {
@@ -237,15 +173,7 @@ class Application {
   destroy(): void {
     // Clean up all components
     this.gameEngine.destroy();
-    this.inputManager.destroy();
-    this.networkManager.destroy();
-    this.uiController.destroy();
-    this.cursorManager.destroy();
-    this.cursorRenderer.destroy();
-    this.battleManager.destroy();
-    this.battleRenderer.destroy();
-    this.virusParamsUI.destroy();
-    this.chatManager.destroy();
+    this.networkManager.leaveRoom();
   }
 }
 

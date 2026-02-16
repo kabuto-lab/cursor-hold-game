@@ -1,16 +1,4 @@
-/**
- * UIController.ts
- * Main UI controller for room management and chat
- */
-
-import { ChatManager } from '../features/chat/ChatManager';
-
-export interface UIEvents {
-  onCreateRoom?: () => void;
-  onJoinRoom?: (roomId: string) => void;
-  onLeaveRoom?: () => void;
-}
-
+// UIController.ts - manages screens: lobby → room → chat
 export class UIController {
   private uiElements: {
     landingScreen: HTMLElement;
@@ -27,31 +15,7 @@ export class UIController {
     chatSendBtn: HTMLButtonElement;
   };
 
-  private chatManager: ChatManager;
-  private events: UIEvents = {};
-
-  constructor(events: UIEvents = {}) {
-    this.events = events;
-    this.chatManager = new ChatManager('chat-messages', 'chat-input', 'chat-send-btn');
-    this.uiElements = this.initializeUIElements();
-    this.setupEventListeners();
-    this.showLandingScreen();
-  }
-
-  private initializeUIElements(): {
-    landingScreen: HTMLElement;
-    gameScreen: HTMLElement;
-    createRoomBtn: HTMLButtonElement;
-    roomIdInput: HTMLInputElement;
-    joinRoomBtn: HTMLButtonElement;
-    leaveRoomBtn: HTMLButtonElement;
-    currentRoomId: HTMLElement;
-    playerCount: HTMLElement;
-    chatContainer: HTMLElement;
-    chatMessages: HTMLElement;
-    chatInput: HTMLInputElement;
-    chatSendBtn: HTMLButtonElement;
-  } {
+  constructor() {
     // Get all required UI elements
     const landingScreen = document.getElementById('landingScreen');
     const gameScreen = document.getElementById('gameScreen');
@@ -66,14 +30,13 @@ export class UIController {
     const chatInput = document.getElementById('chat-input');
     const chatSendBtn = document.getElementById('chat-send-btn');
 
-    // Check if all required elements exist
     if (!landingScreen || !gameScreen || !createRoomBtn || !roomIdInput || !joinRoomBtn || 
         !leaveRoomBtn || !currentRoomId || !playerCount || !chatContainer || 
         !chatMessages || !chatInput || !chatSendBtn) {
       throw new Error('Missing required UI elements');
     }
 
-    return {
+    this.uiElements = {
       landingScreen,
       gameScreen,
       createRoomBtn,
@@ -87,42 +50,38 @@ export class UIController {
       chatInput,
       chatSendBtn
     };
+
+    this.setupEventListeners();
+    this.showLandingScreen();
   }
 
   private setupEventListeners(): void {
-    // Room creation
-    this.uiElements.createRoomBtn.addEventListener('click', () => {
-      if (this.events.onCreateRoom) {
-        this.events.onCreateRoom();
-      }
+    // Chat functionality
+    this.uiElements.chatSendBtn.addEventListener('click', () => {
+      this.sendChatMessage();
     });
 
-    // Room joining
-    this.uiElements.joinRoomBtn.addEventListener('click', () => {
-      const roomId = this.uiElements.roomIdInput.value.trim();
-      if (roomId && this.events.onJoinRoom) {
-        this.events.onJoinRoom(roomId);
-      }
-    });
-
-    // Allow Enter key to join room
-    this.uiElements.roomIdInput.addEventListener('keypress', (e) => {
+    this.uiElements.chatInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
-        const roomId = this.uiElements.roomIdInput.value.trim();
-        if (roomId && this.events.onJoinRoom) {
-          this.events.onJoinRoom(roomId);
-        }
+        this.sendChatMessage();
       }
     });
+  }
 
-    // Leave room
-    this.uiElements.leaveRoomBtn.addEventListener('click', () => {
-      if (this.events.onLeaveRoom) {
-        this.events.onLeaveRoom();
-      }
-    });
-
-    // Chat functionality is handled by ChatManager
+  private sendChatMessage(): void {
+    const message = this.uiElements.chatInput.value.trim();
+    if (message) {
+      // Add message to chat display
+      const messageElement = document.createElement('div');
+      messageElement.textContent = `You: ${message}`;
+      this.uiElements.chatMessages.appendChild(messageElement);
+      
+      // Scroll to bottom
+      this.uiElements.chatMessages.scrollTop = this.uiElements.chatMessages.scrollHeight;
+      
+      // Clear input
+      this.uiElements.chatInput.value = '';
+    }
   }
 
   showLandingScreen(): void {
@@ -165,30 +124,16 @@ export class UIController {
     this.uiElements.playerCount.textContent = '0/2';
   }
 
-  enableRoomActions(enabled: boolean): void {
-    this.uiElements.createRoomBtn.disabled = !enabled;
-    this.uiElements.joinRoomBtn.disabled = !enabled;
-    this.uiElements.roomIdInput.disabled = !enabled;
-  }
-
-  enableLeaveRoom(enabled: boolean): void {
-    this.uiElements.leaveRoomBtn.disabled = !enabled;
+  addChatMessage(message: string): void {
+    const messageElement = document.createElement('div');
+    messageElement.textContent = message;
+    this.uiElements.chatMessages.appendChild(messageElement);
+    
+    // Scroll to bottom
+    this.uiElements.chatMessages.scrollTop = this.uiElements.chatMessages.scrollHeight;
   }
 
   destroy(): void {
-    // Clean up event listeners
-    this.uiElements.createRoomBtn.replaceWith(this.uiElements.createRoomBtn.cloneNode(true));
-    this.uiElements.joinRoomBtn.replaceWith(this.uiElements.joinRoomBtn.cloneNode(true));
-    this.uiElements.leaveRoomBtn.replaceWith(this.uiElements.leaveRoomBtn.cloneNode(true));
-    this.uiElements.roomIdInput.replaceWith(this.uiElements.roomIdInput.cloneNode(true));
-    
-    // Re-reference the cloned elements to maintain functionality
-    this.uiElements.createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
-    this.uiElements.joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
-    this.uiElements.leaveRoomBtn = document.getElementById('leaveRoomBtn') as HTMLButtonElement;
-    this.uiElements.roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
-    
-    // Destroy chat manager
-    this.chatManager.destroy();
+    // Clean up event listeners if needed
   }
 }
