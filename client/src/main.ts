@@ -30,23 +30,27 @@ class MainApp {
       this.uiController = new UIController();
       console.log('[MainApp] Creating ChatManager...');
       this.chatManager = new ChatManager();
-      console.log('[MainApp] Creating CursorManager...');
-      this.cursorManager = new CursorManager(this.inputManager, this.networkManager);
-      console.log('[MainApp] Creating CursorRenderer...');
-      new CursorRenderer(this.gameEngine.app!.stage, this.cursorManager);
 
       console.log('[MainApp] Setting up interactions...');
       this.setupInteractions();
-      
-      // Инициализация PixiJS (асинхронно)
+
+      // Инициализация PixiJS (асинхронно) — потом создаём курсоры
       console.log('[MainApp] Initializing GameEngine...');
       this.gameEngine.init('canvasContainer').then(() => {
         console.log('[MainApp] GameEngine initialized!');
+        
+        // Создаём CursorManager и CursorRenderer ПОСЛЕ инициализации PixiJS
+        console.log('[MainApp] Creating CursorManager...');
+        this.cursorManager = new CursorManager(this.inputManager, this.networkManager);
+        console.log('[MainApp] Creating CursorRenderer...');
+        new CursorRenderer(this.gameEngine.app!.stage, this.cursorManager);
+        
+        console.log('[MainApp] Cursor system initialized!');
         this.gameEngine.start();
       }).catch((error) => {
         console.error('[MainApp] GameEngine init ERROR:', error);
       });
-      
+
       console.log('[MainApp] Constructor finished!');
     } catch (error) {
       console.error('[MainApp] Constructor ERROR:', error);
