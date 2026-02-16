@@ -42,20 +42,21 @@ class MainApp {
     this.uiController.onCreateRoom = async (roomId) => {
       try {
         // Создаём комнату через NetworkManager
-        const createdRoomId = await this.networkManager.createRoom(roomId);
-        
-        // Показываем ID созданной комнаты
-        this.uiController.showCreatedRoomId(createdRoomId);
-        
+        await this.networkManager.createRoom(roomId);
+
         // Переключаемся в комнату
         this.uiController.setView('room');
-        
-        // Подключаем чат к комнате
-        this.chatManager.attachToRoom(this.networkManager.getCurrentRoom()!);
-        
+
+        // Подключаем чат к комнате и показываем ID
+        const room = this.networkManager.getCurrentRoom();
+        if (room) {
+          this.chatManager.attachToRoom(room);
+          this.uiController.updateRoomIdFromRoom(room);
+        }
+
         // Устанавливаем имя игрока (временно фиктивное)
         this.uiController.setPlayerName('Player 1');
-        
+
         // Подписываемся на обновления состояния комнаты
         this.setupRoomStateListener();
       } catch (error) {
@@ -69,16 +70,20 @@ class MainApp {
       try {
         // Присоединяемся к комнате
         await this.networkManager.joinRoom(roomId);
-        
+
         // Переключаемся в комнату
         this.uiController.setView('room');
-        
-        // Подключаем чат к комнате
-        this.chatManager.attachToRoom(this.networkManager.getCurrentRoom()!);
-        
+
+        // Подключаем чат к комнате и показываем ID
+        const room = this.networkManager.getCurrentRoom();
+        if (room) {
+          this.chatManager.attachToRoom(room);
+          this.uiController.updateRoomIdFromRoom(room);
+        }
+
         // Устанавливаем имя игрока (временно фиктивное)
         this.uiController.setPlayerName('Player 2');
-        
+
         // Подписываемся на обновления состояния комнаты
         this.setupRoomStateListener();
       } catch (error) {

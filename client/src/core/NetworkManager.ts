@@ -36,10 +36,14 @@ export class NetworkManager {
     try {
       // Если ID не предоставлен, генерируем новый
       const finalRoomId = roomId || this.generateRoomId();
-      
-      // Создаем комнату с указанным ID
-      this.currentRoom = await this.client.create('holding_room', { roomId: finalRoomId });
-      
+
+      // Создаем комнату с кастомным ID через joinOrCreate
+      // Colyseus не поддерживает прямой set room ID, поэтому используем roomId в опциях
+      this.currentRoom = await this.client.joinOrCreate('holding_room', { roomId: finalRoomId });
+
+      // Сохраняем кастомный roomId для отображения
+      (this.currentRoom as any).customRoomId = finalRoomId;
+
       return finalRoomId;
     } catch (error) {
       console.error('Failed to create room:', error);
@@ -52,7 +56,14 @@ export class NetworkManager {
    */
   async joinRoom(roomId: string): Promise<Room> {
     try {
-      this.currentRoom = await this.client.joinById(roomId);
+      // Ищем комнату с matching roomId в опциях
+      // Colyseus не поддерживает прямой поиск по custom roomId,
+      // поэтому используем joinOrCreate с roomId в опциях
+      this.currentRoom = await this.client.joinOrCreate('holding_room', { roomId });
+
+      // Сохраняем кастомный roomId для отображения
+      (this.currentRoom as any).customRoomId = roomId;
+
       return this.currentRoom;
     } catch (error) {
       console.error('Failed to join room:', error);

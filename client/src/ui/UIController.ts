@@ -128,7 +128,7 @@ export class UIController {
     const centerRoomIdElement = document.getElementById('currentRoomId');
     if (centerRoomIdElement) {
       centerRoomIdElement.textContent = roomId;
-      
+
       // Добавляем возможность копирования
       centerRoomIdElement.classList.add('copyable-id');
       centerRoomIdElement.onclick = () => {
@@ -138,7 +138,7 @@ export class UIController {
         });
       };
     }
-    
+
     // Также обновляем в левой sidebar
     const leftSidebarRoomIdElement = document.getElementById('leftRoomId');
     if (leftSidebarRoomIdElement) {
@@ -150,6 +150,14 @@ export class UIController {
         });
       };
     }
+  }
+
+  /**
+   * Обновить ID комнаты из текущей комнаты
+   */
+  updateRoomIdFromRoom(room: any): void {
+    const roomId = room?.customRoomId || room?.state?.roomId || 'Unknown';
+    this.showCreatedRoomId(roomId);
   }
 
   /**
