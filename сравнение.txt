@@ -1,0 +1,306 @@
+================================================================================
+CURSOR HOLD — СРАВНЕНИЕ: ДО RADIX vs ПОСЛЕ RADIX
+================================================================================
+Дата: 2026-02-16
+Версия: v8 (откат к классическому дизайну)
+
+================================================================================
+ЧАСТЬ 1: ДО RADIX (ретро-неон стиль, ~v1-v30)
+================================================================================
+
+СТИЛЬ:
+- Фон: Тёмно-синий #0f0f23
+- Текст: Зелёный неон #00ff00
+- Акценты: Розовый #ff00ff, Циан #00ffff
+- Шрифт: Courier New (моноширинный)
+- Эффекты: Текстуры, тени, градиенты, liquid glass
+
+client/index.html (CSS — ключевые части):
+─────────────────────────────────────────
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', monospace;
+    background-color: #0f0f23;
+    color: #00ff00;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    max-width: 600px;
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    text-shadow: 2px 2px 0 #ff00ff, 4px 4px 0 rgba(0,0,0,0.5);
+    margin-bottom: 2rem;
+    color: #ffff00;
+    letter-spacing: 2px;
+  }
+
+  .btn {
+    background-color: #ff00ff;
+    color: #0f0f23;
+    border: none;
+    padding: 12px 24px;
+    margin: 10px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 3px 3px 0 #00ffff;
+    transition: all 0.1s;
+    font-family: 'Courier New', monospace;
+  }
+
+  .btn:hover {
+    background-color: #00ffff;
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 #00ffff;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    right: -33%;
+    width: 33%;
+    height: 100%;
+    background: rgba(15, 15, 35, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-left: 2px solid #00ffff;
+    z-index: 1000;
+    transition: right 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    box-shadow:
+      0 0 20px rgba(0, 255, 255, 0.3),
+      inset 0 0 20px rgba(0, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(15, 15, 35, 0.7) 0%, rgba(15, 15, 35, 0.5) 100%);
+  }
+
+  #chat-container {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 600px;
+    background-color: rgba(15, 15, 35, 0.8);
+    border: 2px solid #00ffff;
+    border-radius: 0;
+    padding: 10px;
+    z-index: 100;
+  }
+</style>
+
+<body>
+  <div id="app">
+    <!-- Landing Screen -->
+    <div id="landingScreen" class="screen">
+      <h1>DIGITAL HAND HOLDING</h1>
+      <p>Connect with someone special in a virtual space</p>
+      <button id="createRoomBtn" class="btn">CREATE ROOM</button>
+      <div style="margin-top: 20px;">
+        <input type="text" id="roomIdInput" placeholder="Enter Room ID">
+        <button id="joinRoomBtn" class="btn">JOIN ROOM</button>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen hidden">
+      <div id="canvasContainer"></div>
+      <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+      <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+      <!-- ... остальной контент ... -->
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+================================================================================
+ЧАСТЬ 2: ПОСЛЕ RADIX (минимализм, v31-v7)
+================================================================================
+
+СТИЛЬ:
+- Фон: Чёрный #0a0a0a
+- Текст: Белый #ffffff
+- Акценты: Синий #3b82f6
+- Шрифт: Inter (системный)
+- Эффекты: Минимум, flat design
+
+client/index.html (CSS — ключевые части):
+─────────────────────────────────────────
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #171717;
+    --bg-tertiary: #262626;
+    --text-primary: #ffffff;
+    --text-secondary: #a3a3a3;
+    --border: #404040;
+    --accent: #3b82f6;
+    --radius: 6px;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  .screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  .screen h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    margin-bottom: 0.75rem;
+  }
+
+  .btn {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: background-color 0.15s ease;
+    font-family: inherit;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    width: 320px;
+    height: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    z-index: 100;
+    transition: transform 0.2s ease;
+  }
+
+  .menu-btn {
+    position: fixed;
+    top: 16px;
+    z-index: 200;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 1.25rem;
+  }
+
+  #chat-container {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+  }
+</style>
+
+<body>
+  <div id="app">
+    <div class="version-badge">v7</div>
+
+    <!-- Landing Screen -->
+    <div id="landingScreen" class="screen">
+      <h1>Cursor Hold</h1>
+      <p>Multiplayer collaborative game</p>
+      <button id="createRoomBtn" class="btn">Create Room</button>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <input type="text" id="roomIdInput" placeholder="Enter room ID">
+        <button id="joinRoomBtn" class="btn btn-secondary">Join</button>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen hidden">
+      <div id="canvasContainer"></div>
+      <button id="leftMenuBtn" class="menu-btn">☰</button>
+      <button id="menuBtn" class="menu-btn">☰</button>
+      <!-- ... остальной контент ... -->
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
+================================================================================
+СРАВНИТЕЛЬНАЯ ТАБЛИЦА
+================================================================================
+
+| Характеристика      | ДО RADIX (ретро)          | ПОСЛЕ RADIX (минимализм)  |
+|---------------------|---------------------------|---------------------------|
+| Фон                 | #0f0f23 (тёмно-синий)     | #0a0a0a (чёрный)          |
+| Текст               | #00ff00 (зелёный неон)    | #ffffff (белый)           |
+| Акцент              | #ff00ff (розовый)         | #3b82f6 (синий)           |
+| Шрифт               | Courier New (моно)        | Inter (системный)         |
+| Кнопки              | .btn с box-shadow         | .btn с border-radius      |
+| Бургер кнопки       | class="btn" + inline style| class="menu-btn"          |
+| Sidebar             | backdrop-filter blur      | solid border              |
+| Чат                 | absolute + border         | border-radius + padding   |
+| Версия badge        | Нет                       | Есть (v1, v2, ...)        |
+| Эффекты             | Тени, градиенты, glass    | Flat, минимум             |
+
+================================================================================
+ПРОБЛЕМЫ RADIX ВЕРСИИ (v31-v7)
+================================================================================
+
+1. Бургер кнопки НЕ ВИДНЫ после 7 итераций
+   - Причина: canvas PixiJS перекрывает кнопки
+   - Решение от Grok AI: pointer-events: none на canvas
+   - Статус: Применено в v7, требует проверки
+
+2. Упрощённый дизайн потерял "характер"
+   - Ретро-неон стиль был уникальным
+   - RADIX — стандартный минимализм (как у всех)
+
+3. Усложнение CSS
+   - CSS переменные вместо прямых значений
+   - Больше классов (.menu-btn, .btn-secondary, etc.)
+
+================================================================================
+РЕКОМЕНДАЦИЯ
+================================================================================
+
+ОТКАТИТЬСЯ к ДО-RADIX версии (ретро-неон стиль) + применить фикс pointer-events
+
+Почему:
+1. Ретро стиль был оригинальным
+2. Кнопки работали (были видны)
+3. Меньше CSS сложности
+
+Что сохранить от RADIX:
+- pointer-events: none на canvas (фикс от Grok AI)
+- Версия badge (vN) — полезно для отслеживания
+
+================================================================================
+КОНЕЦ ФАЙЛА
+================================================================================

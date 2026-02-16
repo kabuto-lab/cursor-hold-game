@@ -42,7 +42,6 @@ export class GameEngine {
 
     // КРИТИЧЕСКАЯ СТРОКА — отключаем pointer events на canvas
     this.app.canvas.style.pointerEvents = 'none';
-    console.log('[GameEngine] Canvas pointer-events set to none');
 
     console.log('[GameEngine] Appending canvas...');
     // Добавляем canvas в контейнер
