@@ -110,14 +110,18 @@ export class UIController {
    * Установить текущее представление
    */
   setView(view: 'lobby' | 'room'): void {
+    console.log('[UIController] setView called with:', view);
     this.currentView = view;
 
     if (view === 'lobby') {
+      console.log('[UIController] Showing landing screen, hiding game screen');
       this.lobbyContainer.style.display = 'flex';
       this.roomContainer.style.display = 'none';
     } else {
+      console.log('[UIController] Showing game screen, hiding landing screen');
       this.lobbyContainer.style.display = 'none';
       this.roomContainer.style.display = 'flex';
+      console.log('[UIController] gameScreen display:', this.roomContainer.style.display);
     }
   }
 

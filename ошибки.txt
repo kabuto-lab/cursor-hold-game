@@ -1,34 +1,311 @@
 ================================================================================
-DIGITAL HAND HOLDING - DEBUG FILES DUMP
+CURSOR HOLD — АНАЛИЗ ПРОБЛЕМЫ: БУРГЕР КНОПКИ НЕ ВИДНЫ
 ================================================================================
 Дата: 2026-02-16
-Версия: v27
-Статус: Работает create/join комнат, чат, PixiJS v8 инициализируется
+Версия: v2
+Цель: Grok AI должен проанализировать код и дать ТОЧНЫЙ промпт для исправления
 
 ================================================================================
-=== client/index.html ===
+ОПИСАНИЕ ПРОБЛЕМЫ
+================================================================================
+
+СИМПТОМЫ:
+- После создания/присоединения к комнате бургер-кнопки (☰) НЕ ВИДНЫ
+- Кнопки должны быть в левом и правом верхнем углу
+- Пользователь не может открыть боковые панели
+
+ВОЗМОЖНЫЕ ПРИЧИНЫ:
+1. CSS скрывает кнопки (z-index, display, visibility)
+2. Кнопки внутри скрытого контейнера (#gameScreen.hidden)
+3. Конфликт CSS классов (.btn перебивает .menu-btn)
+4. Кнопки рендерятся ПОД другими элементами
+5. JavaScript ошибка до инициализации кнопок
+
+================================================================================
+ВОПРОСЫ К GROK AI
+================================================================================
+
+1. Почему бургер-кнопки не видны после создания комнаты?
+2. В каком файле/строке ошибка?
+3. Дай ТОЧНЫЙ промпт для исправления (код для замены)
+4. Как протестировать, что кнопки работают?
+
+================================================================================
+ФАЙЛЫ ДЛЯ АНАЛИЗА (ПОЛНОЕ СОДЕРЖИМОЕ)
+================================================================================
+
+================================================================================
+1. client/index.html (HTML + CSS)
+================================================================================
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Digital Hand Holding - Connect with Someone Special</title>
+  <title>Cursor Hold — Multiplayer Game</title>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
-    /* Стили опущены для краткости */
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #171717;
+      --bg-tertiary: #262626;
+      --text-primary: #ffffff;
+      --text-secondary: #a3a3a3;
+      --text-muted: #525252;
+      --border: #404040;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .screen h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.75rem; }
+    .screen p { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 2rem; }
+    .hidden { display: none !important; }
+
+    .version-badge {
+      position: absolute;
+      top: 20px; left: 20px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      padding: 4px 12px;
+      border-radius: var(--radius);
+      font-size: 0.75rem;
+    }
+
+    .btn {
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: var(--radius);
+      transition: background-color 0.15s ease;
+      font-family: inherit;
+    }
+    .btn:hover { background-color: var(--accent-hover); }
+    .btn-secondary { background-color: var(--bg-tertiary); color: var(--text-primary); }
+    .btn-secondary:hover { background-color: var(--border); }
+    .btn-sm { padding: 6px 12px; font-size: 0.75rem; }
+    .btn-block { width: 100%; }
+
+    input[type="text"] {
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      font-size: 0.875rem;
+      border-radius: var(--radius);
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+    input[type="text"]::placeholder { color: var(--text-muted); }
+
+    #canvasContainer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
+
+    .corner-circle {
+      position: absolute;
+      width: 12px; height: 12px;
+      border-radius: 2px;
+      background-color: var(--accent);
+      z-index: 10;
+      opacity: 0.5;
+    }
+    .corner-circle.top-left { top: 20px; left: 20px; }
+    .corner-circle.top-right { top: 20px; right: 20px; }
+    .corner-circle.bottom-left { bottom: 20px; left: 20px; }
+    .corner-circle.bottom-right { bottom: 20px; right: 20px; }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      width: 320px;
+      height: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      z-index: 100;
+      transition: transform 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .left-sidebar { left: 0; transform: translateX(-100%); }
+    .left-sidebar.active { transform: translateX(0); }
+    .right-sidebar { right: 0; transform: translateX(100%); }
+    .right-sidebar.active { transform: translateX(0); }
+
+    .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-title-controls { display: flex; justify-content: space-between; align-items: center; }
+    .sidebar-title-controls h3 { font-size: 0.875rem; font-weight: 600; }
+    .sidebar-content { padding: 16px; overflow-y: auto; flex: 1; }
+
+    /* === БУРГЕР КНОПКИ — CSS === */
+    .menu-btn {
+      position: fixed;
+      top: 16px;
+      z-index: 200;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 1.25rem;
+      transition: background-color 0.15s ease;
+    }
+    .menu-btn:hover { background: var(--border); }
+    #leftMenuBtn { left: 16px; }
+    #menuBtn { right: 16px; }
+
+    #centerPanel {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 480px;
+      z-index: 20;
+    }
+
+    #centerRoomId {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    #centerRoomId span:first-child {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+    #currentRoomId {
+      display: block;
+      color: var(--accent);
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-top: 4px;
+      cursor: pointer;
+    }
+
+    #chat-container {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+    #chat-messages { height: 120px; overflow-y: auto; margin-bottom: 12px; }
+    .chat-message { padding: 4px 0; border-bottom: 1px solid var(--border); }
+    .chat-message strong { color: var(--accent); }
+    #chat-input-container { display: flex; gap: 8px; }
+    #chat-input { flex: 1; background: var(--bg-tertiary); }
+    #chat-send-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+
+    .player-info { font-size: 0.75rem; color: var(--text-secondary); }
+    #roomInfo { margin-top: 8px; font-size: 0.75rem; color: var(--text-secondary); }
+    #leftRoomId { color: var(--accent); font-weight: 500; cursor: pointer; }
+    #hud { background: var(--bg-tertiary); padding: 12px; border-radius: var(--radius); margin-top: 16px; }
+    #playerCounter { font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 8px; }
+
+    .param-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+    .param-cell {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 8px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .param-cell:hover { border-color: var(--accent); }
+    .param-emoji { font-size: 1.25rem; margin-bottom: 4px; }
+    .param-name { font-size: 0.625rem; color: var(--text-secondary); text-transform: uppercase; }
+    .param-value { font-size: 0.875rem; font-weight: 600; }
+    .points-summary {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin: 16px 0;
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius);
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+      font-size: 1.25rem;
+    }
+    .close-btn:hover { color: var(--text-primary); }
+
+    .copied-message {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      padding: 12px 24px;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      z-index: 10000;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { width: 100%; }
+      .left-sidebar { transform: translateX(-100%); }
+      .right-sidebar { transform: translateX(100%); }
+    }
   </style>
 </head>
 <body>
   <div id="app">
+    <div class="version-badge">v2</div>
+
     <!-- Landing Screen -->
     <div id="landingScreen" class="screen">
-      <div style="font-size: 3rem; color: #ff00ff;">1</div>
-      <h1>DIGITAL HAND HOLDING</h1>
-      <p>Connect with someone special in a virtual space</p>
-      <button id="createRoomBtn" class="btn">CREATE ROOM</button>
-      <div style="margin-top: 20px;">
-        <input type="text" id="roomIdInput" placeholder="Enter Room ID">
-        <button id="joinRoomBtn" class="btn">JOIN ROOM</button>
+      <h1>Cursor Hold</h1>
+      <p>Multiplayer collaborative game</p>
+      <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <button id="createRoomBtn" class="btn">Create Room</button>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <input type="text" id="roomIdInput" placeholder="Enter room ID">
+        <button id="joinRoomBtn" class="btn btn-secondary">Join</button>
       </div>
     </div>
 
@@ -39,32 +316,71 @@ DIGITAL HAND HOLDING - DEBUG FILES DUMP
       <div class="corner-circle top-right"></div>
       <div class="corner-circle bottom-left"></div>
       <div class="corner-circle bottom-right"></div>
-      <button id="leftMenuBtn" class="btn">☰</button>
-      <button id="menuBtn" class="btn">☰</button>
+
+      <!-- === БУРГЕР КНОПКИ — HTML === -->
+      <button id="leftMenuBtn" class="menu-btn">☰</button>
+      <button id="menuBtn" class="menu-btn">☰</button>
+
       <div id="centerPanel">
         <div id="centerRoomId">
-          <span>Room ID: </span>
-          <span id="currentRoomId" class="copyable-id"></span>
+          <span>Room ID</span>
+          <span id="currentRoomId"></span>
         </div>
         <div id="chat-container">
           <div id="chat-messages"></div>
           <div id="chat-input-container">
-            <input type="text" id="chat-input" placeholder="Type your message...">
+            <input type="text" id="chat-input" placeholder="Type a message...">
             <button id="chat-send-btn">Send</button>
           </div>
         </div>
       </div>
-      <!-- Sidebars -->
+
+      <div id="leftSidebar" class="sidebar left-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-controls">
+            <h3>Controls</h3>
+            <button id="closeLeftSidebarBtn" class="close-btn">×</button>
+          </div>
+          <div class="player-info"><span id="playerName">Player</span></div>
+          <div id="roomInfo">Room: <span id="leftRoomId"></span></div>
+        </div>
+        <div class="sidebar-content">
+          <div id="hud">
+            <div id="playerCounter">Players: <span id="playerCount">0</span>/2</div>
+            <button id="leaveRoomBtn" class="btn btn-secondary btn-sm btn-block">Leave Room</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="sidebar" class="sidebar right-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-controls">
+            <h3>Virus Parameters</h3>
+            <button id="closeSidebarBtn" class="close-btn">×</button>
+          </div>
+        </div>
+        <div class="sidebar-content">
+          <div class="param-row">
+            <div class="param-cell" data-param="aggression"><div class="param-emoji">⚔️</div><div class="param-name">Aggression</div><div class="param-value" id="param-aggression">0</div></div>
+            <div class="param-cell" data-param="mutation"><div class="param-emoji">🧬</div><div class="param-name">Mutation</div><div class="param-value" id="param-mutation">0</div></div>
+            <div class="param-cell" data-param="speed"><div class="param-emoji">⚡</div><div class="param-name">Speed</div><div class="param-value" id="param-speed">0</div></div>
+          </div>
+          <div class="points-summary">Points remaining: <span id="points-remaining">12</span></div>
+          <button id="randomizeBtn" class="btn btn-secondary btn-sm btn-block">Randomize</button>
+          <button id="readyBtn" class="btn btn-sm btn-block">Ready</button>
+        </div>
+      </div>
     </div>
   </div>
-  
+
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
-=== конец файла ===
+=== КОНЕЦ HTML ===
 
 ================================================================================
-=== client/src/main.ts ===
+2. client/src/main.ts (JavaScript логика)
+================================================================================
 import { GameEngine } from './core/GameEngine';
 import { NetworkManager } from './core/NetworkManager';
 import { UIController } from './ui/UIController';
@@ -80,23 +396,22 @@ class MainApp {
 
   constructor() {
     console.log('[MainApp] Constructor started...');
-    
+
     try {
       this.gameEngine = new GameEngine();
       this.networkManager = new NetworkManager();
       this.uiController = new UIController();
       this.chatManager = new ChatManager();
-      
+
       this.setupInteractions();
-      
-      // Инициализация PixiJS (асинхронно)
+
       this.gameEngine.init('canvasContainer').then(() => {
         console.log('[MainApp] GameEngine initialized!');
         this.gameEngine.start();
       }).catch((error) => {
         console.error('[MainApp] GameEngine init ERROR:', error);
       });
-      
+
       console.log('[MainApp] Constructor finished!');
     } catch (error) {
       console.error('[MainApp] Constructor ERROR:', error);
@@ -105,18 +420,19 @@ class MainApp {
 
   private setupInteractions(): void {
     console.log('[MainApp] Setting up interactions...');
-    
+
     this.uiController.onCreateRoom = async () => {
       console.log('[MainApp] onCreateRoom called!');
       try {
         const roomId = await this.networkManager.createRoom();
         console.log('[MainApp] Room created with ID:', roomId);
-        
+
         this.uiController.setView('room');
+        this.uiController.showCreatedRoomId(roomId);
+
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
-          this.uiController.updateRoomIdFromRoom(room);
         }
         this.uiController.setPlayerName('Player 1');
       } catch (error) {
@@ -130,11 +446,13 @@ class MainApp {
       try {
         await this.networkManager.joinRoom(roomId);
         console.log('[MainApp] Joined room successfully');
+
         this.uiController.setView('room');
+        this.uiController.showCreatedRoomId(roomId);
+
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
-          this.uiController.updateRoomIdFromRoom(room);
         }
         this.uiController.setPlayerName('Player 2');
       } catch (error) {
@@ -152,117 +470,11 @@ window.addEventListener('load', () => {
   console.log('MainApp() created!');
 });
 console.log('[MainApp] Load event listener registered');
-=== конец файла ===
+=== КОНЕЦ main.ts ===
 
 ================================================================================
-=== client/src/core/GameEngine.ts ===
-import * as PIXI from 'pixi.js';
-
-export class GameEngine {
-  app: PIXI.Application | null = null;
-  private ticker: PIXI.Ticker | null = null;
-
-  constructor() {
-    console.log('[GameEngine] Constructor called');
-  }
-
-  async init(containerId: string): Promise<void> {
-    console.log('[GameEngine] Initializing PixiJS...');
-    
-    const container = document.getElementById(containerId);
-    if (!container) {
-      throw new Error(`Container element with id "${containerId}" not found`);
-    }
-
-    this.app = new PIXI.Application();
-    
-    await this.app.init({
-      backgroundColor: 0x1a1a1a,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      antialias: true,
-      autoDensity: true,
-      resolution: Math.min(window.devicePixelRatio, 2),
-    });
-
-    this.ticker = this.app.ticker;
-    container.appendChild(this.app.canvas);
-    console.log('[GameEngine] Canvas appended');
-  }
-
-  start(): void {
-    if (this.ticker) {
-      this.ticker.start();
-    }
-  }
-}
-=== конец файла ===
-
+3. client/src/ui/UIController.ts (Обработчики кнопок)
 ================================================================================
-=== client/src/core/NetworkManager.ts ===
-import { Client } from 'colyseus.js';
-import { Room } from 'colyseus.js';
-
-export class NetworkManager {
-  private client: Client;
-  private currentRoom: Room | null = null;
-  private readonly serverUrl: string;
-
-  constructor(serverUrl?: string) {
-    this.serverUrl = serverUrl || 'wss://cursor-hold-game-server.onrender.com';
-    this.client = new Client(this.serverUrl);
-    console.log('[NetworkManager] Server URL:', this.serverUrl);
-  }
-
-  async createRoom(): Promise<string> {
-    console.log('[NetworkManager] createRoom() called');
-    try {
-      this.currentRoom = await this.client.joinOrCreate('holding_room');
-      const roomId = this.currentRoom.state?.roomId || this.currentRoom.id;
-      console.log('[NetworkManager] Room created:', roomId);
-      return roomId;
-    } catch (error) {
-      console.error('[NetworkManager] ERROR in createRoom:', error);
-      throw error;
-    }
-  }
-
-  async joinRoom(roomId: string): Promise<Room> {
-    console.log('[NetworkManager] joinRoom() called with roomId:', roomId);
-    try {
-      // ВРЕМЕННО: joinOrCreate попадёт в первую доступную комнату
-      this.currentRoom = await this.client.joinOrCreate('holding_room');
-      console.log('[NetworkManager] Joined room:', this.currentRoom.id);
-      return this.currentRoom;
-    } catch (error) {
-      console.error('[NetworkManager] ERROR in joinRoom:', error);
-      throw error;
-    }
-  }
-
-  getCurrentRoom(): Room | null {
-    return this.currentRoom;
-  }
-
-  onStateChange(callback: (state: any) => void): void {
-    if (this.currentRoom) {
-      this.currentRoom.onStateChange((state) => {
-        callback(state);
-      });
-    }
-  }
-
-  getState() {
-    if (this.currentRoom) {
-      return this.currentRoom.state;
-    }
-    return null;
-  }
-}
-=== конец файла ===
-
-================================================================================
-=== client/src/ui/UIController.ts ===
 export class UIController {
   private lobbyContainer: HTMLElement;
   private roomContainer: HTMLElement;
@@ -270,6 +482,12 @@ export class UIController {
   private joinRoomBtn: HTMLButtonElement;
   private roomIdInput: HTMLInputElement;
   private currentView: 'lobby' | 'room' = 'lobby';
+  private leftMenuBtn: HTMLButtonElement;
+  private menuBtn: HTMLButtonElement;
+  private leftSidebar: HTMLElement;
+  private rightSidebar: HTMLElement;
+  private closeLeftSidebarBtn: HTMLButtonElement;
+  private closeSidebarBtn: HTMLButtonElement;
 
   constructor() {
     this.lobbyContainer = document.getElementById('landingScreen')!;
@@ -277,34 +495,36 @@ export class UIController {
     this.createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
     this.joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
     this.roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
+    this.leftMenuBtn = document.getElementById('leftMenuBtn') as HTMLButtonElement;
+    this.menuBtn = document.getElementById('menuBtn') as HTMLButtonElement;
+    this.leftSidebar = document.getElementById('leftSidebar')!;
+    this.rightSidebar = document.getElementById('sidebar')!;
+    this.closeLeftSidebarBtn = document.getElementById('closeLeftSidebarBtn') as HTMLButtonElement;
+    this.closeSidebarBtn = document.getElementById('closeSidebarBtn') as HTMLButtonElement;
+
     this.setupEventListeners();
     this.setView('lobby');
   }
 
   private setupEventListeners(): void {
-    this.createRoomBtn?.addEventListener('click', () => {
-      this.onCreateRoomClick();
-    });
-    this.joinRoomBtn?.addEventListener('click', () => {
-      this.onJoinRoomClick();
-    });
+    this.createRoomBtn?.addEventListener('click', () => { this.onCreateRoomClick(); });
+    this.joinRoomBtn?.addEventListener('click', () => { this.onJoinRoomClick(); });
+    this.roomIdInput?.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.onJoinRoomClick(); });
+    this.leftMenuBtn?.addEventListener('click', () => { this.toggleLeftSidebar(); });
+    this.menuBtn?.addEventListener('click', () => { this.toggleRightSidebar(); });
+    this.closeLeftSidebarBtn?.addEventListener('click', () => { this.closeLeftSidebar(); });
+    this.closeSidebarBtn?.addEventListener('click', () => { this.closeRightSidebar(); });
   }
 
   private onCreateRoomClick(): void {
-    if (this.onCreateRoom) {
-      this.onCreateRoom();
-    }
+    console.log('[UIController] Create Room button clicked!');
+    if (this.onCreateRoom) { this.onCreateRoom(); }
   }
 
   private onJoinRoomClick(): void {
     const roomId = this.roomIdInput?.value.trim();
-    if (!roomId) {
-      alert('Please enter a room ID');
-      return;
-    }
-    if (this.onJoinRoom) {
-      this.onJoinRoom(roomId);
-    }
+    if (!roomId) { alert('Please enter a room ID'); return; }
+    if (this.onJoinRoom) { this.onJoinRoom(roomId); }
   }
 
   setView(view: 'lobby' | 'room'): void {
@@ -318,212 +538,63 @@ export class UIController {
   }
 
   showCreatedRoomId(roomId: string): void {
-    const centerRoomIdElement = document.getElementById('currentRoomId');
-    if (centerRoomIdElement) {
-      centerRoomIdElement.textContent = roomId;
-      centerRoomIdElement.classList.add('copyable-id');
-      centerRoomIdElement.onclick = () => {
-        navigator.clipboard.writeText(roomId);
-      };
+    const el = document.getElementById('currentRoomId');
+    if (el) {
+      el.textContent = roomId;
+      el.classList.add('copyable-id');
+      el.onclick = () => { navigator.clipboard.writeText(roomId); };
     }
-  }
-
-  updateRoomIdFromRoom(room: any): void {
-    const roomId = room?.customRoomId || room?.state?.roomId || 'Unknown';
-    this.showCreatedRoomId(roomId);
+    const leftEl = document.getElementById('leftRoomId');
+    if (leftEl) {
+      leftEl.textContent = roomId;
+      leftEl.classList.add('copyable-id');
+      leftEl.onclick = () => { navigator.clipboard.writeText(roomId); };
+    }
   }
 
   setPlayerName(name: string): void {
-    const playerNameElement = document.getElementById('playerName');
-    if (playerNameElement) {
-      playerNameElement.textContent = name;
-    }
+    const el = document.getElementById('playerName');
+    if (el) { el.textContent = name; }
   }
 
   updatePlayerCount(count: number, maxPlayers: number = 2): void {
-    const playerCountElement = document.getElementById('playerCount');
-    if (playerCountElement) {
-      playerCountElement.textContent = `${count}/${maxPlayers}`;
-    }
+    const el = document.getElementById('playerCount');
+    if (el) { el.textContent = `${count}/${maxPlayers}`; }
   }
+
+  toggleLeftSidebar(): void { this.leftSidebar.classList.toggle('active'); }
+  closeLeftSidebar(): void { this.leftSidebar.classList.remove('active'); }
+  toggleRightSidebar(): void { this.rightSidebar.classList.toggle('active'); }
+  closeRightSidebar(): void { this.rightSidebar.classList.remove('active'); }
 
   onCreateRoom?: () => void;
   onJoinRoom?: (roomId: string) => void;
 }
-=== конец файла ===
+=== КОНЕЦ UIController ===
 
 ================================================================================
-=== client/src/chat/ChatManager.ts ===
-import { Room } from 'colyseus.js';
-
-export class ChatManager {
-  private room: Room | null = null;
-  private chatContainer: HTMLElement;
-  private messageInput: HTMLInputElement;
-  private sendMessageBtn: HTMLButtonElement;
-
-  constructor() {
-    this.chatContainer = document.getElementById('chat-messages')!;
-    this.messageInput = document.getElementById('chat-input') as HTMLInputElement;
-    this.sendMessageBtn = document.getElementById('chat-send-btn') as HTMLButtonElement;
-    this.setupEventListeners();
-  }
-
-  attachToRoom(room: Room): void {
-    this.room = room;
-    this.room.onMessage('chatMessage', (data) => {
-      this.receiveMessage(data.playerName, data.message, data.timestamp);
-    });
-  }
-
-  sendMessage(): void {
-    const message = this.messageInput?.value.trim();
-    if (!message || !this.room) return;
-    this.room.send('chatMessage', { message, timestamp: Date.now() });
-    this.messageInput.value = '';
-  }
-
-  private receiveMessage(sender: string, message: string, timestamp: number): void {
-    const messageElement = document.createElement('div');
-    messageElement.className = 'chat-message';
-    const timeString = new Date(timestamp).toLocaleTimeString();
-    messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
-    this.chatContainer.appendChild(messageElement);
-    this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
-  }
-}
-=== конец файла ===
-
+ГРОК AI — ЗАДАНИЕ НА АНАЛИЗ
 ================================================================================
-=== client/vite.config.ts ===
-import { defineConfig } from 'vite';
-import { resolve } from 'path';
 
-export default defineConfig({
-  base: '/',
-  server: {
-    port: 3000,
-    host: true
-  },
-  build: {
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-      }
-    },
-    outDir: 'dist',
-    emptyOutDir: true
-  }
-});
-=== конец файла ===
+ВОПРОС: Почему бургер-кнопки (☰) не видны после создания комнаты?
 
-================================================================================
-=== client/package.json ===
-{
-  "name": "@holding-hands/client",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "test": "vitest"
-  },
-  "dependencies": {
-    "@pixi/filter-bloom": "^5.1.1",
-    "@pixi/filter-crt": "^5.1.1",
-    "@pixi/filter-noise": "^5.3.12",
-    "@pixi/filter-pixelate": "^5.1.1",
-    "colyseus.js": "^0.15.28",
-    "pixi.js": "^8.16.0"
-  },
-  "devDependencies": {
-    "@types/jest": "^29.5.0",
-    "@types/node": "^20.0.0",
-    "@vitest/ui": "^1.0.0",
-    "typescript": "^5.0.2",
-    "vite": "^5.0.0",
-    "vitest": "^1.0.0"
-  }
-}
-=== конец файла ===
+КОНТЕКСТ:
+1. Кнопки определены в HTML: <button id="leftMenuBtn" class="menu-btn">☰</button>
+2. CSS для кнопок: .menu-btn { position: fixed; top: 16px; z-index: 200; ... }
+3. Кнопки внутри #gameScreen, который имеет класс .hidden до создания комнаты
+4. После createRoom вызывается this.uiController.setView('room')
 
-================================================================================
-=== client/tsconfig.json ===
-{
-  "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
-  },
-  "include": ["src", "src/types/**/*.d.ts"]
-}
-=== конец файла ===
+ЧТО ПРОВЕРИТЬ:
+1. Удаляется ли класс .hidden с #gameScreen после setView('room')?
+2. Не перекрывается ли #gameScreen другими элементами (z-index)?
+3. Инициализируется ли UIController корректно?
+4. Работают ли обработчики клика на кнопках?
 
-================================================================================
-=== server/src/index.ts ===
-import express from 'express';
-import { Server } from 'colyseus';
-import { createServer } from 'http';
-import cors from 'cors';
-import { HoldingRoom } from './rooms/HoldingRoom';
-
-const PORT = Number(process.env.PORT || 2567);
-const app = express();
-app.use(cors());
-
-const server = createServer(app);
-const gameServer = new Server({ server });
-
-gameServer.define('holding_room', HoldingRoom);
-
-app.get('/health', (req, res) => {
-  res.status(200).send('OK');
-});
-
-gameServer.listen(PORT);
-console.log(`Listening on Port: ${PORT}`);
-=== конец файла ===
-
-================================================================================
-=== server/src/rooms/schema.ts ===
-import { Schema, type, MapSchema } from '@colyseus/schema';
-
-export class PlayerSchema extends Schema {
-  @type('string') id!: string;
-  @type('string') name: string = '';
-  @type('number') x: number = 0;
-  @type('number') y: number = 0;
-  @type('number') color: number = 0xffffff;
-  @type('boolean') isHoldingHands: boolean = false;
-  @type('string') holdingHandsWith: string = '';
-  @type('boolean') isRoomCreator: boolean = false;
-  @type('boolean') isReady: boolean = false;
-  @type({ map: 'number' }) virusParams: Map<string, number> = new Map();
-  @type('number') cursorX: number = 0;
-  @type('number') cursorY: number = 0;
-}
-
-export class RoomState extends Schema {
-  @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
-  @type('string') roomId: string = '';
-  @type('number') maxPlayers: number = 2;
-  @type({ array: 'number' }) battleGrid: number[] = [];
-  @type('boolean') battleActive: boolean = false;
-}
-=== конец файла ===
+ТРЕБУЕМЫЙ ОТВЕТ ОТ GROK AI:
+1. ТОЧНАЯ причина проблемы (файл + строка)
+2. ГОТОВЫЙ код для исправления (что заменить, на что заменить)
+3. ИНСТРУКЦИЯ по тестированию (открой консоль, нажми кнопку, смотри лог)
+4. ПРОМПТ для Qwen Code чтобы он исправил проблему
 
 ================================================================================
 КОНЕЦ ФАЙЛА

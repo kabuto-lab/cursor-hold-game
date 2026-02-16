@@ -52,11 +52,16 @@ class MainApp {
         const roomId = await this.networkManager.createRoom();
         console.log('[MainApp] Room created with ID:', roomId);
 
+        // Ждём следующего тика, чтобы DOM был готов
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        console.log('[MainApp] Calling setView(room)...');
         this.uiController.setView('room');
-        
+        console.log('[MainApp] setView(room) completed');
+
         // Показываем ID комнаты сразу
         this.uiController.showCreatedRoomId(roomId);
-        
+
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
@@ -73,12 +78,17 @@ class MainApp {
       try {
         await this.networkManager.joinRoom(roomId);
         console.log('[MainApp] Joined room successfully');
-        
+
+        // Ждём следующего тика, чтобы DOM был готов
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        console.log('[MainApp] Calling setView(room)...');
         this.uiController.setView('room');
-        
+        console.log('[MainApp] setView(room) completed');
+
         // Показываем ID комнаты сразу
         this.uiController.showCreatedRoomId(roomId);
-        
+
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
