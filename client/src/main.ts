@@ -39,10 +39,10 @@ class MainApp {
    */
   private setupInteractions(): void {
     // Обработка создания комнаты
-    this.uiController.onCreateRoom = async (roomId) => {
+    this.uiController.onCreateRoom = async () => {
       try {
         // Создаём комнату через NetworkManager
-        await this.networkManager.createRoom(roomId);
+        await this.networkManager.createRoom();
 
         // Переключаемся в комнату
         this.uiController.setView('room');

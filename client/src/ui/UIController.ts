@@ -80,12 +80,9 @@ export class UIController {
    * Обработчик клика на "Create Room"
    */
   private onCreateRoomClick(): void {
-    // Генерируем ID комнаты
-    const roomId = this.generateRoomId();
-
-    // Вызываем callback для создания комнаты
+    // Вызываем callback для создания комнаты (без параметров)
     if (this.onCreateRoom) {
-      this.onCreateRoom(roomId);
+      this.onCreateRoom();
     }
   }
 
@@ -240,13 +237,6 @@ export class UIController {
   }
 
   /**
-   * Генерация уникального ID комнаты
-   */
-  private generateRoomId(): string {
-    return Math.random().toString(36).substring(2, 10).toUpperCase();
-  }
-
-  /**
    * Получить текущее представление
    * Используется для предотвращения ошибки неиспользуемой переменной
    */
@@ -255,6 +245,6 @@ export class UIController {
   }
 
   // Callbacks для взаимодействия с NetworkManager
-  onCreateRoom?: (roomId: string) => void;
+  onCreateRoom?: () => void;
   onJoinRoom?: (roomId: string) => void;
 }

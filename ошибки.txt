@@ -1,5 +1,6 @@
+================================================================================
 ОШИБКИ И КРИТИЧЕСКИЕ ФАЙЛЫ ДЛЯ ОТЛАДКИ
-========================================
+================================================================================
 
 Самые важные (обязательно)
 --------------------------
@@ -32,25 +33,26 @@
 8. client/src/chat/ChatManager.ts
    → если чат работает, а комнаты нет — это даст подсказку
 
-9. server/package.json
-   → чтобы понять, как запускается серверная часть (Colyseus)
+9. client/src/core/GameEngine.ts
+   → если используется в main.ts
 
-10. server/src/index.ts (или основной файл сервера)
+10. server/package.json
+    → чтобы понять, как запускается серверная часть (Colyseus)
+
+11. server/src/index.ts (или основной файл сервера)
     → регистрация комнат, порт, CORS и т.д.
 
-11. server/src/rooms/HoldingRoom.ts (или аналогичный файл комнаты)
+12. server/src/rooms/HoldingRoom.ts (или аналогичный файл комнаты)
     → логика комнаты на сервере (onCreate, onJoin, сообщения)
 
-12. server/src/rooms/schema.ts (или где определены схемы Colyseus)
+13. server/src/rooms/schema.ts (или где определены схемы Colyseus)
     → PlayerSchema, RoomState и т.д.
 
 
 Дополнительно (если есть)
 -------------------------
 
-13. client/src/core/GameEngine.ts (если он используется)
-
-14. любые файлы в client/src/types/ (например schema.ts, types.d.ts)
+14. client/src/types/ (например schema.ts, types.d.ts)
 
 
 Что НЕ нужно скидывать (пока)
@@ -62,10 +64,1207 @@
 - любые скомпилированные файлы (dist, build и т.д.)
 
 
-Как лучше всего скидывать
--------------------------
+================================================================================
+СОДЕРЖИМОЕ ФАЙЛОВ (АКТУАЛЬНОЕ)
+================================================================================
 
-Можно одним большим сообщением, но удобно так:
-- Сначала файлы клиента (client/)
-- Потом файлы сервера (server/)
-- Если есть ошибки в консоли — приложи скриншот или текст ошибки
+--------------------------------------------------------------------------------
+1. client/package.json
+--------------------------------------------------------------------------------
+{
+  "name": "@holding-hands/client",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@pixi/filter-bloom": "^5.1.1",
+    "@pixi/filter-crt": "^5.1.1",
+    "@pixi/filter-noise": "^5.3.12",
+    "@pixi/filter-pixelate": "^5.1.1",
+    "colyseus.js": "^0.15.28",
+    "pixi.js": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@vitest/ui": "^1.0.0",
+    "typescript": "^5.0.2",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}
+
+--------------------------------------------------------------------------------
+2. client/vite.config.ts
+--------------------------------------------------------------------------------
+import { defineConfig } from 'vite';
+import { resolve } from 'path';
+
+export default defineConfig({
+  server: {
+    port: 3000,
+    host: true
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+      }
+    }
+  }
+});
+
+--------------------------------------------------------------------------------
+3. client/tsconfig.json
+--------------------------------------------------------------------------------
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src", "src/types/**/*.d.ts"]
+}
+
+--------------------------------------------------------------------------------
+4. client/index.html
+--------------------------------------------------------------------------------
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Digital Hand Holding - Connect with Someone Special</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Courier New', monospace;
+      background-color: #0f0f23;
+      color: #00ff00;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      max-width: 600px;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      text-shadow: 2px 2px 0 #ff00ff, 4px 4px 0 rgba(0,0,0,0.5);
+      margin-bottom: 2rem;
+      color: #ffff00;
+      letter-spacing: 2px;
+    }
+
+    .btn {
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 12px 24px;
+      margin: 10px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 3px 3px 0 #00ffff;
+      transition: all 0.1s;
+      font-family: 'Courier New', monospace;
+    }
+
+    .btn:hover {
+      background-color: #00ffff;
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 #00ffff;
+    }
+
+    .btn:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0px 0px 0 #00ffff;
+    }
+
+    .no-border {
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 5px 10px;
+      margin-top: 10px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+
+    input[type="text"] {
+      background-color: #0f0f23;
+      color: #00ff00;
+      border: 2px solid #00ffff;
+      padding: 10px;
+      font-size: 1rem;
+      width: 250px;
+      margin: 10px;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #canvasContainer {
+      position: absolute;
+      top: 0;
+      left: 33%;
+      width: 33%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      right: -33%;
+      width: 33%;
+      height: 100%;
+      background: rgba(15, 15, 35, 0.7);
+      backdrop-filter: blur(10px);
+      border-left: 2px solid #00ffff;
+      z-index: 1000;
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .right-sidebar {
+      right: -33%;
+      left: auto;
+    }
+
+    .right-sidebar.active {
+      right: 0;
+      left: auto;
+    }
+
+    .left-sidebar {
+      right: auto;
+      left: -33%;
+      width: 33%;
+      transition: left 0.3s ease;
+    }
+
+    .left-sidebar.active {
+      left: 0;
+      right: auto;
+    }
+
+    .corner-circle {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: #ffff00;
+      z-index: 50;
+      border: 3px solid #ff00ff;
+    }
+
+    .corner-circle.top-left {
+      top: 10px;
+      left: 10px;
+    }
+
+    .corner-circle.top-right {
+      top: 10px;
+      right: 10px;
+    }
+
+    .corner-circle.bottom-left {
+      bottom: 10px;
+      left: 10px;
+    }
+
+    .corner-circle.bottom-right {
+      bottom: 10px;
+      right: 10px;
+    }
+
+    .copyable-id {
+      cursor: pointer;
+      text-decoration: underline;
+      transition: color 0.2s;
+    }
+
+    .copyable-id:hover {
+      color: #00ffff;
+    }
+
+    .copied-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #00ff00;
+      padding: 10px 20px;
+      border: 2px solid #00ffff;
+      font-family: 'Courier New', monospace;
+      font-size: 1.2rem;
+      z-index: 10000;
+      text-align: center;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Landing Screen -->
+    <div id="landingScreen" class="screen">
+      <h1>DIGITAL HAND HOLDING</h1>
+      <p>Connect with someone special in a virtual space</p>
+
+      <button id="createRoomBtn" class="btn">CREATE ROOM</button>
+      <div style="margin-top: 20px;">
+        <input type="text" id="roomIdInput" placeholder="Enter Room ID">
+        <button id="joinRoomBtn" class="btn">JOIN ROOM</button>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen hidden">
+      <div id="canvasContainer"></div>
+
+      <!-- 4 желтых круга по углам -->
+      <div class="corner-circle top-left"></div>
+      <div class="corner-circle top-right"></div>
+      <div class="corner-circle bottom-left"></div>
+      <div class="corner-circle bottom-right"></div>
+
+      <!-- Left menu button -->
+      <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+
+      <!-- Menu button in top right corner -->
+      <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+
+      <!-- Центральная панель с ID комнаты и чатом -->
+      <div id="centerPanel" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 600px; z-index: 150;">
+        <div id="centerRoomId" style="background-color: rgba(15, 15, 35, 0.9); border: 2px solid #ffff00; padding: 15px; margin-bottom: 10px; text-align: center; border-radius: 0;">
+          <span style="color: #ffff00; font-family: 'Courier New', monospace; font-size: 1rem;">Room ID: </span>
+          <span id="currentRoomId" class="copyable-id" style="color: #00ff00; font-family: 'Courier New', monospace; font-size: 1.2rem; font-weight: bold;"></span>
+        </div>
+
+        <div id="chat-container" style="position: relative; bottom: auto; left: auto; transform: none; width: 100%; margin: 0;">
+          <div id="chat-messages"></div>
+          <div id="chat-input-container">
+            <input type="text" id="chat-input" placeholder="Type your message...">
+            <button id="chat-send-btn">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Left Sidebar -->
+      <div id="leftSidebar" class="sidebar left-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-controls">
+            <h3>Controls</h3>
+            <div class="player-info">
+              <div id="playerName">Player 1 | Player 2</div>
+            </div>
+            <button id="closeLeftSidebarBtn" class="btn close-btn">✕</button>
+          </div>
+          <div id="roomInfo">Room: <span id="leftRoomId" class="copyable-id"></span></div>
+        </div>
+        <div class="sidebar-content">
+          <div class="control-panel">
+            <div id="hud">
+              <div id="playerCounter">Players: <span id="playerCount">0</span>/2</div>
+              <button id="leaveRoomBtn" class="btn no-border">LEAVE ROOM</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Sidebar -->
+      <div id="sidebar" class="sidebar right-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-controls">
+            <h3>Virus Parameters</h3>
+            <button id="closeSidebarBtn" class="btn close-btn">✕</button>
+          </div>
+        </div>
+        <div class="sidebar-content">
+          <div class="setting-item">
+            <h4>Virus Parameters (12 points total)</h4>
+            <div id="virusParamsContainer">
+              <!-- Row 1 -->
+              <div class="param-row">
+                <div class="param-cell" data-param="aggression">
+                  <div class="param-emoji">⚔️</div>
+                  <div class="param-name">Aggression</div>
+                  <div class="param-value" id="param-aggression">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="mutation">
+                  <div class="param-emoji">🧬</div>
+                  <div class="param-name">Mutation</div>
+                  <div class="param-value" id="param-mutation">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="speed">
+                  <div class="param-emoji">⚡</div>
+                  <div class="param-name">Speed</div>
+                  <div class="param-value" id="param-speed">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+              </div>
+
+              <!-- Row 2 -->
+              <div class="param-row">
+                <div class="param-cell" data-param="defense">
+                  <div class="param-emoji">🛡️</div>
+                  <div class="param-name">Defense</div>
+                  <div class="param-value" id="param-defense">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="reproduction">
+                  <div class="param-emoji">🦠</div>
+                  <div class="param-name">Reproduction</div>
+                  <div class="param-value" id="param-reproduction">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="stealth">
+                  <div class="param-emoji">👻</div>
+                  <div class="param-name">Stealth</div>
+                  <div class="param-value" id="param-stealth">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+              </div>
+
+              <!-- Row 3 -->
+              <div class="param-row">
+                <div class="param-cell" data-param="virulence">
+                  <div class="param-emoji">☣️</div>
+                  <div class="param-name">Virulence</div>
+                  <div class="param-value" id="param-virulence">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="resilience">
+                  <div class="param-emoji">💪</div>
+                  <div class="param-name">Resilience</div>
+                  <div class="param-value" id="param-resilience">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="mobility">
+                  <div class="param-emoji">🚶</div>
+                  <div class="param-name">Mobility</div>
+                  <div class="param-value" id="param-mobility">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+              </div>
+
+              <!-- Row 4 -->
+              <div class="param-row">
+                <div class="param-cell" data-param="intellect">
+                  <div class="param-emoji">🧠</div>
+                  <div class="param-name">Intellect</div>
+                  <div class="param-value" id="param-intellect">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="contagiousness">
+                  <div class="param-emoji">🫁</div>
+                  <div class="param-name">Contagiousness</div>
+                  <div class="param-value" id="param-contagiousness">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="lethality">
+                  <div class="param-emoji">💀</div>
+                  <div class="param-name">Lethality</div>
+                  <div class="param-value" id="param-lethality">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="points-summary">
+              Points remaining: <span id="points-remaining">12</span>
+            </div>
+
+            <button id="randomizeBtn" class="btn no-border">RANDOMIZE</button>
+            <button id="readyBtn" class="btn no-border">READY</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
+
+--------------------------------------------------------------------------------
+5. client/src/main.ts
+--------------------------------------------------------------------------------
+import { GameEngine } from './core/GameEngine';
+import { NetworkManager } from './core/NetworkManager';
+import { InputManager } from './core/InputManager';
+import { UIController } from './ui/UIController';
+import { ChatManager } from './chat/ChatManager';
+
+class MainApp {
+  private gameEngine: GameEngine;
+  private networkManager: NetworkManager;
+  private inputManager: InputManager;
+  private uiController: UIController;
+  private chatManager: ChatManager;
+
+  constructor() {
+    this.gameEngine = new GameEngine('canvasContainer');
+    this.networkManager = new NetworkManager(process.env.SERVER_URL || 'ws://localhost:2567');
+    this.inputManager = new InputManager();
+    this.uiController = new UIController();
+    this.chatManager = new ChatManager();
+
+    this.setupInteractions();
+    this.gameEngine.start();
+  }
+
+  getInputManager(): InputManager {
+    return this.inputManager;
+  }
+
+  private setupInteractions(): void {
+    this.uiController.onCreateRoom = async (roomId) => {
+      try {
+        await this.networkManager.createRoom(roomId);
+        this.uiController.setView('room');
+
+        const room = this.networkManager.getCurrentRoom();
+        if (room) {
+          this.chatManager.attachToRoom(room);
+          this.uiController.updateRoomIdFromRoom(room);
+        }
+
+        this.uiController.setPlayerName('Player 1');
+        this.setupRoomStateListener();
+      } catch (error) {
+        console.error('Failed to create room:', error);
+        alert('Failed to create room. Please try again.');
+      }
+    };
+
+    this.uiController.onJoinRoom = async (roomId) => {
+      try {
+        await this.networkManager.joinRoom(roomId);
+        this.uiController.setView('room');
+
+        const room = this.networkManager.getCurrentRoom();
+        if (room) {
+          this.chatManager.attachToRoom(room);
+          this.uiController.updateRoomIdFromRoom(room);
+        }
+
+        this.uiController.setPlayerName('Player 2');
+        this.setupRoomStateListener();
+      } catch (error) {
+        console.error('Failed to join room:', error);
+        alert('Failed to join room. Invalid room ID or connection error.');
+      }
+    };
+  }
+
+  private setupRoomStateListener(): void {
+    this.networkManager.onStateChange((state) => {
+      if (state && state.players) {
+        this.uiController.updatePlayerCount(state.players.size);
+      }
+    });
+
+    const initialState = this.networkManager.getState();
+    if (initialState && initialState.players) {
+      this.uiController.updatePlayerCount(initialState.players.size);
+    }
+  }
+}
+
+window.addEventListener('load', () => {
+  new MainApp();
+});
+
+--------------------------------------------------------------------------------
+6. client/src/ui/UIController.ts
+--------------------------------------------------------------------------------
+/**
+ * Контроллер пользовательского интерфейса
+ * Управляет переключением между lobby ↔ room и боковыми панелями
+ */
+export class UIController {
+  private lobbyContainer: HTMLElement;
+  private roomContainer: HTMLElement;
+  private createRoomBtn: HTMLButtonElement;
+  private joinRoomBtn: HTMLButtonElement;
+  private roomIdInput: HTMLInputElement;
+  private currentView: 'lobby' | 'room' = 'lobby';
+
+  private leftMenuBtn: HTMLButtonElement;
+  private menuBtn: HTMLButtonElement;
+  private leftSidebar: HTMLElement;
+  private rightSidebar: HTMLElement;
+  private closeLeftSidebarBtn: HTMLButtonElement;
+  private closeSidebarBtn: HTMLButtonElement;
+
+  constructor() {
+    this.lobbyContainer = document.getElementById('landingScreen')!;
+    this.roomContainer = document.getElementById('gameScreen')!;
+    this.createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
+    this.joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
+    this.roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
+
+    this.leftMenuBtn = document.getElementById('leftMenuBtn') as HTMLButtonElement;
+    this.menuBtn = document.getElementById('menuBtn') as HTMLButtonElement;
+    this.leftSidebar = document.getElementById('leftSidebar')!;
+    this.rightSidebar = document.getElementById('sidebar')!;
+    this.closeLeftSidebarBtn = document.getElementById('closeLeftSidebarBtn') as HTMLButtonElement;
+    this.closeSidebarBtn = document.getElementById('closeSidebarBtn') as HTMLButtonElement;
+
+    this.setupEventListeners();
+    this.setView('lobby');
+  }
+
+  private setupEventListeners(): void {
+    this.createRoomBtn?.addEventListener('click', () => {
+      this.onCreateRoomClick();
+    });
+
+    this.joinRoomBtn?.addEventListener('click', () => {
+      this.onJoinRoomClick();
+    });
+
+    this.roomIdInput?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        this.onJoinRoomClick();
+      }
+    });
+
+    this.leftMenuBtn?.addEventListener('click', () => {
+      this.toggleLeftSidebar();
+    });
+
+    this.menuBtn?.addEventListener('click', () => {
+      this.toggleRightSidebar();
+    });
+
+    this.closeLeftSidebarBtn?.addEventListener('click', () => {
+      this.closeLeftSidebar();
+    });
+
+    this.closeSidebarBtn?.addEventListener('click', () => {
+      this.closeRightSidebar();
+    });
+  }
+
+  private onCreateRoomClick(): void {
+    const roomId = this.generateRoomId();
+    if (this.onCreateRoom) {
+      this.onCreateRoom(roomId);
+    }
+  }
+
+  private onJoinRoomClick(): void {
+    const roomId = this.roomIdInput?.value.trim();
+    if (!roomId) {
+      alert('Please enter a room ID');
+      return;
+    }
+    if (this.onJoinRoom) {
+      this.onJoinRoom(roomId);
+    }
+  }
+
+  setView(view: 'lobby' | 'room'): void {
+    this.currentView = view;
+    if (view === 'lobby') {
+      this.lobbyContainer.style.display = 'flex';
+      this.roomContainer.style.display = 'none';
+    } else {
+      this.lobbyContainer.style.display = 'none';
+      this.roomContainer.style.display = 'flex';
+    }
+  }
+
+  showCreatedRoomId(roomId: string): void {
+    const centerRoomIdElement = document.getElementById('currentRoomId');
+    if (centerRoomIdElement) {
+      centerRoomIdElement.textContent = roomId;
+      centerRoomIdElement.classList.add('copyable-id');
+      centerRoomIdElement.onclick = () => {
+        navigator.clipboard.writeText(roomId).then(() => {
+          this.showCopiedMessage();
+        });
+      };
+    }
+
+    const leftSidebarRoomIdElement = document.getElementById('leftRoomId');
+    if (leftSidebarRoomIdElement) {
+      leftSidebarRoomIdElement.textContent = roomId;
+      leftSidebarRoomIdElement.classList.add('copyable-id');
+      leftSidebarRoomIdElement.onclick = () => {
+        navigator.clipboard.writeText(roomId).then(() => {
+          this.showCopiedMessage();
+        });
+      };
+    }
+  }
+
+  updateRoomIdFromRoom(room: any): void {
+    const roomId = room?.customRoomId || room?.state?.roomId || 'Unknown';
+    this.showCreatedRoomId(roomId);
+  }
+
+  setPlayerName(name: string): void {
+    const playerNameElement = document.getElementById('playerName');
+    if (playerNameElement) {
+      playerNameElement.textContent = name;
+    }
+  }
+
+  updatePlayerCount(count: number, maxPlayers: number = 2): void {
+    const playerCountElement = document.getElementById('playerCount');
+    if (playerCountElement) {
+      playerCountElement.textContent = `${count}/${maxPlayers}`;
+    }
+  }
+
+  private showCopiedMessage(): void {
+    const message = document.createElement('div');
+    message.className = 'copied-message';
+    message.textContent = 'Copied to clipboard!';
+    document.body.appendChild(message);
+    setTimeout(() => {
+      document.body.removeChild(message);
+    }, 2000);
+  }
+
+  toggleLeftSidebar(): void {
+    this.leftSidebar.classList.toggle('active');
+  }
+
+  openLeftSidebar(): void {
+    this.leftSidebar.classList.add('active');
+  }
+
+  closeLeftSidebar(): void {
+    this.leftSidebar.classList.remove('active');
+  }
+
+  toggleRightSidebar(): void {
+    this.rightSidebar.classList.toggle('active');
+  }
+
+  openRightSidebar(): void {
+    this.rightSidebar.classList.add('active');
+  }
+
+  closeRightSidebar(): void {
+    this.rightSidebar.classList.remove('active');
+  }
+
+  private generateRoomId(): string {
+    return Math.random().toString(36).substring(2, 10).toUpperCase();
+  }
+
+  getCurrentView(): 'lobby' | 'room' {
+    return this.currentView;
+  }
+
+  onCreateRoom?: (roomId: string) => void;
+  onJoinRoom?: (roomId: string) => void;
+}
+
+--------------------------------------------------------------------------------
+7. client/src/core/NetworkManager.ts
+--------------------------------------------------------------------------------
+import { Client } from 'colyseus.js';
+import { Room } from 'colyseus.js';
+
+export class NetworkManager {
+  private client: Client;
+  private currentRoom: Room | null = null;
+  private readonly serverUrl: string;
+
+  constructor(serverUrl: string = 'ws://localhost:2567') {
+    this.serverUrl = serverUrl;
+    this.client = new Client(this.serverUrl);
+  }
+
+  async connect(): Promise<void> {
+    try {
+      await this.client.joinOrCreate('holding_room');
+      console.log('Connected to server:', this.serverUrl);
+    } catch (error) {
+      console.error('Failed to connect to server:', error);
+      throw error;
+    }
+  }
+
+  async createRoom(roomId?: string): Promise<string> {
+    try {
+      const finalRoomId = roomId || this.generateRoomId();
+      this.currentRoom = await this.client.joinOrCreate('holding_room', { roomId: finalRoomId });
+      (this.currentRoom as any).customRoomId = finalRoomId;
+      return finalRoomId;
+    } catch (error) {
+      console.error('Failed to create room:', error);
+      throw error;
+    }
+  }
+
+  async joinRoom(roomId: string): Promise<Room> {
+    try {
+      this.currentRoom = await this.client.joinOrCreate('holding_room', { roomId });
+      (this.currentRoom as any).customRoomId = roomId;
+      return this.currentRoom;
+    } catch (error) {
+      console.error('Failed to join room:', error);
+      throw error;
+    }
+  }
+
+  async joinOrCreateRoom(roomName: string = 'holding_room'): Promise<Room> {
+    try {
+      this.currentRoom = await this.client.joinOrCreate(roomName);
+      return this.currentRoom;
+    } catch (error) {
+      console.error('Failed to join or create room:', error);
+      throw error;
+    }
+  }
+
+  leaveCurrentRoom(): void {
+    if (this.currentRoom) {
+      this.currentRoom.leave();
+      this.currentRoom = null;
+    }
+  }
+
+  getCurrentRoom(): Room | null {
+    return this.currentRoom;
+  }
+
+  sendToRoom(messageType: string, data: any): void {
+    if (this.currentRoom) {
+      this.currentRoom.send(messageType, data);
+    } else {
+      console.warn('No active room to send message to');
+    }
+  }
+
+  onMessage(messageType: string, callback: (data: any) => void): void {
+    if (this.currentRoom) {
+      this.currentRoom.onMessage(messageType, (data) => {
+        callback(data);
+      });
+    } else {
+      console.warn('No active room to listen to messages from');
+    }
+  }
+
+  onStateChange(callback: (state: any) => void): void {
+    if (this.currentRoom) {
+      this.currentRoom.onStateChange((state) => {
+        callback(state);
+      });
+    } else {
+      console.warn('No active room to listen to state changes from');
+    }
+  }
+
+  getState() {
+    if (this.currentRoom) {
+      return this.currentRoom.state;
+    }
+    return null;
+  }
+
+  private generateRoomId(): string {
+    return Math.random().toString(36).substring(2, 10).toUpperCase();
+  }
+}
+
+--------------------------------------------------------------------------------
+8. client/src/chat/ChatManager.ts
+--------------------------------------------------------------------------------
+import { Room } from 'colyseus.js';
+
+export class ChatManager {
+  private room: Room | null = null;
+  private chatContainer: HTMLElement;
+  private messageInput: HTMLInputElement;
+  private sendMessageBtn: HTMLButtonElement;
+
+  constructor() {
+    this.chatContainer = document.getElementById('chat-messages')!;
+    this.messageInput = document.getElementById('chat-input') as HTMLInputElement;
+    this.sendMessageBtn = document.getElementById('chat-send-btn') as HTMLButtonElement;
+    this.setupEventListeners();
+  }
+
+  private setupEventListeners(): void {
+    this.sendMessageBtn?.addEventListener('click', () => {
+      this.sendMessage();
+    });
+
+    this.messageInput?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        this.sendMessage();
+      }
+    });
+  }
+
+  attachToRoom(room: Room): void {
+    this.room = room;
+    this.room.onMessage('chatMessage', (data) => {
+      this.receiveMessage(data.playerName, data.message, data.timestamp);
+    });
+  }
+
+  sendMessage(): void {
+    const message = this.messageInput?.value.trim();
+    if (!message || !this.room) {
+      return;
+    }
+    this.room.send('chatMessage', {
+      message: message,
+      timestamp: Date.now()
+    });
+    this.messageInput.value = '';
+  }
+
+  private receiveMessage(sender: string, message: string, timestamp: number): void {
+    const messageElement = document.createElement('div');
+    messageElement.className = 'chat-message';
+    const timeString = new Date(timestamp).toLocaleTimeString();
+    messageElement.innerHTML = `<strong>${sender}:</strong> ${message} <span class="timestamp">(${timeString})</span>`;
+    this.chatContainer.appendChild(messageElement);
+    this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
+  }
+
+  clear(): void {
+    if (this.chatContainer) {
+      this.chatContainer.innerHTML = '';
+    }
+  }
+}
+
+--------------------------------------------------------------------------------
+9. client/src/core/GameEngine.ts
+--------------------------------------------------------------------------------
+import * as PIXI from 'pixi.js';
+
+export class GameEngine {
+  readonly app: PIXI.Application;
+  private ticker: PIXI.Ticker;
+
+  constructor(containerId: string = 'canvasContainer') {
+    this.app = new PIXI.Application();
+    this.ticker = this.app.ticker;
+
+    const container = document.getElementById(containerId);
+    if (!container) {
+      throw new Error(`Container element with id "${containerId}" not found`);
+    }
+
+    this.app.init({
+      backgroundColor: 0x1a1a1a,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      antialias: true,
+      autoDensity: true,
+      resolution: Math.min(window.devicePixelRatio, 2),
+    });
+
+    container.appendChild(this.app.canvas);
+  }
+
+  addTickerUpdate(updateFn: (dt: number) => void): void {
+    this.ticker.add((ticker) => {
+      const dt = ticker.deltaTime;
+      updateFn(dt);
+    });
+  }
+
+  start(): void {
+    this.ticker.start();
+  }
+
+  stop(): void {
+    this.ticker.stop();
+  }
+}
+
+--------------------------------------------------------------------------------
+10. server/package.json
+--------------------------------------------------------------------------------
+{
+  "name": "@holding-hands/server",
+  "private": true,
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only ./src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@colyseus/schema": "^2.0.0",
+    "colyseus": "^0.15.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.17",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.5.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.2"
+  }
+}
+
+--------------------------------------------------------------------------------
+11. server/src/index.ts
+--------------------------------------------------------------------------------
+import express from 'express';
+import { Server } from 'colyseus';
+import { createServer } from 'http';
+import cors from 'cors';
+import { HoldingRoom } from './rooms/HoldingRoom';
+
+const PORT = Number(process.env.PORT || 2567);
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+const server = createServer(app);
+const gameServer = new Server({ server });
+
+const customRoomIdMap = new Map<string, string>();
+
+gameServer.define('holding_room', HoldingRoom, {
+  // Add default options if needed
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+gameServer.listen(PORT);
+
+console.log(`Listening on Port: ${PORT}`);
+
+process.on('SIGTERM', () => {
+  console.log('Shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+--------------------------------------------------------------------------------
+12. server/src/rooms/HoldingRoom.ts (сокращённо - ключевые методы)
+--------------------------------------------------------------------------------
+import { Room, Client } from 'colyseus';
+import { RoomState, PlayerSchema, DraggableObjectSchema } from './schema';
+
+export class HoldingRoom extends Room<RoomState> {
+  private holdTimeout: NodeJS.Timeout | null = null;
+
+  onCreate(options: any) {
+    this.setState(new RoomState());
+    this.state.roomId = options.roomId || this.roomId;
+    this.state.maxPlayers = 2;
+
+    // Chat messages
+    this.onMessage('chatMessage', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player && typeof data.message === 'string' && data.message.trim().length > 0) {
+        const message = data.message.trim().substring(0, 200);
+        this.broadcast('chatMessage', {
+          playerId: client.sessionId,
+          playerName: player.name,
+          message: message,
+          timestamp: Date.now()
+        });
+      }
+    });
+
+    // Cursor updates
+    this.onMessage('updateCursor', (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      if (player && typeof data.x === 'number' && typeof data.y === 'number') {
+        player.cursorX = data.x;
+        player.cursorY = data.y;
+        this.broadcast('cursorUpdate', {
+          playerId: client.sessionId,
+          x: data.x,
+          y: data.y
+        }, { except: client });
+      }
+    });
+  }
+
+  onJoin(client: Client, options: any) {
+    if (this.clients.length > this.state.maxPlayers) {
+      client.leave(4000);
+      return;
+    }
+
+    const player = new PlayerSchema();
+    player.id = client.sessionId;
+    player.name = `Player${client.sessionId.substring(0, 4)}`;
+    player.x = Math.random() * 400 + 100;
+    player.y = Math.random() * 300 + 100;
+    player.color = this.generateRandomColor();
+    player.isRoomCreator = this.state.players.size === 0;
+
+    const paramNames = [
+      'aggression', 'mutation', 'speed', 'defense',
+      'reproduction', 'stealth', 'virulence', 'resilience',
+      'mobility', 'intellect', 'contagiousness', 'lethality'
+    ];
+
+    paramNames.forEach(param => {
+      player.virusParams.set(param, 0);
+    });
+
+    this.state.players.set(client.sessionId, player);
+    console.log(`${client.sessionId} joined room ${this.roomId}`);
+  }
+
+  onLeave(client: Client, consented: boolean) {
+    this.state.players.delete(client.sessionId);
+    this.releaseHoldsForPlayer(client.sessionId);
+    console.log(`${client.sessionId} left room ${this.roomId}`);
+  }
+
+  onDispose() {
+    console.log(`Disposing room ${this.roomId}`);
+    if (this.holdTimeout) clearTimeout(this.holdTimeout);
+  }
+
+  private generateRandomColor(): number {
+    const r = Math.floor(Math.random() * 128) + 127;
+    const g = Math.floor(Math.random() * 128) + 127;
+    const b = Math.floor(Math.random() * 128) + 127;
+    return (r << 16) + (g << 8) + b;
+  }
+
+  private releaseHoldsForPlayer(playerId: string) {
+    const player = this.state.players.get(playerId);
+    if (player && player.isHoldingHands) {
+      const otherPlayerId = player.holdingHandsWith;
+      const otherPlayer = this.state.players.get(otherPlayerId);
+      player.isHoldingHands = false;
+      player.holdingHandsWith = '';
+      if (otherPlayer) {
+        otherPlayer.isHoldingHands = false;
+        otherPlayer.holdingHandsWith = '';
+        this.broadcast('releaseHands', {
+          player1Id: playerId,
+          player2Id: otherPlayerId
+        });
+      }
+    }
+  }
+
+  // ... (virus battle simulation methods)
+}
+
+--------------------------------------------------------------------------------
+13. server/src/rooms/schema.ts
+--------------------------------------------------------------------------------
+import { Schema, type, MapSchema } from '@colyseus/schema';
+
+export class PlayerSchema extends Schema {
+  @type('string') id!: string;
+  @type('string') name: string = '';
+  @type('number') x: number = 0;
+  @type('number') y: number = 0;
+  @type('number') color: number = 0xffffff;
+  @type('boolean') isHoldingHands: boolean = false;
+  @type('string') holdingHandsWith: string = '';
+  @type('boolean') isRoomCreator: boolean = false;
+  @type('boolean') isReady: boolean = false;
+  @type({ map: 'number' }) virusParams: Map<string, number> = new Map<string, number>();
+  @type('number') cursorX: number = 0;
+  @type('number') cursorY: number = 0;
+}
+
+export class DraggableObjectSchema extends Schema {
+  @type('string') id!: string;
+  @type('number') x: number = 400;
+  @type('number') y: number = 300;
+  @type('number') radius: number = 30;
+  @type('number') color: number = 0xff69b4;
+  @type('boolean') isBeingDragged: boolean = false;
+  @type('string') draggedBy: string = '';
+  @type('boolean') isFollower: boolean = false;
+  @type('string') owner: string = '';
+  @type('number') targetX: number = 0;
+  @type('number') targetY: number = 0;
+}
+
+export class RoomState extends Schema {
+  @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
+  @type({ map: DraggableObjectSchema }) objects = new MapSchema<DraggableObjectSchema>();
+  @type('string') roomId: string = '';
+  @type('number') maxPlayers: number = 2;
+  @type({ array: 'number' }) battleGrid: number[] = [];
+  @type('boolean') battleActive: boolean = false;
+}
+
+================================================================================
+КОНЕЦ ФАЙЛА
+================================================================================

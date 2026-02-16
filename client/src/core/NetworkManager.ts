@@ -10,9 +10,11 @@ export class NetworkManager {
   private currentRoom: Room | null = null;
   private readonly serverUrl: string;
 
-  constructor(serverUrl: string = 'ws://localhost:2567') {
+  constructor(serverUrl: string = (import.meta as any).env?.VITE_SERVER_URL || 'ws://localhost:2567') {
     this.serverUrl = serverUrl;
     this.client = new Client(this.serverUrl);
+    
+    console.log('[NetworkManager] Server URL:', this.serverUrl);
   }
 
   /**
@@ -30,21 +32,19 @@ export class NetworkManager {
   }
 
   /**
-   * Создать новую комнату с указанным ID
+   * Создать новую комнату
+   * Возвращает реальный ID комнаты от Colyseus
    */
-  async createRoom(roomId?: string): Promise<string> {
+  async createRoom(): Promise<string> {
     try {
-      // Если ID не предоставлен, генерируем новый
-      const finalRoomId = roomId || this.generateRoomId();
-
-      // Создаем комнату с кастомным ID через joinOrCreate
-      // Colyseus не поддерживает прямой set room ID, поэтому используем roomId в опциях
-      this.currentRoom = await this.client.joinOrCreate('holding_room', { roomId: finalRoomId });
-
-      // Сохраняем кастомный roomId для отображения
-      (this.currentRoom as any).customRoomId = finalRoomId;
-
-      return finalRoomId;
+      // Создаём новую комнату через joinOrCreate
+      this.currentRoom = await this.client.joinOrCreate('holding_room');
+      
+      // Получаем roomId из state комнаты
+      const roomId = this.currentRoom.state?.roomId || this.currentRoom.id;
+      console.log('[NetworkManager] Room created:', roomId);
+      
+      return roomId;
     } catch (error) {
       console.error('Failed to create room:', error);
       throw error;
@@ -56,14 +56,10 @@ export class NetworkManager {
    */
   async joinRoom(roomId: string): Promise<Room> {
     try {
-      // Ищем комнату с matching roomId в опциях
-      // Colyseus не поддерживает прямой поиск по custom roomId,
-      // поэтому используем joinOrCreate с roomId в опциях
-      this.currentRoom = await this.client.joinOrCreate('holding_room', { roomId });
-
-      // Сохраняем кастомный roomId для отображения
-      (this.currentRoom as any).customRoomId = roomId;
-
+      // Присоединяемся к комнате по реальному ID
+      this.currentRoom = await this.client.joinById(roomId);
+      console.log('[NetworkManager] Joined room:', roomId);
+      
       return this.currentRoom;
     } catch (error) {
       console.error('Failed to join room:', error);
@@ -72,15 +68,15 @@ export class NetworkManager {
   }
 
   /**
-   * Присоединиться к комнате по имени (если нужен поиск по имени)
+   * Получить список доступных комнат (для будущего UI)
    */
-  async joinOrCreateRoom(roomName: string = 'holding_room'): Promise<Room> {
+  async getAvailableRooms(): Promise<any[]> {
     try {
-      this.currentRoom = await this.client.joinOrCreate(roomName);
-      return this.currentRoom;
+      const rooms = await this.client.getAvailableRooms('holding_room');
+      return rooms;
     } catch (error) {
-      console.error('Failed to join or create room:', error);
-      throw error;
+      console.error('Failed to get available rooms:', error);
+      return [];
     }
   }
 
@@ -146,12 +142,5 @@ export class NetworkManager {
       return this.currentRoom.state;
     }
     return null;
-  }
-
-  /**
-   * Генерация уникального ID комнаты
-   */
-  private generateRoomId(): string {
-    return Math.random().toString(36).substring(2, 10).toUpperCase();
   }
 }
