@@ -4,20 +4,45 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Digital Hand Holding - Connect with Someone Special</title>
+  <title>Cursor Hold — Multiplayer Game</title>
+  
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
   <style>
-    body {
+    :root {
+      /* Radix-like color palette */
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #171717;
+      --bg-tertiary: #262626;
+      --text-primary: #ffffff;
+      --text-secondary: #a3a3a3;
+      --text-muted: #525252;
+      --border: #404040;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #22c55e;
+      --error: #ef4444;
+      --radius: 6px;
+      --shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: 'Courier New', monospace;
-      background-color: #0f0f23; /* Dark blue background */
-      color: #00ff00; /* Green text for retro feel */
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
       overflow: hidden;
       height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
     }
 
     #app {
@@ -25,8 +50,6 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
     }
 
     .screen {
@@ -35,507 +58,464 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      max-width: 600px;
-      padding: 20px;
+      padding: 40px 20px;
+      min-height: 100vh;
     }
 
-    h1 {
-      font-size: 2.5rem;
-      text-shadow: 2px 2px 0 #ff00ff, 4px 4px 0 rgba(0,0,0,0.5);
+    .screen h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.75rem;
+    }
+
+    .screen p {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
       margin-bottom: 2rem;
-      color: #ffff00; /* Yellow for title */
-      letter-spacing: 2px;
     }
 
+    .version-badge {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      padding: 4px 12px;
+      border-radius: var(--radius);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    /* Buttons */
     .btn {
-      background-color: #ff00ff; /* Magenta */
-      color: #0f0f23;
+      background-color: var(--accent);
+      color: white;
       border: none;
-      padding: 12px 24px;
-      margin: 10px;
-      font-size: 1.2rem;
-      font-weight: bold;
+      padding: 10px 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
       cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      box-shadow: 3px 3px 0 #00ffff; /* Cyan outline */
-      transition: all 0.1s;
-      font-family: 'Courier New', monospace;
+      border-radius: var(--radius);
+      transition: background-color 0.15s ease;
+      font-family: inherit;
     }
 
     .btn:hover {
-      background-color: #00ffff; /* Cyan on hover */
-      transform: translate(2px, 2px);
-      box-shadow: 1px 1px 0 #00ffff;
+      background-color: var(--accent-hover);
     }
 
     .btn:active {
-      transform: translate(4px, 4px);
-      box-shadow: 0px 0px 0 #00ffff;
+      transform: scale(0.98);
     }
-    
-    .no-border {
-      background-color: #ff00ff;
-      color: #0f0f23;
-      border: none;
-      padding: 5px 10px;
-      margin-top: 10px;
-      cursor: pointer;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
+
+    .btn-secondary {
+      background-color: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--border);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.75rem;
+    }
+
+    .btn-block {
       width: 100%;
     }
 
+    /* Input */
     input[type="text"] {
-      background-color: #0f0f23;
-      color: #00ff00;
-      border: 2px solid #00ffff;
-      padding: 10px;
-      font-size: 1rem;
-      width: 250px;
-      margin: 10px;
-      font-family: 'Courier New', monospace;
-      text-align: center;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      font-size: 0.875rem;
+      border-radius: var(--radius);
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s ease;
     }
 
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* Hidden */
     .hidden {
-      display: none;
+      display: none !important;
     }
 
-    #gameContainer {
-      width: 100%;
-      height: 100%;
-    }
-
+    /* Canvas */
     #canvasContainer {
       position: absolute;
       top: 0;
-      left: 33%; /* Start after the left sidebar area */
-      width: 33%; /* 33.3% width */
+      left: 0;
+      width: 100%;
       height: 100%;
-      z-index: 1; /* Below the grid */
+      z-index: 0;
     }
 
-    #hud {
+    /* Corner markers */
+    .corner-circle {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 100;
-      background-color: rgba(15, 15, 35, 0.7);
-      padding: 10px;
-      border-radius: 0;
-      font-size: 0.9rem;
-    }
-    
-
-    .connection-status {
-      display: inline-block;
       width: 12px;
       height: 12px;
-      border-radius: 50%;
-      margin-right: 8px;
+      border-radius: 2px;
+      background-color: var(--accent);
+      z-index: 10;
+      opacity: 0.5;
     }
 
-    .connected {
-      background-color: #00ff00;
-    }
+    .corner-circle.top-left { top: 20px; left: 20px; }
+    .corner-circle.top-right { top: 20px; right: 20px; }
+    .corner-circle.bottom-left { bottom: 20px; left: 20px; }
+    .corner-circle.bottom-right { bottom: 20px; right: 20px; }
 
-    .disconnected {
-      background-color: #ff0000;
-    }
-
-    .connecting {
-      background-color: #ffff00;
-    }
-
-    #roomLink {
-      word-break: break-all;
-      max-width: 300px;
-    }
-
-    .pixel-art {
-      image-rendering: pixelated;
-      image-rendering: -moz-crisp-edges;
-      image-rendering: crisp-edges;
-    }
-    
+    /* Sidebars */
     .sidebar {
       position: fixed;
       top: 0;
-      right: -33%; /* Hidden by default */
-      width: 33%;
+      width: 320px;
       height: 100%;
-      background: rgba(15, 15, 35, 0.7);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border-left: 2px solid #00ffff;
-      z-index: 1000;
-      transition: right 0.3s ease;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      z-index: 100;
+      transition: transform 0.2s ease;
       display: flex;
       flex-direction: column;
-      box-shadow: 
-        0 0 20px rgba(0, 255, 255, 0.3),
-        inset 0 0 20px rgba(0, 255, 255, 0.1);
-      /* Liquid glass effect */
-      background: linear-gradient(135deg, rgba(15, 15, 35, 0.7) 0%, rgba(15, 15, 35, 0.5) 100%);
-      border: 1px solid rgba(0, 255, 255, 0.3);
-      border-radius: 0;
     }
-    
-    /* Adjust right sidebar position to account for battle grid */
-    .right-sidebar {
-      right: -33%; /* Hidden by default */
-      left: auto;
-    }
-    
-    .right-sidebar.active {
-      right: 0;
-      left: auto;
-    }
-    
-    .sidebar.active {
-      right: 0;
-    }
-    
+
     .left-sidebar {
-      right: auto;
-      left: -33%; /* Hidden by default */
-      width: 33%; /* 33.3% width for desktop */
-      transition: left 0.3s ease;
-    }
-    
-    .left-sidebar.active {
       left: 0;
-      right: auto;
+      transform: translateX(-100%);
+      border-right: 1px solid var(--border);
+      border-left: none;
     }
-    
-    /* Mobile responsiveness */
-    @media (max-width: 768px) {
-      .sidebar {
-        width: 100%;
-      }
-      
-      .right-sidebar {
-        right: -100%;
-      }
-      
-      .left-sidebar {
-        left: -100%;
-      }
-      
-      .right-sidebar.active {
-        right: 0;
-      }
-      
-      .left-sidebar.active {
-        left: 0;
-      }
-      
-      #canvasContainer {
-        left: 0;
-        width: 100%;
-      }
-      
+
+    .left-sidebar.active {
+      transform: translateX(0);
     }
-    
+
+    .right-sidebar {
+      right: 0;
+      transform: translateX(100%);
+      border-left: 1px solid var(--border);
+    }
+
+    .right-sidebar.active {
+      transform: translateX(0);
+    }
+
     .sidebar-header {
-      display: flex;
-      flex-direction: column;
-      padding: 10px;
-      border-bottom: 1px solid #00ffff;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
     }
-    
+
     .sidebar-title-controls {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      width: 100%;
     }
-    
-    .sidebar-header h3 {
-      margin: 0;
-      color: #00ff00;
-      font-family: 'Courier New', monospace;
-      font-size: 1.2rem;
-      flex-grow: 1;
+
+    .sidebar-title-controls h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
     }
-    
-    .player-info {
-      color: #00ff00;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
-      text-align: center;
-      flex-grow: 1;
-    }
-    
-    #roomInfo {
-      color: #00ff00;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
-      padding-left: 30px; /* To align with the controls below */
-    }
-    
+
     .sidebar-content {
-      padding: 10px;
-      overflow-y: hidden; /* Changed from auto to hide scrollbar */
-      flex-grow: 1;
-    }
-    
-    .setting-item {
-      margin-bottom: 15px;
-    }
-    
-    .setting-item label {
-      display: block;
-      color: #00ff00;
-      margin-bottom: 5px;
-      font-family: 'Courier New', monospace;
-    }
-    
-    .setting-item input[type="range"],
-    .setting-item select {
-      width: 100%;
-      padding: 5px;
-      background-color: #0f0f23;
-      color: #00ff00;
-      border: 1px solid #00ffff;
-      font-family: 'Courier New', monospace;
-    }
-    
-    .close-btn {
-      background-color: #ff00ff;
-      color: #0f0f23;
-      border: none;
-      padding: 5px 10px;
-      cursor: pointer;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
-      width: auto;
-    }
-    
-    #chat-container {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80%;
-      max-width: 600px;
-      background-color: rgba(15, 15, 35, 0.8);
-      border: 2px solid #00ffff;
-      border-radius: 0;
-      padding: 10px;
-      z-index: 100;
-    }
-    
-    #chat-messages {
-      height: 100px;
+      padding: 16px;
       overflow-y: auto;
-      margin-bottom: 10px;
-      color: #00ff00;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
+      flex: 1;
     }
-    
+
+    .sidebar-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .sidebar-content::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    /* Menu buttons */
+    .menu-btn {
+      position: fixed;
+      top: 16px;
+      z-index: 50;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+    }
+
+    .menu-btn.left { left: 16px; }
+    .menu-btn.right { right: 16px; }
+
+    /* Center panel */
+    #centerPanel {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 480px;
+      z-index: 20;
+    }
+
+    #centerRoomId {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: var(--radius);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    #centerRoomId span:first-child {
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    #currentRoomId {
+      display: block;
+      color: var(--accent);
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-top: 4px;
+      cursor: pointer;
+    }
+
+    #currentRoomId:hover {
+      color: var(--accent-hover);
+    }
+
+    /* Chat */
+    #chat-container {
+      position: relative;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+
+    #chat-messages {
+      height: 120px;
+      overflow-y: auto;
+      margin-bottom: 12px;
+      font-size: 0.875rem;
+    }
+
+    #chat-messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #chat-messages::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .chat-message {
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chat-message:last-child {
+      border-bottom: none;
+    }
+
+    .chat-message strong {
+      color: var(--accent);
+    }
+
+    .chat-message .timestamp {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-left: 8px;
+    }
+
     #chat-input-container {
       display: flex;
+      gap: 8px;
     }
-    
+
     #chat-input {
-      flex-grow: 1;
-      background-color: #0f0f23;
-      color: #00ff00;
-      border: 1px solid #00ffff;
-      padding: 5px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
+      flex: 1;
+      background: var(--bg-tertiary);
     }
-    
+
     #chat-send-btn {
-      background-color: #ff00ff;
-      color: #0f0f23;
+      background: var(--accent);
+      color: white;
       border: none;
-      padding: 5px 10px;
-      margin-left: 5px;
+      padding: 8px 16px;
+      border-radius: var(--radius);
       cursor: pointer;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
+      font-weight: 500;
+      font-size: 0.875rem;
     }
-    
-    /* Virus Parameter Styles */
+
+    #chat-send-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    /* Player info */
+    .player-info {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    #roomInfo {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    #leftRoomId {
+      color: var(--accent);
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* HUD */
+    #hud {
+      background: var(--bg-tertiary);
+      padding: 12px;
+      border-radius: var(--radius);
+      margin-top: 16px;
+    }
+
+    #playerCounter {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    /* Virus params - simplified */
     .param-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 5px; /* Reduced margin to save space */
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 8px;
     }
-    
+
     .param-cell {
-      width: 30%;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 8px;
       text-align: center;
-      background-color: rgba(0, 0, 0, 0.3);
-      border: 1px solid #00ffff;
-      padding: 5px;
       cursor: pointer;
-      transition: background-color 0.2s;
-      position: relative;
-      border-radius: 0 0 5px 5px; /* Rounded bottom for test tube shape */
-      overflow: hidden;
+      transition: border-color 0.15s ease;
     }
-    
+
     .param-cell:hover {
-      background-color: rgba(0, 255, 255, 0.2);
+      border-color: var(--accent);
     }
-    
+
     .param-emoji {
-      font-size: 1.5rem;
-      margin-bottom: 3px;
-      display: block;
+      font-size: 1.25rem;
+      margin-bottom: 4px;
     }
-    
+
     .param-name {
-      font-size: 0.7rem;
-      color: #00ff00;
-      margin-bottom: 3px;
+      font-size: 0.625rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
     }
-    
+
     .param-value {
-      font-size: 1rem;
-      color: #ffff00;
-      font-weight: bold;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
     }
-    
-    /* Test tube liquid effect */
-    .param-liquid {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 0%;
-      transition: height 0.5s ease;
-      z-index: 1;
-    }
-    
-    /* Emoji-specific colors for liquids */
-    .param-cell[data-param="aggression"] .param-liquid { background-color: rgba(255, 0, 0, 0.6); } /* Red for ⚔️ */
-    .param-cell[data-param="mutation"] .param-liquid { background-color: rgba(128, 0, 128, 0.6); } /* Purple for 🧬 */
-    .param-cell[data-param="speed"] .param-liquid { background-color: rgba(255, 165, 0, 0.6); } /* Orange for ⚡ */
-    .param-cell[data-param="defense"] .param-liquid { background-color: rgba(0, 0, 255, 0.6); } /* Blue for 🛡️ */
-    .param-cell[data-param="reproduction"] .param-liquid { background-color: rgba(0, 128, 0, 0.6); } /* Green for 🦠 */
-    .param-cell[data-param="stealth"] .param-liquid { background-color: rgba(128, 128, 128, 0.6); } /* Gray for 👻 */
-    .param-cell[data-param="virulence"] .param-liquid { background-color: rgba(128, 0, 0, 0.6); } /* Maroon for ☣️ */
-    .param-cell[data-param="resilience"] .param-liquid { background-color: rgba(255, 192, 203, 0.6); } /* Pink for 💪 */
-    .param-cell[data-param="mobility"] .param-liquid { background-color: rgba(139, 69, 19, 0.6); } /* Brown for 🚶 */
-    .param-cell[data-param="intellect"] .param-liquid { background-color: rgba(255, 255, 0, 0.6); } /* Yellow for 🧠 */
-    .param-cell[data-param="contagiousness"] .param-liquid { background-color: rgba(0, 255, 255, 0.6); } /* Cyan for 🫁 */
-    .param-cell[data-param="lethality"] .param-liquid { background-color: rgba(0, 0, 0, 0.6); } /* Black for 💀 */
-    
-    /* Drop animation */
-    .drop-animation {
-      position: absolute;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: currentColor; /* Will inherit the color from parent */
-      pointer-events: none;
-      z-index: 2;
-    }
-    
+
     .points-summary {
-      margin: 10px 0;
-      color: #00ff00;
-      font-size: 0.9rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin: 16px 0;
+      padding: 12px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius);
     }
-    
-    #readyBtn {
-      width: 100%;
-      margin-top: 10px;
-    }
-    
-    .param-cell.disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .copyable-id {
+
+    /* Close button */
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
       cursor: pointer;
-      text-decoration: underline;
-      transition: color 0.2s;
+      padding: 4px;
+      font-size: 1.25rem;
+      line-height: 1;
     }
-    
-    .copyable-id:hover {
-      color: #00ffff;
+
+    .close-btn:hover {
+      color: var(--text-primary);
     }
-    
+
+    /* Copy message */
     .copied-message {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background-color: rgba(0, 0, 0, 0.7);
-      color: #00ff00;
-      padding: 10px 20px;
-      border: 2px solid #00ffff;
-      border-radius: 0;
-      font-family: 'Courier New', monospace;
-      font-size: 1.2rem;
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      padding: 12px 24px;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
       z-index: 10000;
-      text-align: center;
-      pointer-events: none;
-    }
-    
-    /* Hide scrollbar for sidebar */
-    .sidebar-content::-webkit-scrollbar {
-      display: none; /* For Chrome, Safari, and Opera */
-    }
-    
-    .sidebar-content {
-      -ms-overflow-style: none;  /* IE and Edge */
-      scrollbar-width: none;  /* Firefox */
+      box-shadow: 0 4px 12px rgb(0 0 0 / 0.5);
     }
 
-    /* 4 желтых круга по углам экрана для проверки позиционирования */
-    .corner-circle {
-      position: absolute;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background-color: #ffff00;
-      z-index: 50;
-      border: 3px solid #ff00ff;
-    }
+    /* Responsive */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+      }
 
-    .corner-circle.top-left {
-      top: 10px;
-      left: 10px;
-    }
+      .left-sidebar {
+        transform: translateX(-100%);
+      }
 
-    .corner-circle.top-right {
-      top: 10px;
-      right: 10px;
-    }
+      .right-sidebar {
+        transform: translateX(100%);
+      }
 
-    .corner-circle.bottom-left {
-      bottom: 10px;
-      left: 10px;
-    }
-
-    .corner-circle.bottom-right {
-      bottom: 10px;
-      right: 10px;
+      #centerPanel {
+        width: 95%;
+      }
     }
   </style>
 </head>
 <body>
   <div id="app">
+    <!-- Version Badge -->
+    <div class="version-badge">v1</div>
+
     <!-- Landing Screen -->
     <div id="landingScreen" class="screen">
-      <div style="font-size: 3rem; color: #ff00ff; font-family: 'Courier New', monospace; font-weight: bold; margin-bottom: 0.5rem;">1</div>
-      <h1>DIGITAL HAND HOLDING</h1>
-      <p>Connect with someone special in a virtual space</p>
+      <h1>Cursor Hold</h1>
+      <p>Multiplayer collaborative game</p>
 
-      <button id="createRoomBtn" class="btn">CREATE ROOM</button>
-      <div style="margin-top: 20px;">
-        <input type="text" id="roomIdInput" placeholder="Enter Room ID">
-        <button id="joinRoomBtn" class="btn">JOIN ROOM</button>
+      <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+        <button id="createRoomBtn" class="btn">Create Room</button>
+      </div>
+      
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <input type="text" id="roomIdInput" placeholder="Enter room ID">
+        <button id="joinRoomBtn" class="btn btn-secondary">Join</button>
       </div>
     </div>
 
@@ -543,172 +523,141 @@
     <div id="gameScreen" class="screen hidden">
       <div id="canvasContainer"></div>
 
-      <!-- 4 желтых круга по углам экрана для проверки позиционирования -->
+      <!-- Corner markers -->
       <div class="corner-circle top-left"></div>
       <div class="corner-circle top-right"></div>
       <div class="corner-circle bottom-left"></div>
       <div class="corner-circle bottom-right"></div>
 
-      <!-- Left menu button -->
-      <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+      <!-- Menu buttons -->
+      <button id="leftMenuBtn" class="btn btn-sm menu-btn left">☰</button>
+      <button id="menuBtn" class="btn btn-sm menu-btn right">☰</button>
 
-      <!-- Menu button in top right corner -->
-      <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
-
-      <!-- Центральная панель с ID комнаты и чатом -->
-      <div id="centerPanel" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 600px; z-index: 150;">
-        <!-- ID комнаты -->
-        <div id="centerRoomId" style="background-color: rgba(15, 15, 35, 0.9); border: 2px solid #ffff00; padding: 15px; margin-bottom: 10px; text-align: center; border-radius: 0;">
-          <span style="color: #ffff00; font-family: 'Courier New', monospace; font-size: 1rem;">Room ID: </span>
-          <span id="currentRoomId" class="copyable-id" style="color: #00ff00; font-family: 'Courier New', monospace; font-size: 1.2rem; font-weight: bold;"></span>
+      <!-- Center panel with room ID and chat -->
+      <div id="centerPanel">
+        <div id="centerRoomId">
+          <span>Room ID</span>
+          <span id="currentRoomId"></span>
         </div>
 
-        <!-- Чат -->
-        <div id="chat-container" style="position: relative; bottom: auto; left: auto; transform: none; width: 100%; margin: 0;">
+        <div id="chat-container">
           <div id="chat-messages"></div>
           <div id="chat-input-container">
-            <input type="text" id="chat-input" placeholder="Type your message...">
+            <input type="text" id="chat-input" placeholder="Type a message...">
             <button id="chat-send-btn">Send</button>
           </div>
         </div>
       </div>
-      
+
       <!-- Left Sidebar -->
       <div id="leftSidebar" class="sidebar left-sidebar">
         <div class="sidebar-header">
           <div class="sidebar-title-controls">
             <h3>Controls</h3>
-            <div class="player-info">
-              <div id="playerName">Player 1 | Player 2</div>
-            </div>
-            <button id="closeLeftSidebarBtn" class="btn close-btn">✕</button>
+            <button id="closeLeftSidebarBtn" class="close-btn">×</button>
           </div>
-          <div id="roomInfo">Room: <span id="leftRoomId" class="copyable-id"></span></div>
+          <div class="player-info">
+            <span id="playerName">Player</span>
+          </div>
+          <div id="roomInfo">Room: <span id="leftRoomId"></span></div>
         </div>
         <div class="sidebar-content">
-          <div class="control-panel">
-            <div id="hud">
-              <div id="playerCounter">Players: <span id="playerCount">0</span>/2</div>
-              <button id="leaveRoomBtn" class="btn no-border">LEAVE ROOM</button>
-            </div>
+          <div id="hud">
+            <div id="playerCounter">Players: <span id="playerCount">0</span>/2</div>
+            <button id="leaveRoomBtn" class="btn btn-secondary btn-sm btn-block">Leave Room</button>
           </div>
         </div>
       </div>
-      
+
       <!-- Right Sidebar -->
       <div id="sidebar" class="sidebar right-sidebar">
         <div class="sidebar-header">
           <div class="sidebar-title-controls">
             <h3>Virus Parameters</h3>
-            <button id="closeSidebarBtn" class="btn close-btn">✕</button>
+            <button id="closeSidebarBtn" class="close-btn">×</button>
           </div>
         </div>
         <div class="sidebar-content">
-          <!-- Virus Parameter Selection -->
-          <div class="setting-item">
-            <h4>Virus Parameters (12 points total)</h4>
-            <div id="virusParamsContainer">
-              <!-- Row 1 -->
-              <div class="param-row">
-                <div class="param-cell" data-param="aggression">
-                  <div class="param-emoji">⚔️</div>
-                  <div class="param-name">Aggression</div>
-                  <div class="param-value" id="param-aggression">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="mutation">
-                  <div class="param-emoji">🧬</div>
-                  <div class="param-name">Mutation</div>
-                  <div class="param-value" id="param-mutation">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="speed">
-                  <div class="param-emoji">⚡</div>
-                  <div class="param-name">Speed</div>
-                  <div class="param-value" id="param-speed">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-              </div>
-
-              <!-- Row 2 -->
-              <div class="param-row">
-                <div class="param-cell" data-param="defense">
-                  <div class="param-emoji">🛡️</div>
-                  <div class="param-name">Defense</div>
-                  <div class="param-value" id="param-defense">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="reproduction">
-                  <div class="param-emoji">🦠</div>
-                  <div class="param-name">Reproduction</div>
-                  <div class="param-value" id="param-reproduction">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="stealth">
-                  <div class="param-emoji">👻</div>
-                  <div class="param-name">Stealth</div>
-                  <div class="param-value" id="param-stealth">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-              </div>
-
-              <!-- Row 3 -->
-              <div class="param-row">
-                <div class="param-cell" data-param="virulence">
-                  <div class="param-emoji">☣️</div>
-                  <div class="param-name">Virulence</div>
-                  <div class="param-value" id="param-virulence">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="resilience">
-                  <div class="param-emoji">💪</div>
-                  <div class="param-name">Resilience</div>
-                  <div class="param-value" id="param-resilience">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="mobility">
-                  <div class="param-emoji">🚶</div>
-                  <div class="param-name">Mobility</div>
-                  <div class="param-value" id="param-mobility">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-              </div>
-
-              <!-- Row 4 -->
-              <div class="param-row">
-                <div class="param-cell" data-param="intellect">
-                  <div class="param-emoji">🧠</div>
-                  <div class="param-name">Intellect</div>
-                  <div class="param-value" id="param-intellect">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="contagiousness">
-                  <div class="param-emoji">🫁</div>
-                  <div class="param-name">Contagiousness</div>
-                  <div class="param-value" id="param-contagiousness">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="lethality">
-                  <div class="param-emoji">💀</div>
-                  <div class="param-name">Lethality</div>
-                  <div class="param-value" id="param-lethality">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-              </div>
+          <div class="param-row">
+            <div class="param-cell" data-param="aggression">
+              <div class="param-emoji">⚔️</div>
+              <div class="param-name">Aggression</div>
+              <div class="param-value" id="param-aggression">0</div>
             </div>
-            
-            <div class="points-summary">
-              Points remaining: <span id="points-remaining">12</span>
+            <div class="param-cell" data-param="mutation">
+              <div class="param-emoji">🧬</div>
+              <div class="param-name">Mutation</div>
+              <div class="param-value" id="param-mutation">0</div>
             </div>
-
-            <button id="randomizeBtn" class="btn no-border">RANDOMIZE</button>
-            <button id="readyBtn" class="btn no-border">READY</button>
+            <div class="param-cell" data-param="speed">
+              <div class="param-emoji">⚡</div>
+              <div class="param-name">Speed</div>
+              <div class="param-value" id="param-speed">0</div>
+            </div>
           </div>
+          <div class="param-row">
+            <div class="param-cell" data-param="defense">
+              <div class="param-emoji">🛡️</div>
+              <div class="param-name">Defense</div>
+              <div class="param-value" id="param-defense">0</div>
+            </div>
+            <div class="param-cell" data-param="reproduction">
+              <div class="param-emoji">🦠</div>
+              <div class="param-name">Reproduction</div>
+              <div class="param-value" id="param-reproduction">0</div>
+            </div>
+            <div class="param-cell" data-param="stealth">
+              <div class="param-emoji">👻</div>
+              <div class="param-name">Stealth</div>
+              <div class="param-value" id="param-stealth">0</div>
+            </div>
+          </div>
+          <div class="param-row">
+            <div class="param-cell" data-param="virulence">
+              <div class="param-emoji">☣️</div>
+              <div class="param-name">Virulence</div>
+              <div class="param-value" id="param-virulence">0</div>
+            </div>
+            <div class="param-cell" data-param="resilience">
+              <div class="param-emoji">💪</div>
+              <div class="param-name">Resilience</div>
+              <div class="param-value" id="param-resilience">0</div>
+            </div>
+            <div class="param-cell" data-param="mobility">
+              <div class="param-emoji">🚶</div>
+              <div class="param-name">Mobility</div>
+              <div class="param-value" id="param-mobility">0</div>
+            </div>
+          </div>
+          <div class="param-row">
+            <div class="param-cell" data-param="intellect">
+              <div class="param-emoji">🧠</div>
+              <div class="param-name">Intellect</div>
+              <div class="param-value" id="param-intellect">0</div>
+            </div>
+            <div class="param-cell" data-param="contagiousness">
+              <div class="param-emoji">🫁</div>
+              <div class="param-name">Contagious</div>
+              <div class="param-value" id="param-contagiousness">0</div>
+            </div>
+            <div class="param-cell" data-param="lethality">
+              <div class="param-emoji">💀</div>
+              <div class="param-name">Lethality</div>
+              <div class="param-value" id="param-lethality">0</div>
+            </div>
+          </div>
+
+          <div class="points-summary">
+            Points remaining: <span id="points-remaining">12</span>
+          </div>
+
+          <button id="randomizeBtn" class="btn btn-secondary btn-sm btn-block" style="margin-bottom: 8px;">Randomize</button>
+          <button id="readyBtn" class="btn btn-sm btn-block">Ready</button>
         </div>
       </div>
     </div>
   </div>
-  
+
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
