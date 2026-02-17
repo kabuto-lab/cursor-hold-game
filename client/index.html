@@ -555,9 +555,22 @@
       <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
 
       <!-- Room ID panel at the top center -->
-      <div id="topRoomIdPanel" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #00ffff; padding: 10px 20px; border-radius: 20px; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; border: 2px solid #00ffff; z-index: 9999; pointer-events: none;">
-        <span style="color: #ffff00;">Room ID: </span>
-        <span id="topRoomId" class="copyable-id" style="color: #00ff00;"></span>
+      <div id="topRoomIdPanel" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #00ffff; padding: 10px 20px; border-radius: 20px; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; border: 2px solid #00ffff; z-index: 9999; cursor: pointer;">
+        <span style="color: #ffff00;">Всего игроков: </span>
+        <span id="playerCountTop" style="color: #00ff00;">0</span>
+        <span style="color: #ffff00;">/2</span>
+        <span style="color: #00ffff; margin-left: 10px;">|</span>
+        <span id="topRoomId" class="copyable-id" style="color: #00ff00; margin-left: 10px;"></span>
+      </div>
+
+      <!-- Player 1 name (left of center panel) -->
+      <div id="player1Name" style="position: fixed; top: 25px; left: 50%; transform: translateX(-180px); color: #ff0000; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; z-index: 9999; pointer-events: none;">
+        Player 1
+      </div>
+
+      <!-- Player 2 name (right of center panel) -->
+      <div id="player2Name" style="position: fixed; top: 25px; left: 50%; transform: translateX(180px); color: #0000ff; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; z-index: 9999; pointer-events: none;">
+        Player 2
       </div>
 
       <!-- Left Sidebar -->
@@ -565,12 +578,8 @@
         <div class="sidebar-header">
           <div class="sidebar-title-controls">
             <h3>Controls</h3>
-            <div class="player-info">
-              <div id="playerName">Player 1 | Player 2</div>
-            </div>
             <button id="closeLeftSidebarBtn" class="btn close-btn">✕</button>
           </div>
-          <div id="roomInfo">Room: <span id="leftRoomId" class="copyable-id"></span></div>
         </div>
         <div class="sidebar-content">
           <div class="control-panel">

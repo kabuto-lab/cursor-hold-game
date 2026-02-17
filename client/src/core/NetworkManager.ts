@@ -10,6 +10,9 @@ export class NetworkManager {
   private currentRoom: Room | null = null;
   private readonly serverUrl: string;
 
+  // Callback для изменения количества игроков
+  public onRoomStateChange?: (count: number, max: number) => void;
+
   constructor(serverUrl?: string) {
     // Локальный сервер для разработки, прод-сервер для production
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -174,6 +177,36 @@ export class NetworkManager {
     if (!this.currentRoom) return;
 
     console.log('[NetworkManager] setupRoomMessageHandlers called, sessionId:', this.currentRoom.sessionId);
+
+    // Подписываемся на изменение количества игроков
+    this.currentRoom.state.players.onAdd = () => {
+      this.updatePlayerCount();
+    };
+
+    this.currentRoom.state.players.onRemove = () => {
+      this.updatePlayerCount();
+    };
+
+    // Первоначальное обновление счётчика
+    this.updatePlayerCount();
+  }
+
+  /**
+   * Обновить счётчик игроков
+   */
+  private updatePlayerCount(): void {
+    if (this.currentRoom && this.onRoomStateChange) {
+      const count = this.currentRoom.state.players.size;
+      const max = this.currentRoom.state.maxPlayers || 2;
+      this.onRoomStateChange(count, max);
+    }
+  }
+
+  /**
+   * Получить текущее количество игроков
+   */
+  getPlayerCount(): number {
+    return this.currentRoom?.state.players.size || 0;
   }
 
   /**

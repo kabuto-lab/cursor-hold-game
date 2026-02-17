@@ -94,6 +94,13 @@ class MainApp {
           this.draggableObject.setupNetworkListeners();
           // Устанавливаем mouse follower для создателя
           this.mouseFollower.onRoomJoined(true, this.networkManager.getSessionId()!);
+          
+          // Подписываемся на изменение количества игроков
+          this.networkManager.onRoomStateChange = (count, max) => {
+            this.uiController.updatePlayerCount(count, max);
+          };
+          // Обновляем счётчик при создании комнаты
+          this.uiController.updatePlayerCount(this.networkManager.getPlayerCount(), 2);
         }
         this.uiController.setPlayerName('Player 1');
       } catch (error) {
@@ -126,6 +133,13 @@ class MainApp {
           this.draggableObject.setupNetworkListeners();
           // Устанавливаем mouse follower для присоединившегося
           this.mouseFollower.onRoomJoined(false, this.networkManager.getSessionId()!);
+          
+          // Подписываемся на изменение количества игроков
+          this.networkManager.onRoomStateChange = (count, max) => {
+            this.uiController.updatePlayerCount(count, max);
+          };
+          // Обновляем счётчик при присоединении
+          this.uiController.updatePlayerCount(this.networkManager.getPlayerCount(), 2);
         }
         this.uiController.setPlayerName('Player 2');
       } catch (error) {

@@ -132,28 +132,18 @@ export class UIController {
     // Обновляем отображение ID комнаты в верхней панели
     const topRoomIdElement = document.getElementById('topRoomId');
     if (topRoomIdElement) {
-      topRoomIdElement.textContent = roomId;
+      topRoomIdElement.textContent = `ID: ${roomId}`;
 
-      // Добавляем возможность копирования
-      topRoomIdElement.classList.add('copyable-id');
-      topRoomIdElement.onclick = () => {
-        navigator.clipboard.writeText(roomId).then(() => {
-          // Показываем сообщение о копировании
-          this.showCopiedMessage();
-        });
-      };
-    }
-
-    // Также обновляем в левой sidebar
-    const leftSidebarRoomIdElement = document.getElementById('leftRoomId');
-    if (leftSidebarRoomIdElement) {
-      leftSidebarRoomIdElement.textContent = roomId;
-      leftSidebarRoomIdElement.classList.add('copyable-id');
-      leftSidebarRoomIdElement.onclick = () => {
-        navigator.clipboard.writeText(roomId).then(() => {
-          this.showCopiedMessage();
-        });
-      };
+      // Добавляем возможность копирования на весь панель
+      const topRoomIdPanel = document.getElementById('topRoomIdPanel');
+      if (topRoomIdPanel) {
+        topRoomIdPanel.onclick = () => {
+          navigator.clipboard.writeText(roomId).then(() => {
+            // Показываем сообщение о копировании
+            this.showCopiedMessage();
+          });
+        };
+      }
     }
   }
 
@@ -169,9 +159,28 @@ export class UIController {
    * Установить имя игрока
    */
   setPlayerName(name: string): void {
-    const playerNameElement = document.getElementById('playerName');
-    if (playerNameElement) {
-      playerNameElement.textContent = name;
+    // Определяем, какой игрок (Player 1 или Player 2)
+    if (name === 'Player 1') {
+      const player1Element = document.getElementById('player1Name');
+      if (player1Element) {
+        player1Element.textContent = name;
+      }
+    } else if (name === 'Player 2') {
+      const player2Element = document.getElementById('player2Name');
+      if (player2Element) {
+        player2Element.textContent = name;
+      }
+    }
+  }
+
+  /**
+   * Обновить имя конкретного игрока
+   */
+  updatePlayerNameDisplay(playerNum: 1 | 2, name: string): void {
+    const elementId = playerNum === 1 ? 'player1Name' : 'player2Name';
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.textContent = name;
     }
   }
 
@@ -179,6 +188,13 @@ export class UIController {
    * Обновить счётчик игроков
    */
   updatePlayerCount(count: number, maxPlayers: number = 2): void {
+    // Обновляем в верхней панели
+    const playerCountTopElement = document.getElementById('playerCountTop');
+    if (playerCountTopElement) {
+      playerCountTopElement.textContent = `${count}`;
+    }
+
+    // Обновляем в левом сайдбаре (если есть)
     const playerCountElement = document.getElementById('playerCount');
     if (playerCountElement) {
       playerCountElement.textContent = `${count}/${maxPlayers}`;
