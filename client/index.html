@@ -315,7 +315,7 @@
     }
     
     #chat-container {
-      position: absolute;
+      position: fixed;
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
@@ -325,7 +325,14 @@
       border: 2px solid #00ffff;
       border-radius: 0;
       padding: 10px;
-      z-index: 100;
+      z-index: 1000;
+      cursor: grab;
+      user-select: none;
+      transition: none; /* Remove transition for smooth drag */
+    }
+
+    #chat-container.dragging {
+      cursor: grabbing;
     }
     
     #chat-messages {
