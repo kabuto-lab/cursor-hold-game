@@ -130,8 +130,8 @@ export class DraggableObject {
     // Label
     if (this.isDragging) {
       const text = new PIXI.Text('DRAGGING', {
-        fontFamily: 'Courier New',
-        fontSize: 12,
+        fontFamily: 'PIXY',
+        fontSize: 14,
         fill: 0xffffff,
         fontWeight: 'bold',
       });

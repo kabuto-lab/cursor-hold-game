@@ -185,13 +185,13 @@ export class MouseFollowerManager {
 
     // Create label text
     const labelSprite = new PIXI.Text(follower.label, {
-      fontFamily: 'Courier New',
-      fontSize: 14,
+      fontFamily: 'PIXY',
+      fontSize: 16,
       fill: follower.color,
       fontWeight: 'bold',
       stroke: {
         color: 0x000000,
-        width: 4,
+        width: 3,
       } as any,
     });
     labelSprite.anchor.set(0.5);
