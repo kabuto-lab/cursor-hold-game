@@ -41,7 +41,8 @@ export class GameEngine {
     this.ticker = this.app.ticker;
 
     // КРИТИЧЕСКАЯ СТРОКА — отключаем pointer events на canvas
-    this.app.canvas.style.pointerEvents = 'none';
+    // ВАЖНО: Оставляем pointer-events: auto для интерактивных объектов (drag-and-drop)
+    this.app.canvas.style.pointerEvents = 'auto';
 
     console.log('[GameEngine] Appending canvas...');
     // Добавляем canvas в контейнер

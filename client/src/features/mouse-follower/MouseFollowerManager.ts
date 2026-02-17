@@ -198,6 +198,9 @@ export class MouseFollowerManager {
     container.addChild(labelSprite);
 
     container.zIndex = 1000;
+    
+    // КРИТИЧЕСКИ ВАЖНО: followers пропускают события мыши сквозь себя
+    container.eventMode = 'none'; // Не блокирует mouse events
 
     this.stage.addChild(container);
 
