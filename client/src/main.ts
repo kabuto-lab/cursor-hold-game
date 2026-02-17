@@ -5,6 +5,7 @@ import { UIController } from './ui/UIController';
 import { ChatManager } from './chat/ChatManager';
 import { MouseFollowerManager } from './features/mouse-follower/MouseFollowerManager';
 import { DraggableObject } from './features/draggable/DraggableObject';
+import { VirusTubeManager } from './features/battle/VirusTubeManager';
 
 console.log('[MainApp] main.ts loaded');
 
@@ -16,6 +17,7 @@ class MainApp {
   private chatManager!: ChatManager;
   private mouseFollower!: MouseFollowerManager;
   private draggableObject!: DraggableObject;
+  private virusTubeManager!: VirusTubeManager;
 
   constructor() {
     console.log('[MainApp] Constructor started...');
@@ -31,6 +33,8 @@ class MainApp {
       this.uiController = new UIController();
       console.log('[MainApp] Creating ChatManager...');
       this.chatManager = new ChatManager();
+      console.log('[MainApp] Creating VirusTubeManager...');
+      this.virusTubeManager = new VirusTubeManager();
 
       console.log('[MainApp] Setting up interactions...');
       this.setupInteractions();
@@ -68,7 +72,31 @@ class MainApp {
 
   private setupInteractions(): void {
     console.log('[MainApp] Setting up interactions...');
-    
+
+    // Настраиваем VirusTubeManager
+    this.virusTubeManager.setOnParamsChange((params) => {
+      console.log('[MainApp] Virus params changed:', params);
+      this.networkManager.sendParameterUpdate(params);
+    });
+
+    // Кнопка RANDOMIZE
+    const randomizeBtn = document.getElementById('randomizeBtn');
+    if (randomizeBtn) {
+      randomizeBtn.addEventListener('click', () => {
+        console.log('[MainApp] Randomize button clicked');
+        this.virusTubeManager.randomize();
+      });
+    }
+
+    // Кнопка READY
+    const readyBtn = document.getElementById('readyBtn');
+    if (readyBtn) {
+      readyBtn.addEventListener('click', () => {
+        console.log('[MainApp] Ready button clicked');
+        this.networkManager.sendToggleReady(true);
+      });
+    }
+
     this.uiController.onCreateRoom = async () => {
       console.log('[MainApp] onCreateRoom called!');
       try {

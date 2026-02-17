@@ -451,6 +451,106 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+
+    /* Пробирки - интерактивность */
+    .param-cell {
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s;
+    }
+
+    .param-cell:active {
+      transform: scale(0.95);
+    }
+
+    .param-cell.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Капля */
+    .tube-drop {
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--tube-color, #00ffff);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .tube-drop.falling {
+      animation: dropFall 0.5s ease-in forwards;
+    }
+
+    @keyframes dropFall {
+      0% { top: 5px; opacity: 1; }
+      100% { top: 70%; opacity: 0.8; }
+    }
+
+    /* Всплеск */
+    .tube-splash {
+      position: absolute;
+      bottom: 10%;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      width: 30px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.6);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .tube-splash.active {
+      animation: splashEffect 0.4s ease-out forwards;
+    }
+
+    @keyframes splashEffect {
+      0% { transform: translateX(-50%) scale(0); opacity: 0.8; }
+      100% { transform: translateX(-50%) scale(2); opacity: 0; }
+    }
+
+    /* Пузырьки */
+    .tube-bubble {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: bubbleRise 1.5s ease-out forwards;
+    }
+
+    @keyframes bubbleRise {
+      0% { transform: translateY(0) scale(1); opacity: 0.6; }
+      100% { transform: translateY(-40px) scale(0.3); opacity: 0; }
+    }
+
+    /* Жидкость */
+    .param-liquid {
+      transition: height 0.3s ease;
+    }
+
+    /* Кликабельные элементы для уменьшения */
+    .param-emoji,
+    .param-name,
+    .param-value {
+      cursor: pointer;
+      position: relative;
+      z-index: 5;
+      transition: transform 0.1s;
+    }
+
+    .param-emoji:hover,
+    .param-name:hover,
+    .param-value:hover {
+      transform: scale(1.1);
+      text-shadow: 0 0 10px currentColor;
+    }
     
     .copyable-id {
       cursor: pointer;

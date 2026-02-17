@@ -217,4 +217,24 @@ export class NetworkManager {
       this.currentRoom.send('updateCursor', { x, y });
     }
   }
+
+  /**
+   * Отправить обновление параметров вируса
+   */
+  sendParameterUpdate(params: { [key: string]: number }): void {
+    if (this.currentRoom) {
+      this.currentRoom.send('updateVirusParams', { params });
+      console.log('[NetworkManager] Sent virus params update:', params);
+    }
+  }
+
+  /**
+   * Отправить статус готовности
+   */
+  sendToggleReady(isReady: boolean): void {
+    if (this.currentRoom) {
+      this.currentRoom.send('toggleReady', { isReady });
+      console.log('[NetworkManager] Sent toggle ready:', isReady);
+    }
+  }
 }
