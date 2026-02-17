@@ -39,26 +39,13 @@ export class InputManager {
       this.keyboardState.set(e.code, false);
     });
 
-    // Mouse events - get canvas container offset
-    const canvasContainer = document.getElementById('canvasContainer');
-
+    // Mouse events
     window.addEventListener('mousemove', (e) => {
-      // Get canvas container offset
-      const container = canvasContainer || document.getElementById('canvasContainer');
-      let offsetX = 0;
-      let offsetY = 0;
+      // Mouse position relative to viewport (canvas is full screen at 0,0)
+      this.mouseState.x = e.clientX;
+      this.mouseState.y = e.clientY;
 
-      if (container) {
-        const rect = container.getBoundingClientRect();
-        offsetX = rect.left;
-        offsetY = rect.top;
-      }
-
-      // Calculate position relative to canvas container
-      this.mouseState.x = e.clientX - offsetX;
-      this.mouseState.y = e.clientY - offsetY;
-
-      // Вызываем callback для follower circle (с координатами относительно canvas)
+      // Вызываем callback для follower circle
       if (this.onMouseMove) {
         this.onMouseMove(this.mouseState.x, this.mouseState.y);
       }
