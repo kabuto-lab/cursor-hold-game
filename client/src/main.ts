@@ -4,6 +4,7 @@ import { InputManager } from './core/InputManager';
 import { UIController } from './ui/UIController';
 import { ChatManager } from './chat/ChatManager';
 import { MouseFollowerManager } from './features/mouse-follower/MouseFollowerManager';
+import { DraggableObject } from './features/draggable/DraggableObject';
 
 console.log('[MainApp] main.ts loaded');
 
@@ -14,6 +15,7 @@ class MainApp {
   private uiController!: UIController;
   private chatManager!: ChatManager;
   private mouseFollower!: MouseFollowerManager;
+  private draggableObject!: DraggableObject;
 
   constructor() {
     console.log('[MainApp] Constructor started...');
@@ -42,12 +44,17 @@ class MainApp {
         console.log('[MainApp] Creating MouseFollowerManager...');
         this.mouseFollower = new MouseFollowerManager(this.gameEngine.app!.stage, this.networkManager);
 
+        // Создаём DraggableObject в центре экрана
+        console.log('[MainApp] Creating DraggableObject...');
+        this.draggableObject = new DraggableObject(this.gameEngine.app!.stage, this.networkManager);
+        this.draggableObject.init(window.innerWidth, window.innerHeight);
+
         // Подключаем InputManager к MouseFollowerManager
         this.inputManager.onMouseMove = (x, y) => {
           this.mouseFollower.updateLocalPosition(x, y);
         };
 
-        console.log('[MainApp] Mouse follower system initialized!');
+        console.log('[MainApp] Mouse follower and draggable object initialized!');
         this.gameEngine.start();
       }).catch((error) => {
         console.error('[MainApp] GameEngine init ERROR:', error);

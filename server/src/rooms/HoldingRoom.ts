@@ -85,7 +85,76 @@ export class HoldingRoom extends Room<RoomState> {
       });
     });
 
-    // Handle draggable object messages
+    // Handle draggable object messages (new simplified API)
+    this.onMessage('startDragObject', (client, data) => {
+      // Check if object already being dragged
+      const existingObj = this.state.objects.get(data.objectId);
+      if (existingObj && existingObj.isBeingDragged) {
+        // Already being dragged by someone else
+        return;
+      }
+
+      // Create or update the draggable object
+      let obj = existingObj;
+      if (!obj) {
+        obj = new DraggableObjectSchema();
+        obj.id = data.objectId;
+        obj.x = data.startX || 400;
+        obj.y = data.startY || 300;
+        obj.radius = 50;
+        obj.color = 0x00ffff;
+        obj.isBeingDragged = false;
+        obj.draggedBy = '';
+        obj.isFollower = false;
+        this.state.objects.set(obj.id, obj);
+      }
+
+      obj.isBeingDragged = true;
+      obj.draggedBy = client.sessionId;
+
+      // Broadcast to all clients that an object is being dragged
+      this.broadcast('objectDragStarted', {
+        objectId: data.objectId,
+        playerId: client.sessionId
+      });
+    });
+
+    this.onMessage('updateObjectPosition', (client, data) => {
+      const obj = this.state.objects.get(data.objectId);
+      if (obj && obj.isBeingDragged && obj.draggedBy === client.sessionId) {
+        // Validate position updates to prevent cheating
+        if (
+          typeof data.x === 'number' &&
+          typeof data.y === 'number'
+        ) {
+          obj.x = data.x;
+          obj.y = data.y;
+
+          // Broadcast the position update to all clients
+          this.broadcast('objectPositionUpdated', {
+            objectId: data.objectId,
+            x: data.x,
+            y: data.y
+          });
+        }
+      }
+    });
+
+    this.onMessage('stopDragObject', (client, data) => {
+      const obj = this.state.objects.get(data.objectId);
+      if (obj && obj.draggedBy === client.sessionId) {
+        obj.isBeingDragged = false;
+        obj.draggedBy = '';
+
+        // Broadcast to all clients that dragging has stopped
+        this.broadcast('objectDragStopped', {
+          objectId: data.objectId,
+          playerId: client.sessionId
+        });
+      }
+    });
+
+    // Handle draggable object messages (legacy API - kept for backwards compatibility)
     this.onMessage('startDraggingObject', (client, data) => {
       const obj = this.state.objects.get(data.objectId);
       if (obj) {
