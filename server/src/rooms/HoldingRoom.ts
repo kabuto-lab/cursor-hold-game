@@ -154,6 +154,39 @@ export class HoldingRoom extends Room<RoomState> {
       }
     });
 
+    // Handle hover state changes (sync hover across all clients)
+    this.onMessage('updateObjectHover', (client, data) => {
+      const obj = this.state.objects.get(data.objectId);
+      if (obj && typeof data.isHovered === 'boolean') {
+        // Broadcast hover state to ALL clients (including sender)
+        this.broadcast('objectHoverChanged', {
+          objectId: data.objectId,
+          isHovered: data.isHovered
+        });
+      }
+    });
+
+    // Handle chat window drag
+    this.onMessage('startDragChat', (client, data) => {
+      // Just broadcast that chat drag started (no exclusive lock needed)
+      this.broadcast('chatDragStarted', {
+        objectId: data.objectId
+      });
+    });
+
+    this.onMessage('updateChatPosition', (client, data) => {
+      if (
+        typeof data.x === 'number' &&
+        typeof data.y === 'number'
+      ) {
+        // Broadcast new chat position to all clients
+        this.broadcast('chatPositionUpdated', {
+          x: data.x,
+          y: data.y
+        });
+      }
+    });
+
     // Handle draggable object messages (legacy API - kept for backwards compatibility)
     this.onMessage('startDraggingObject', (client, data) => {
       const obj = this.state.objects.get(data.objectId);

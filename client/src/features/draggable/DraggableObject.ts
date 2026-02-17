@@ -47,6 +47,13 @@ export class DraggableObject {
       }
     });
 
+    // NEW: Subscribe to hover state changes
+    this.networkManager.onMessage('objectHoverChanged', (data: { objectId: string; isHovered: boolean }) => {
+      if (data.objectId === this.objectId) {
+        this.onHoverChanged(data.isHovered);
+      }
+    });
+
     console.log('[DraggableObject] Created');
   }
 
@@ -185,8 +192,17 @@ export class DraggableObject {
    */
   private onPointerMove() {
     if (!this.isDragging) {
+      const wasHovered = this.isHovered;
       this.isHovered = true;
       this.drawObject();
+      
+      // Send hover state to server ONLY if changed
+      if (!wasHovered) {
+        this.networkManager.sendToRoom('updateObjectHover', {
+          objectId: this.objectId,
+          isHovered: true
+        });
+      }
     }
   }
 
@@ -194,8 +210,17 @@ export class DraggableObject {
    * Pointer leave - remove hover
    */
   private onPointerLeave() {
+    const wasHovered = this.isHovered;
     this.isHovered = false;
     this.drawObject();
+    
+    // Send hover state to server ONLY if changed
+    if (wasHovered) {
+      this.networkManager.sendToRoom('updateObjectHover', {
+        objectId: this.objectId,
+        isHovered: false
+      });
+    }
   }
 
   /**
@@ -254,6 +279,16 @@ export class DraggableObject {
     
     if (this.graphics) {
       this.graphics.cursor = 'grab';
+      this.drawObject();
+    }
+  }
+
+  /**
+   * Called when hover state changes (from server)
+   */
+  private onHoverChanged(isHovered: boolean) {
+    this.isHovered = isHovered;
+    if (this.graphics) {
       this.drawObject();
     }
   }

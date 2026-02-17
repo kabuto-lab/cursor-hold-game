@@ -5,6 +5,7 @@ import { UIController } from './ui/UIController';
 import { ChatManager } from './chat/ChatManager';
 import { MouseFollowerManager } from './features/mouse-follower/MouseFollowerManager';
 import { DraggableObject } from './features/draggable/DraggableObject';
+import { DraggableChatManager } from './chat/DraggableChatManager';
 
 console.log('[MainApp] main.ts loaded');
 
@@ -16,6 +17,7 @@ class MainApp {
   private chatManager!: ChatManager;
   private mouseFollower!: MouseFollowerManager;
   private draggableObject!: DraggableObject;
+  private draggableChat!: DraggableChatManager;
 
   constructor() {
     console.log('[MainApp] Constructor started...');
@@ -31,6 +33,8 @@ class MainApp {
       this.uiController = new UIController();
       console.log('[MainApp] Creating ChatManager...');
       this.chatManager = new ChatManager();
+      console.log('[MainApp] Creating DraggableChatManager...');
+      this.draggableChat = new DraggableChatManager(this.networkManager);
 
       console.log('[MainApp] Setting up interactions...');
       this.setupInteractions();
@@ -91,6 +95,8 @@ class MainApp {
           this.chatManager.attachToRoom(room);
           // Устанавливаем mouse follower для создателя
           this.mouseFollower.onRoomJoined(true, this.networkManager.getSessionId()!);
+          // Инициализируем draggable chat
+          this.draggableChat.init();
         }
         this.uiController.setPlayerName('Player 1');
       } catch (error) {
@@ -120,6 +126,8 @@ class MainApp {
           this.chatManager.attachToRoom(room);
           // Устанавливаем mouse follower для присоединившегося
           this.mouseFollower.onRoomJoined(false, this.networkManager.getSessionId()!);
+          // Инициализируем draggable chat
+          this.draggableChat.init();
         }
         this.uiController.setPlayerName('Player 2');
       } catch (error) {
