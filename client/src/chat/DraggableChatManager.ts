@@ -39,21 +39,30 @@ export class DraggableChatManager {
       return;
     }
 
-    // Set up chat container for dragging
+    // Load saved position or calculate center
+    const savedPos = this.loadPosition();
+    
+    if (savedPos) {
+      // Use saved position
+      this.currentX = savedPos.x;
+      this.currentY = savedPos.y;
+    } else {
+      // Calculate center position
+      const rect = this.chatContainer.getBoundingClientRect();
+      this.currentX = (window.innerWidth - rect.width) / 2;
+      this.currentY = window.innerHeight - rect.height - 20;
+    }
+
+    // Set up chat container for dragging - NO transform
     this.chatContainer.style.position = 'fixed';
-    this.chatContainer.style.left = '50%';
-    this.chatContainer.style.top = 'auto';
-    this.chatContainer.style.bottom = '20px';
-    this.chatContainer.style.transform = 'translateX(-50%)';
+    this.chatContainer.style.left = `${this.currentX}px`;
+    this.chatContainer.style.top = `${this.currentY}px`;
+    this.chatContainer.style.bottom = 'auto';
+    this.chatContainer.style.transform = 'none'; // Remove centering transform
     this.chatContainer.style.cursor = 'grab';
     this.chatContainer.style.zIndex = '1000';
     this.chatContainer.style.userSelect = 'none';
     this.chatContainer.style.touchAction = 'none';
-
-    // Store initial position
-    const rect = this.chatContainer.getBoundingClientRect();
-    this.currentX = rect.left;
-    this.currentY = rect.top;
 
     // Add drag handle (the whole container)
     this.chatContainer.addEventListener('mousedown', (e) => this.onMouseDown(e));
@@ -65,7 +74,7 @@ export class DraggableChatManager {
     document.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
     document.addEventListener('touchend', () => this.onMouseUp());
 
-    console.log('[DraggableChatManager] Initialized');
+    console.log('[DraggableChatManager] Initialized at', this.currentX, this.currentY);
   }
 
   /**
@@ -211,19 +220,30 @@ export class DraggableChatManager {
   }
 
   /**
-   * Load position from localStorage (unused - kept for future use)
+   * Load position from localStorage
    */
-  private _loadPosition(): { x: number; y: number } | null {
+  private loadPosition(): { x: number; y: number } | null {
     const saved = localStorage.getItem('chatPosition');
     if (saved) {
       try {
         const pos = JSON.parse(saved);
-        // Check if position is still valid (screen might have changed)
-        if (pos.x < window.innerWidth && pos.y < window.innerHeight) {
+        // Check if position is valid and within screen bounds
+        if (
+          typeof pos.x === 'number' &&
+          typeof pos.y === 'number' &&
+          pos.x >= 0 &&
+          pos.x < window.innerWidth &&
+          pos.y >= 0 &&
+          pos.y < window.innerHeight
+        ) {
           return { x: pos.x, y: pos.y };
+        } else {
+          // Invalid position - clear it
+          localStorage.removeItem('chatPosition');
         }
       } catch (e) {
         console.error('[DraggableChatManager] Failed to load position');
+        localStorage.removeItem('chatPosition');
       }
     }
     return null;
