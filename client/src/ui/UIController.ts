@@ -164,11 +164,13 @@ export class UIController {
       const player1Element = document.getElementById('player1Name');
       if (player1Element) {
         player1Element.textContent = name;
+        console.log('[UIController] Set Player 1 name:', name);
       }
     } else if (name === 'Player 2') {
       const player2Element = document.getElementById('player2Name');
       if (player2Element) {
         player2Element.textContent = name;
+        console.log('[UIController] Set Player 2 name:', name);
       }
     }
   }
@@ -182,6 +184,14 @@ export class UIController {
     if (element) {
       element.textContent = name;
     }
+  }
+
+  /**
+   * Обновить отображение имени игрока (из сетевого события)
+   */
+  updatePlayerNameFromNetwork(playerId: string, name: string): void {
+    // Можно использовать в будущем для синхронизации имён от сервера
+    console.log('[UIController] Update player name from network:', playerId, name);
   }
 
   /**
