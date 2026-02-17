@@ -336,6 +336,23 @@ export class HoldingRoom extends Room<RoomState> {
         }, { except: client });
       }
     });
+
+    // Handle mouse follower updates (MFL system - broadcasts to ALL including sender)
+    this.onMessage('mflUpdate', (client, data) => {
+      if (typeof data.x === 'number' && typeof data.y === 'number' && typeof data.isCreator === 'boolean') {
+        // Get player to verify isCreator status
+        const player = this.state.players.get(client.sessionId);
+        if (player) {
+          // Broadcast to ALL players (including sender) so everyone sees both followers
+          this.broadcast('mflUpdate', {
+            playerId: client.sessionId,
+            isCreator: data.isCreator,
+            x: data.x,
+            y: data.y
+          });
+        }
+      }
+    });
   }
 
   onActivate() {

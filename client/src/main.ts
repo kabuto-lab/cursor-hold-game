@@ -3,8 +3,7 @@ import { NetworkManager } from './core/NetworkManager';
 import { InputManager } from './core/InputManager';
 import { UIController } from './ui/UIController';
 import { ChatManager } from './chat/ChatManager';
-import { FollowerCircle } from './features/follower/FollowerCircle';
-import { FollowerUI } from './features/follower/FollowerUI';
+import { MouseFollowerManager } from './features/mouse-follower/MouseFollowerManager';
 
 console.log('[MainApp] main.ts loaded');
 
@@ -14,8 +13,7 @@ class MainApp {
   private inputManager!: InputManager;
   private uiController!: UIController;
   private chatManager!: ChatManager;
-  private followerCircle!: FollowerCircle;
-  private followerUI!: FollowerUI;
+  private mouseFollower!: MouseFollowerManager;
 
   constructor() {
     console.log('[MainApp] Constructor started...');
@@ -35,34 +33,21 @@ class MainApp {
       console.log('[MainApp] Setting up interactions...');
       this.setupInteractions();
 
-      // Инициализация PixiJS (асинхронно) — потом создаём follower circles
+      // Инициализация PixiJS (асинхронно) — потом создаём mouse follower
       console.log('[MainApp] Initializing GameEngine...');
       this.gameEngine.init('canvasContainer').then(() => {
         console.log('[MainApp] GameEngine initialized!');
-        
-        // Создаём FollowerCircle ПОСЛЕ инициализации PixiJS
-        console.log('[MainApp] Creating FollowerCircle...');
-        this.followerCircle = new FollowerCircle(this.gameEngine.app!.stage, this.networkManager);
-        
-        // Создаём UI для координат
-        console.log('[MainApp] Creating FollowerUI...');
-        this.followerUI = new FollowerUI();
-        
-        // Подключаем InputManager к FollowerCircle
+
+        // Создаём MouseFollowerManager ПОСЛЕ инициализации PixiJS
+        console.log('[MainApp] Creating MouseFollowerManager...');
+        this.mouseFollower = new MouseFollowerManager(this.gameEngine.app!.stage, this.networkManager);
+
+        // Подключаем InputManager к MouseFollowerManager
         this.inputManager.onMouseMove = (x, y) => {
-          this.followerCircle.updateLocalPosition(x, y);
-        };
-        
-        // Подключаем UI к FollowerCircle
-        this.followerCircle.onFollowerUpdate = (playerId, x, y) => {
-          if (playerId === 'creator') {
-            this.followerUI.updateCreator(x, y);
-          } else {
-            this.followerUI.updateJoiner(x, y);
-          }
+          this.mouseFollower.updateLocalPosition(x, y);
         };
 
-        console.log('[MainApp] Follower system initialized!');
+        console.log('[MainApp] Mouse follower system initialized!');
         this.gameEngine.start();
       }).catch((error) => {
         console.error('[MainApp] GameEngine init ERROR:', error);
@@ -97,8 +82,8 @@ class MainApp {
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
-          // Устанавливаем follower circle для создателя
-          this.followerCircle.onRoomJoined(true, this.networkManager.getSessionId()!);
+          // Устанавливаем mouse follower для создателя
+          this.mouseFollower.onRoomJoined(true, this.networkManager.getSessionId()!);
         }
         this.uiController.setPlayerName('Player 1');
       } catch (error) {
@@ -126,8 +111,8 @@ class MainApp {
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
-          // Устанавливаем follower circle для присоединившегося
-          this.followerCircle.onRoomJoined(false, this.networkManager.getSessionId()!);
+          // Устанавливаем mouse follower для присоединившегося
+          this.mouseFollower.onRoomJoined(false, this.networkManager.getSessionId()!);
         }
         this.uiController.setPlayerName('Player 2');
       } catch (error) {
