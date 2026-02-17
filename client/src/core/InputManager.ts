@@ -39,14 +39,28 @@ export class InputManager {
       this.keyboardState.set(e.code, false);
     });
 
-    // Mouse events
+    // Mouse events - get canvas container offset
+    const canvasContainer = document.getElementById('canvasContainer');
+
     window.addEventListener('mousemove', (e) => {
-      this.mouseState.x = e.clientX;
-      this.mouseState.y = e.clientY;
-      
-      // Вызываем callback для follower circle
+      // Get canvas container offset
+      const container = canvasContainer || document.getElementById('canvasContainer');
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        offsetX = rect.left;
+        offsetY = rect.top;
+      }
+
+      // Calculate position relative to canvas container
+      this.mouseState.x = e.clientX - offsetX;
+      this.mouseState.y = e.clientY - offsetY;
+
+      // Вызываем callback для follower circle (с координатами относительно canvas)
       if (this.onMouseMove) {
-        this.onMouseMove(e.clientX, e.clientY);
+        this.onMouseMove(this.mouseState.x, this.mouseState.y);
       }
     });
 
