@@ -713,9 +713,69 @@
       bottom: 10px;
       right: 10px;
     }
+    /* Принудительный ландшафт */
+    #rotateScreen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0f0f23;
+      color: #00ff00;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 99999;
+      font-family: 'PIXY', 'Courier New', monospace;
+    }
+
+    @media (orientation: portrait) {
+      #rotateScreen {
+        display: flex;
+      }
+      #gameScreen {
+        display: none !important;
+      }
+    }
+
+    @media (orientation: landscape) {
+      #rotateScreen {
+        display: none;
+      }
+      #gameScreen {
+        display: flex !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      #topPanelWrapper {
+        width: calc(100% - 20px);
+        padding: 0 10px;
+      }
+      
+      #player1Name, #player2Name {
+        font-size: 12px;
+        min-width: 60px;
+      }
+      
+      #topRoomIdPanel {
+        font-size: 11px;
+        padding: 6px 10px;
+      }
+    }
   </style>
 </head>
 <body>
+  <!-- Экран поворота устройства -->
+  <div id="rotateScreen">
+    <div style="font-size: 3rem; margin-bottom: 20px;">📱</div>
+    <div style="font-size: 1.5rem;">Поверните устройство</div>
+    <div style="font-size: 1rem; color: #00ffff; margin-top: 10px;">
+      Требуется альбомная ориентация
+    </div>
+  </div>
+
   <div id="app">
     <div style="position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); color: #00ff00; padding: 4px 12px; font-family: 'Courier New', monospace; font-size: 0.75rem; border: 1px solid #00ffff;">v8</div>
     

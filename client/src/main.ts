@@ -4,7 +4,8 @@ import { InputManager } from './core/InputManager';
 import { UIController } from './ui/UIController';
 import { ChatManager } from './chat/ChatManager';
 import { MouseFollowerManager } from './features/mouse-follower/MouseFollowerManager';
-import { DraggableObject } from './features/draggable/DraggableObject';
+import { BattleManager } from './features/battle/BattleManager';
+import { BattleRenderer } from './features/battle/BattleRenderer';
 import { VirusTubeManager } from './features/battle/VirusTubeManager';
 
 console.log('[MainApp] main.ts loaded');
@@ -16,8 +17,9 @@ class MainApp {
   private uiController!: UIController;
   private chatManager!: ChatManager;
   private mouseFollower!: MouseFollowerManager;
-  private draggableObject!: DraggableObject;
   private virusTubeManager!: VirusTubeManager;
+  private battleManager!: BattleManager;
+  private battleRenderer!: BattleRenderer;
 
   constructor() {
     console.log('[MainApp] Constructor started...');
@@ -35,6 +37,8 @@ class MainApp {
       this.chatManager = new ChatManager();
       console.log('[MainApp] Creating VirusTubeManager...');
       this.virusTubeManager = new VirusTubeManager();
+      console.log('[MainApp] Creating BattleManager...');
+      this.battleManager = new BattleManager();
 
       console.log('[MainApp] Setting up interactions...');
       this.setupInteractions();
@@ -48,17 +52,16 @@ class MainApp {
         console.log('[MainApp] Creating MouseFollowerManager...');
         this.mouseFollower = new MouseFollowerManager(this.gameEngine.app!.stage, this.networkManager);
 
-        // Создаём DraggableObject в центре экрана
-        console.log('[MainApp] Creating DraggableObject...');
-        this.draggableObject = new DraggableObject(this.gameEngine.app!.stage, this.networkManager);
-        this.draggableObject.init(window.innerWidth, window.innerHeight);
+        // Создаём BattleRenderer ПОСЛЕ инициализации PixiJS
+        console.log('[MainApp] Creating BattleRenderer...');
+        this.battleRenderer = new BattleRenderer(this.gameEngine.app!.stage);
 
         // Подключаем InputManager к MouseFollowerManager
         this.inputManager.onMouseMove = (x, y) => {
           this.mouseFollower.updateLocalPosition(x, y);
         };
 
-        console.log('[MainApp] Mouse follower and draggable object initialized!');
+        console.log('[MainApp] Mouse follower and battle renderer initialized!');
         this.gameEngine.start();
       }).catch((error) => {
         console.error('[MainApp] GameEngine init ERROR:', error);
@@ -97,6 +100,42 @@ class MainApp {
       });
     }
 
+    // BattleManager callbacks
+    this.battleManager.setOnStateChange((state) => {
+      console.log('[MainApp] Battle state changed:', state);
+      
+      if (state.type === 'running') {
+        this.battleRenderer.show();
+      } else if (state.type === 'ended') {
+        const winnerText = state.winner === 'A' ? 'Player 1' : state.winner === 'B' ? 'Player 2' : 'Draw';
+        alert(`Battle ended! Winner: ${winnerText}`);
+        this.battleRenderer.hide();
+      }
+    });
+
+    this.battleManager.setOnGridUpdate((grid) => {
+      this.battleRenderer.updateGrid(grid);
+    });
+
+    // Network listeners для битвы
+    this.networkManager.onVirusBattleStarted = (data) => {
+      console.log('[MainApp] Virus battle started:', data);
+      this.battleManager.onBattleStarted(data);
+    };
+
+    this.networkManager.onVirusTick = (tick, data) => {
+      this.battleManager.onBattleTick({ battleGrid: data.battleGrid, tick });
+    };
+
+    this.networkManager.onVirusBattleEnded = (data) => {
+      console.log('[MainApp] Virus battle ended:', data);
+      this.battleManager.onBattleEnded({
+        winner: data.winner === 'Player A' ? 'A' : data.winner === 'Player B' ? 'B' : 'draw',
+        virusACount: data.virusACount,
+        virusBCount: data.virusBCount
+      });
+    };
+
     this.uiController.onCreateRoom = async () => {
       console.log('[MainApp] onCreateRoom called!');
       try {
@@ -117,12 +156,11 @@ class MainApp {
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
-          // Устанавливаем network listeners для mouse follower и draggable object
+          // Устанавливаем network listeners для mouse follower
           this.mouseFollower.setupNetworkListeners();
-          this.draggableObject.setupNetworkListeners();
           // Устанавливаем mouse follower для создателя
           this.mouseFollower.onRoomJoined(true, this.networkManager.getSessionId()!);
-          
+
           // Подписываемся на изменение количества игроков
           this.networkManager.onRoomStateChange = (count, max) => {
             this.uiController.updatePlayerCount(count, max);
@@ -156,12 +194,11 @@ class MainApp {
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
-          // Устанавливаем network listeners для mouse follower и draggable object
+          // Устанавливаем network listeners для mouse follower
           this.mouseFollower.setupNetworkListeners();
-          this.draggableObject.setupNetworkListeners();
           // Устанавливаем mouse follower для присоединившегося
           this.mouseFollower.onRoomJoined(false, this.networkManager.getSessionId()!);
-          
+
           // Подписываемся на изменение количества игроков
           this.networkManager.onRoomStateChange = (count, max) => {
             this.uiController.updatePlayerCount(count, max);

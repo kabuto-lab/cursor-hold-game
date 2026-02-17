@@ -13,6 +13,29 @@ export class NetworkManager {
   // Callback для изменения количества игроков
   public onRoomStateChange?: (count: number, max: number) => void;
 
+  // Callbacks для вирусной битвы
+  public onVirusBattleStarted?: (data: { 
+    battleGrid: number[]; 
+    width: number; 
+    height: number;
+    message: string;
+    timestamp: number;
+  }) => void;
+
+  public onVirusTick?: (tick: number, data: {
+    battleGrid: number[];
+    width: number;
+    height: number;
+  }) => void;
+
+  public onVirusBattleEnded?: (data: {
+    message: string;
+    winner: string;
+    virusACount: number;
+    virusBCount: number;
+    timestamp: number;
+  }) => void;
+
   constructor(serverUrl?: string) {
     // Локальный сервер для разработки, прод-сервер для production
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -189,6 +212,25 @@ export class NetworkManager {
 
     // Первоначальное обновление счётчика
     this.updatePlayerCount();
+
+    // Подписываемся на сообщения вирусной битвы
+    this.currentRoom.onMessage('virusBattleStarted', (data) => {
+      if (this.onVirusBattleStarted) {
+        this.onVirusBattleStarted(data);
+      }
+    });
+
+    this.currentRoom.onMessage('virusTick', (data) => {
+      if (this.onVirusTick) {
+        this.onVirusTick(data.tick, data);
+      }
+    });
+
+    this.currentRoom.onMessage('virusBattleEnded', (data) => {
+      if (this.onVirusBattleEnded) {
+        this.onVirusBattleEnded(data);
+      }
+    });
   }
 
   /**
