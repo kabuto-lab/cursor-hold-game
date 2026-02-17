@@ -17,12 +17,16 @@ export class DraggableObject {
   private x: number = 0;
   private y: number = 0;
   private radius: number = 50;
+
+  // Visual state - SEPARATE local and remote hover
+  private localHover: boolean = false;           // Моя мышь над объектом
+  private remoteHover: boolean = false;          // Мышь другого игрока над объектом
+  private remoteHoverPlayer: string | null = null; // Кто именно навёл
   
-  // Visual state
-  private isHovered: boolean = false;
   private dragColor: number = 0xffff00; // Yellow when dragging
   private idleColor: number = 0x00ffff; // Cyan when idle
-  private hoverColor: number = 0xff00ff; // Magenta when hovered
+  private hoverColor: number = 0xff00ff; // Magenta when I hover
+  private remoteHoverColor: number = 0xff69b4; // Hot pink when remote player hovers
 
   constructor(
     private stage: PIXI.Container,
@@ -135,8 +139,9 @@ export class DraggableObject {
    */
   private getColor(): number {
     if (this.isDragging) return this.dragColor;
-    if (this.isHovered) return this.hoverColor;
-    return this.idleColor;
+    if (this.localHover) return this.hoverColor;        // Magenta — я навёл
+    if (this.remoteHover) return this.remoteHoverColor; // Hot pink — другой навёл
+    return this.idleColor;                              // Cyan — никто не навёл
   }
 
   /**
@@ -192,34 +197,30 @@ export class DraggableObject {
   }
 
   /**
-   * Pointer move - hover effect
+   * Pointer move - hover effect (LOCAL only)
    */
   private onPointerMove() {
-    if (!this.isDragging) {
-      const wasHovered = this.isHovered;
-      this.isHovered = true;
+    if (!this.isDragging && !this.localHover) {
+      this.localHover = true;
       this.drawObject();
-      
-      // Send hover state to server ONLY if changed
-      if (!wasHovered) {
-        this.networkManager.sendToRoom('updateObjectHover', {
-          objectId: this.objectId,
-          isHovered: true
-        });
-      }
+
+      // Send hover state to server
+      this.networkManager.sendToRoom('updateObjectHover', {
+        objectId: this.objectId,
+        isHovered: true
+      });
     }
   }
 
   /**
-   * Pointer leave - remove hover
+   * Pointer leave - remove hover (LOCAL only)
    */
   private onPointerLeave() {
-    const wasHovered = this.isHovered;
-    this.isHovered = false;
-    this.drawObject();
-    
-    // Send hover state to server ONLY if changed
-    if (wasHovered) {
+    if (this.localHover) {
+      this.localHover = false;
+      this.drawObject();
+
+      // Send hover state to server
       this.networkManager.sendToRoom('updateObjectHover', {
         objectId: this.objectId,
         isHovered: false
@@ -288,14 +289,22 @@ export class DraggableObject {
   }
 
   /**
-   * Called when hover state changes (from server)
+   * Called when hover state changes (from server - REMOTE player)
    */
   private onHoverChanged(isHovered: boolean, hoveredBy?: string) {
-    this.isHovered = isHovered;
+    // Игнорируем свои собственные события
+    const mySessionId = this.networkManager.getSessionId();
+    if (hoveredBy === mySessionId) return;
+    
+    // Обновляем remote hover
+    this.remoteHover = isHovered;
+    this.remoteHoverPlayer = isHovered ? (hoveredBy || null) : null;
+    
+    console.log('[DraggableObject] Remote hover changed:', isHovered, 'by:', hoveredBy);
+    
     if (this.graphics) {
       this.drawObject();
     }
-    console.log('[DraggableObject] Hover changed:', isHovered, 'by:', hoveredBy);
   }
 
   /**
