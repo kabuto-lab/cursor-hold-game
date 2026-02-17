@@ -158,10 +158,15 @@ export class HoldingRoom extends Room<RoomState> {
     this.onMessage('updateObjectHover', (client, data) => {
       const obj = this.state.objects.get(data.objectId);
       if (obj && typeof data.isHovered === 'boolean') {
-        // Broadcast hover state to ALL clients (including sender)
+        // Update server state
+        obj.isHovered = data.isHovered;
+        obj.hoveredBy = data.isHovered ? client.sessionId : '';
+
+        // Broadcast to ALL clients (including sender) with player info
         this.broadcast('objectHoverChanged', {
           objectId: data.objectId,
-          isHovered: data.isHovered
+          isHovered: data.isHovered,
+          hoveredBy: obj.hoveredBy
         });
       }
     });

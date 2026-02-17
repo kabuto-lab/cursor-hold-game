@@ -48,9 +48,13 @@ export class DraggableObject {
     });
 
     // NEW: Subscribe to hover state changes
-    this.networkManager.onMessage('objectHoverChanged', (data: { objectId: string; isHovered: boolean }) => {
+    this.networkManager.onMessage('objectHoverChanged', (data: { 
+      objectId: string; 
+      isHovered: boolean;
+      hoveredBy?: string;
+    }) => {
       if (data.objectId === this.objectId) {
-        this.onHoverChanged(data.isHovered);
+        this.onHoverChanged(data.isHovered, data.hoveredBy);
       }
     });
 
@@ -286,11 +290,12 @@ export class DraggableObject {
   /**
    * Called when hover state changes (from server)
    */
-  private onHoverChanged(isHovered: boolean) {
+  private onHoverChanged(isHovered: boolean, hoveredBy?: string) {
     this.isHovered = isHovered;
     if (this.graphics) {
       this.drawObject();
     }
+    console.log('[DraggableObject] Hover changed:', isHovered, 'by:', hoveredBy);
   }
 
   /**

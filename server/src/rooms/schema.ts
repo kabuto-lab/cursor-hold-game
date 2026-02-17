@@ -27,6 +27,8 @@ export class DraggableObjectSchema extends Schema {
   @type('string') owner: string = ''; // ID of the player who owns this follower
   @type('number') targetX: number = 0; // Target position for followers
   @type('number') targetY: number = 0; // Target position for followers
+  @type('boolean') isHovered: boolean = false; // Whether the object is currently hovered
+  @type('string') hoveredBy: string = ''; // ID of player who is hovering the object
 }
 
 export class RoomState extends Schema {
