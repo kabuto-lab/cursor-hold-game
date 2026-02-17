@@ -89,6 +89,9 @@ class MainApp {
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
+          // Устанавливаем network listeners для mouse follower и draggable object
+          this.mouseFollower.setupNetworkListeners();
+          this.draggableObject.setupNetworkListeners();
           // Устанавливаем mouse follower для создателя
           this.mouseFollower.onRoomJoined(true, this.networkManager.getSessionId()!);
         }
@@ -118,6 +121,9 @@ class MainApp {
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
+          // Устанавливаем network listeners для mouse follower и draggable object
+          this.mouseFollower.setupNetworkListeners();
+          this.draggableObject.setupNetworkListeners();
           // Устанавливаем mouse follower для присоединившегося
           this.mouseFollower.onRoomJoined(false, this.networkManager.getSessionId()!);
         }

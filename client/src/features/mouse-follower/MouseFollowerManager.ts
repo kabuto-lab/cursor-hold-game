@@ -46,12 +46,19 @@ export class MouseFollowerManager {
     private stage: PIXI.Container,
     private networkManager: NetworkManager
   ) {
+    console.log('[MouseFollowerManager] Created');
+  }
+
+  /**
+   * Setup network listeners (call after room is joined)
+   */
+  setupNetworkListeners() {
     // Subscribe to server messages
-    this.networkManager.onMessage('mflUpdate', (data: { 
-      playerId: string; 
+    this.networkManager.onMessage('mflUpdate', (data: {
+      playerId: string;
       isCreator: boolean;
-      x: number; 
-      y: number; 
+      x: number;
+      y: number;
     }) => {
       this.updateRemoteFollower(data.playerId, data.isCreator, data.x, data.y);
     });
@@ -59,7 +66,7 @@ export class MouseFollowerManager {
     // Start interpolation ticker
     PIXI.Ticker.shared.add((ticker) => this.update(ticker.deltaTime));
 
-    console.log('[MouseFollowerManager] Initialized');
+    console.log('[MouseFollowerManager] Network listeners setup complete');
   }
 
   /**

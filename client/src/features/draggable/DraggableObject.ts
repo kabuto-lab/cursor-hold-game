@@ -32,6 +32,13 @@ export class DraggableObject {
     private stage: PIXI.Container,
     private networkManager: NetworkManager
   ) {
+    console.log('[DraggableObject] Created');
+  }
+
+  /**
+   * Setup network listeners (call after room is joined)
+   */
+  setupNetworkListeners() {
     // Subscribe to server messages
     this.networkManager.onMessage('objectDragStarted', (data: { objectId: string; playerId: string }) => {
       if (data.objectId === this.objectId) {
@@ -51,9 +58,9 @@ export class DraggableObject {
       }
     });
 
-    // NEW: Subscribe to hover state changes
-    this.networkManager.onMessage('objectHoverChanged', (data: { 
-      objectId: string; 
+    // Subscribe to hover state changes
+    this.networkManager.onMessage('objectHoverChanged', (data: {
+      objectId: string;
       isHovered: boolean;
       hoveredBy?: string;
     }) => {
@@ -62,7 +69,7 @@ export class DraggableObject {
       }
     });
 
-    console.log('[DraggableObject] Created');
+    console.log('[DraggableObject] Network listeners setup complete');
   }
 
   /**
