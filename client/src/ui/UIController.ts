@@ -129,14 +129,14 @@ export class UIController {
    * Показать ID созданной комнаты
    */
   showCreatedRoomId(roomId: string): void {
-    // Обновляем отображение ID комнаты в центральной панели
-    const centerRoomIdElement = document.getElementById('currentRoomId');
-    if (centerRoomIdElement) {
-      centerRoomIdElement.textContent = roomId;
+    // Обновляем отображение ID комнаты в верхней панели
+    const topRoomIdElement = document.getElementById('topRoomId');
+    if (topRoomIdElement) {
+      topRoomIdElement.textContent = roomId;
 
       // Добавляем возможность копирования
-      centerRoomIdElement.classList.add('copyable-id');
-      centerRoomIdElement.onclick = () => {
+      topRoomIdElement.classList.add('copyable-id');
+      topRoomIdElement.onclick = () => {
         navigator.clipboard.writeText(roomId).then(() => {
           // Показываем сообщение о копировании
           this.showCopiedMessage();
