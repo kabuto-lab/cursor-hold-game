@@ -21,6 +21,15 @@ interface MouseFollowerData {
   currentY: number;
   graphics: PIXI.Container | null;
   labelSprite: PIXI.Text | null;
+  trail: TrailParticle[];     // Trail particles behind follower
+}
+
+interface TrailParticle {
+  x: number;
+  y: number;
+  alpha: number;
+  radius: number;
+  graphics: PIXI.Graphics;
 }
 
 export class MouseFollowerManager {
@@ -29,6 +38,9 @@ export class MouseFollowerManager {
   private isCreator: boolean = false;
   private lastSendTime: number = 0;
   private readonly SEND_INTERVAL_MS: number = 33; // ~30 updates per second
+  private readonly TRAIL_LENGTH: number = 8;      // Number of trail particles
+  private readonly TRAIL_SPAWN_RATE: number = 3;  // Spawn trail every N frames
+  private frameCount: number = 0;
 
   constructor(
     private stage: PIXI.Container,
@@ -73,6 +85,7 @@ export class MouseFollowerManager {
       currentY: 0,
       graphics: null,
       labelSprite: null,
+      trail: [],
     });
 
     console.log(`[MouseFollowerManager] Created local follower: ${label}`);
@@ -123,6 +136,7 @@ export class MouseFollowerManager {
         currentY: y,
         graphics: null,
         labelSprite: null,
+        trail: [],
       };
 
       this.followers.set(playerId, follower);
@@ -194,10 +208,11 @@ export class MouseFollowerManager {
   }
 
   /**
-   * Update all followers (interpolation + rendering)
+   * Update all followers (interpolation + rendering + trail)
    */
   private update(delta: number) {
     const lerp = 0.2; // Smoother interpolation
+    this.frameCount++;
 
     this.followers.forEach((follower) => {
       if (!follower.graphics) {
@@ -216,6 +231,68 @@ export class MouseFollowerManager {
       // Pulse effect for active followers
       const pulse = 1 + Math.sin(Date.now() / 200) * 0.1;
       follower.graphics.scale.set(pulse);
+
+      // Spawn trail particles
+      if (this.frameCount % this.TRAIL_SPAWN_RATE === 0) {
+        this.spawnTrailParticle(follower);
+      }
+
+      // Update trail particles
+      this.updateTrail(follower);
+    });
+  }
+
+  /**
+   * Spawn a new trail particle at follower's current position
+   */
+  private spawnTrailParticle(follower: MouseFollowerData) {
+    // Create trail particle graphics
+    const particle = new PIXI.Graphics();
+    const radius = 12;
+    particle.beginFill(follower.color, 0.6);
+    particle.drawCircle(0, 0, radius);
+    particle.endFill();
+    particle.position.set(follower.currentX, follower.currentY);
+    particle.zIndex = 999; // Just below the main follower
+
+    this.stage.addChild(particle);
+
+    // Add to trail array
+    follower.trail.push({
+      x: follower.currentX,
+      y: follower.currentY,
+      alpha: 0.6,
+      radius,
+      graphics: particle,
+    });
+
+    // Limit trail length
+    if (follower.trail.length > this.TRAIL_LENGTH) {
+      const oldParticle = follower.trail.shift();
+      if (oldParticle && oldParticle.graphics) {
+        this.stage.removeChild(oldParticle.graphics);
+        oldParticle.graphics.destroy();
+      }
+    }
+  }
+
+  /**
+   * Update trail particles (fade out and shrink)
+   */
+  private updateTrail(follower: MouseFollowerData) {
+    follower.trail.forEach((particle, index) => {
+      // Fade out based on position in trail (older = more faded)
+      const fadeFactor = 1 - (index / this.TRAIL_LENGTH);
+      particle.alpha = 0.6 * fadeFactor;
+      
+      // Shrink radius
+      const newRadius = particle.radius * fadeFactor;
+      
+      // Update graphics
+      particle.graphics.clear();
+      particle.graphics.beginFill(follower.color, particle.alpha);
+      particle.graphics.drawCircle(0, 0, newRadius);
+      particle.graphics.endFill();
     });
   }
 
@@ -234,6 +311,14 @@ export class MouseFollowerManager {
       if (follower.graphics) {
         this.stage.removeChild(follower.graphics);
       }
+      // Clean up trail particles
+      follower.trail.forEach((particle) => {
+        if (particle.graphics) {
+          this.stage.removeChild(particle.graphics);
+          particle.graphics.destroy();
+        }
+      });
+      follower.trail = [];
     });
     this.followers.clear();
     console.log('[MouseFollowerManager] Destroyed');
