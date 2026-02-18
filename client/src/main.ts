@@ -22,6 +22,9 @@ class MainApp {
   private battleRenderer!: BattleRenderer;
 
   constructor() {
+    console.log('[DIAGNOSTIC] main.ts started');
+    console.log('[DIAGNOSTIC] URL:', window.location.href);
+    console.log('[DIAGNOSTIC] referrer:', document.referrer);
     console.log('[MainApp] Constructor started...');
 
     try {

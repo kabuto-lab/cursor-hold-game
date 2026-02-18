@@ -392,10 +392,11 @@
       border: 1px solid #00ffff;
       padding: 5px;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: background-color 0.2s, transform 0.1s;
       position: relative;
       border-radius: 0 0 5px 5px; /* Rounded bottom for test tube shape */
       overflow: hidden;
+      user-select: none;
     }
     
     .param-cell:hover {
@@ -472,25 +473,13 @@
     }
     
     .param-cell.disabled {
-      opacity: 0.5;
+      opacity: 0.4;
       cursor: not-allowed;
     }
 
     /* Пробирки - интерактивность */
-    .param-cell {
-      position: relative;
-      cursor: pointer;
-      user-select: none;
-      transition: transform 0.1s;
-    }
-
     .param-cell:active {
       transform: scale(0.95);
-    }
-
-    .param-cell.disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
     }
 
     /* Капля */
