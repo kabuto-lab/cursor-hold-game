@@ -64,7 +64,12 @@ export class NetworkManager {
    * Возвращает реальный ID комнаты от Colyseus
    */
   async createRoom(): Promise<string> {
-    console.log('[NetworkManager] createRoom() called');
+    console.log('========================================');
+    console.log('[NetworkManager] ⚠️ createRoom() CALL DETECTED!');
+    console.log('Stack trace:');
+    console.log(new Error().stack);
+    console.log('========================================');
+    
     try {
       console.log('[NetworkManager] Calling client.joinOrCreate("holding_room")...');
       // Создаём новую комнату через joinOrCreate
