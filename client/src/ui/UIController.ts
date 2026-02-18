@@ -19,12 +19,23 @@ export class UIController {
   private closeSidebarBtn: HTMLButtonElement;
 
   constructor() {
+    console.log('[UIController] Constructor started');
+    console.log('[UIController] document.readyState:', document.readyState);
+    
     // Основные элементы
     this.lobbyContainer = document.getElementById('landingScreen')!;
     this.roomContainer = document.getElementById('gameScreen')!;
     this.createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
     this.joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
     this.roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
+
+    console.log('[UIController] Elements found:', {
+      lobby: !!this.lobbyContainer,
+      room: !!this.roomContainer,
+      createBtn: !!this.createRoomBtn,
+      joinBtn: !!this.joinRoomBtn,
+      roomIdInput: !!this.roomIdInput
+    });
 
     // Элементы боковых панелей
     this.leftMenuBtn = document.getElementById('leftMenuBtn') as HTMLButtonElement;
