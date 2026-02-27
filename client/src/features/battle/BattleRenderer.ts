@@ -65,6 +65,7 @@ export class BattleRenderer {
 
     console.log(`[BattleRenderer] Init grid: ${width}×${height} = ${this.totalCells} cells`);
 
+    // Очистка старых контейнеров
     this.cellContainers.forEach(container => {
       this.container.removeChild(container);
       container.destroy({ children: true });
@@ -72,17 +73,31 @@ export class BattleRenderer {
     this.cellContainers.clear();
     this.linesContainer.clear();
 
+    // Создание клеток с ПРАВИЛЬНЫМ позиционированием
+    const diameter = this.config.cellDiameter;
+    const step = diameter + this.config.cellGap;
+
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const idx = y * width + x;
         const container = this.createCellContainer(x, y);
+        
+        // Устанавливаем позицию сразу при создании
+        container.position.x = x * step + step / 2;
+        container.position.y = y * step + step / 2;
+        
         this.cellContainers.set(idx, container);
         this.container.addChild(container);
       }
     }
 
+    // Рисуем линии после того, как все позиции установлены
     this.drawSynapses();
+    
+    // Центрируем весь контейнер на экране
     this.centerGrid();
+
+    console.log(`[BattleRenderer] Grid positioned at:`, this.container.position);
   }
 
   private createCellContainer(x: number, y: number): PIXI.Container {
@@ -159,16 +174,9 @@ export class BattleRenderer {
     const gridWidthPx = this.gridWidth * step;
     const gridHeightPx = this.gridHeight * step;
 
-    this.cellContainers.forEach((container, idx) => {
-      const x = idx % this.gridWidth;
-      const y = Math.floor(idx / this.gridWidth);
-
-      container.position.x = x * step + step / 2;
-      container.position.y = y * step + step / 2;
-    });
-
-    this.container.position.x = (window.innerWidth - gridWidthPx) / 2 + step / 2;
-    this.container.position.y = (window.innerHeight - gridHeightPx) / 2 + step / 2;
+    // Центрируем только контейнер, позиции клеток уже установлены
+    this.container.position.x = (window.innerWidth - gridWidthPx) / 2;
+    this.container.position.y = (window.innerHeight - gridHeightPx) / 2;
   }
 
   updateGrid(grid: number[]): void {
@@ -251,7 +259,11 @@ export class BattleRenderer {
   show(): void {
     this.container.alpha = 1;
     this.container.visible = true;
-    console.log('[BattleRenderer] Show');
+    
+    console.log('[BattleRenderer] Show:', {
+      position: this.container.position,
+      children: this.container.children.length
+    });
   }
 
   hide(): void {
