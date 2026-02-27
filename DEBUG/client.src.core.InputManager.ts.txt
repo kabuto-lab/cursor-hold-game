@@ -1,0 +1,86 @@
+========================================
+ORIGINAL FILE PATH: C:\__Qwen1\TOVCH\client\src\core\InputManager.ts
+========================================
+
+/**
+ * Менеджер ввода
+ * Обрабатывает клавиатуру и мышь
+ */
+export class InputManager {
+  private keyboardState: Map<string, boolean>;
+  private mouseState: {
+    x: number;
+    y: number;
+    leftButton: boolean;
+    rightButton: boolean;
+  };
+
+  // Callback для обновления позиции мыши (для follower circle)
+  public onMouseMove?: (x: number, y: number) => void;
+
+  constructor() {
+    this.keyboardState = new Map();
+    this.mouseState = {
+      x: 0,
+      y: 0,
+      leftButton: false,
+      rightButton: false
+    };
+
+    this.setupEventListeners();
+  }
+
+  /**
+   * Установить обработчики событий
+   */
+  private setupEventListeners(): void {
+    // Keyboard events
+    window.addEventListener('keydown', (e) => {
+      this.keyboardState.set(e.code, true);
+    });
+
+    window.addEventListener('keyup', (e) => {
+      this.keyboardState.set(e.code, false);
+    });
+
+    // Mouse events
+    window.addEventListener('mousemove', (e) => {
+      this.mouseState.x = e.clientX;
+      this.mouseState.y = e.clientY;
+
+      if (this.onMouseMove) {
+        this.onMouseMove(this.mouseState.x, this.mouseState.y);
+      }
+    });
+
+    window.addEventListener('mousedown', (e) => {
+      switch (e.button) {
+        case 0: this.mouseState.leftButton = true; break;
+        case 2: this.mouseState.rightButton = true; break;
+      }
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      switch (e.button) {
+        case 0: this.mouseState.leftButton = false; break;
+        case 2: this.mouseState.rightButton = false; break;
+      }
+    });
+
+    window.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
+  }
+
+  isKeyPressed(keyCode: string): boolean {
+    return this.keyboardState.get(keyCode) === true;
+  }
+
+  getMouseState(): { x: number; y: number; leftButton: boolean; rightButton: boolean } {
+    return { ...this.mouseState };
+  }
+
+  getMousePosition(): { x: number; y: number } {
+    return { x: this.mouseState.x, y: this.mouseState.y };
+  }
+}
