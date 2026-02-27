@@ -1,0 +1,75 @@
+========================================
+ORIGINAL FILE PATH: C:\__Qwen1\TOVCH\client\src\main.ts
+========================================
+
+import { GameEngine } from './core/GameEngine';
+import { NetworkManager } from './core/NetworkManager';
+import { InputManager } from './core/InputManager';
+import { UIController } from './ui/UIController';
+import { ChatManager } from './chat/ChatManager';
+import { MouseFollowerManager } from './features/mouse-follower/MouseFollowerManager';
+import { BattleManager } from './features/battle/BattleManager';
+import { BattleRenderer } from './features/battle/BattleRenderer';
+import { VirusTubeManager } from './features/battle/VirusTubeManager';
+
+console.log('[MainApp] main.ts loaded');
+
+class MainApp {
+  private gameEngine!: GameEngine;
+  private networkManager!: NetworkManager;
+  private inputManager!: InputManager;
+  private uiController!: UIController;
+  private chatManager!: ChatManager;
+  private mouseFollower!: MouseFollowerManager;
+  private virusTubeManager!: VirusTubeManager;
+  private battleManager!: BattleManager;
+  private battleRenderer: BattleRenderer | null = null;
+
+  private updateBattleProgress!: (grid: number[]) => void;
+
+  constructor() {
+    console.log('[MainApp] Constructor started...');
+
+    this.gameEngine = new GameEngine();
+    this.networkManager = new NetworkManager();
+    this.inputManager = new InputManager();
+    this.uiController = new UIController();
+    this.chatManager = new ChatManager();
+    this.virusTubeManager = new VirusTubeManager();
+    this.battleManager = new BattleManager();
+
+    this.setupInteractions();
+
+    this.gameEngine.init('canvasContainer').then(() => {
+      this.mouseFollower = new MouseFollowerManager(this.gameEngine.app!.stage, this.networkManager);
+      
+      this.inputManager.onMouseMove = (x, y) => {
+        this.mouseFollower.updateLocalPosition(x, y);
+      };
+
+      this.gameEngine.start();
+    });
+  }
+
+  private setupInteractions(): void {
+    this.networkManager.onVirusBattleStarted = (data) => {
+      // Создаём BattleRenderer при старте битвы
+      if (!this.battleRenderer && this.gameEngine.app) {
+        this.battleRenderer = new BattleRenderer(this.gameEngine.app.stage);
+        this.battleRenderer.initGrid(data.width, data.height);
+      }
+      this.battleManager.startCountdownAndBattle(data.battleGrid, data.width, data.height);
+    };
+
+    this.battleManager.setOnGridUpdate((grid) => {
+      if (this.battleRenderer) {
+        this.battleRenderer.updateGrid(grid);
+      }
+      this.updateBattleProgress(grid);
+    });
+  }
+}
+
+window.addEventListener('load', () => {
+  new MainApp();
+});

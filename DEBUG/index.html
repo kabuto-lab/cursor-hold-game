@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TOVCH Debug Package Structure</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0f0f23;
+      color: #00ff00;
+      padding: 20px;
+    }
+    .tree {
+      white-space: pre;
+      line-height: 1.5;
+    }
+    .folder { color: #00ffff; }
+    .file { color: #ff00ff; }
+    .desc { color: #888; }
+    a {
+      color: #00ff00;
+      text-decoration: underline;
+    }
+    a:hover {
+      color: #ffff00;
+    }
+    h1 { color: #ffff00; }
+    h2 { color: #00ffff; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <h1>TOVCH Debug Package</h1>
+  <p><strong>Generated:</strong> 2026-02-27</p>
+  <p><strong>Version:</strong> v29</p>
+  <p><strong>Purpose:</strong> AI debugging package for Grok</p>
+  
+  <h2>📁 File Structure</h2>
+  <div class="tree">
+DEBUG/
+├── 📄 <a href="package.json.txt">package.json.txt</a>                    <span class="desc"># Root workspace</span>
+├── 📄 <a href="prompt.txt">prompt.txt</a>                          <span class="desc"># AI debugging instructions</span>
+│
+├── 📂 <span class="folder">client/</span>
+│   ├── 📄 <a href="client/package.json.txt">package.json.txt</a>                <span class="desc"># Client dependencies</span>
+│   ├── 📄 <a href="client/index.html.txt">index.html.txt</a>                    <span class="desc"># HTML + CSS</span>
+│   └── 📂 <span class="folder">src/</span>
+│       ├── 📄 <a href="client/src/main.ts.txt">main.ts.txt</a>                      <span class="desc"># Entry point</span>
+│       ├── 📂 <span class="folder">core/</span>
+│       │   ├── 📄 <a href="client/src/core/GameEngine.ts.txt">GameEngine.ts.txt</a>   <span class="desc"># PixiJS engine</span>
+│       │   ├── 📄 <a href="client/src/core/InputManager.ts.txt">InputManager.ts.txt</a> <span class="desc"># Mouse/keyboard</span>
+│       │   └── 📄 <a href="client/src/core/NetworkManager.ts.txt">NetworkManager.ts.txt</a> <span class="desc"># Colyseus client</span>
+│       ├── 📂 <span class="folder">ui/</span>
+│       │   └── 📄 <a href="client/src/ui/UIController.ts.txt">UIController.ts.txt</a> <span class="desc"># Lobby/Room UI</span>
+│       ├── 📂 <span class="folder">chat/</span>
+│       │   └── 📄 <a href="client/src/chat/ChatManager.ts.txt">ChatManager.ts.txt</a>   <span class="desc"># In-room chat</span>
+│       └── 📂 <span class="folder">features/</span>
+│           ├── 📂 <span class="folder">battle/</span>
+│           │   ├── 📄 <a href="client/src/features/battle/BattleManager.ts.txt">BattleManager.ts.txt</a>    <span class="desc"># Battle logic</span>
+│           │   ├── 📄 <a href="client/src/features/battle/BattleRenderer.ts.txt">BattleRenderer.ts.txt</a>  <span class="desc"># Battle visual</span>
+│           │   └── 📄 <a href="client/src/features/battle/VirusTubeManager.ts.txt">VirusTubeManager.ts.txt</a> <span class="desc"># Virus params</span>
+│           └── 📂 <span class="folder">mouse-follower/</span>
+│               └── 📄 <a href="client/src/features/mouse-follower/MouseFollowerManager.ts.txt">MouseFollowerManager.ts.txt</a> <span class="desc"># Cursor sync</span>
+│
+├── 📂 <span class="folder">server/</span>
+│   ├── 📄 <a href="server/package.json.txt">package.json.txt</a>                <span class="desc"># Server dependencies</span>
+│   └── 📂 <span class="folder">src/</span>
+│       ├── 📄 <a href="server/src/index.ts.txt">index.ts.txt</a>                    <span class="desc"># Server entry</span>
+│       └── 📂 <span class="folder">rooms/</span>
+│           ├── 📄 <a href="server/src/rooms/HoldingRoom.ts.txt">HoldingRoom.ts.txt</a>  <span class="desc"># Room logic</span>
+│           └── 📄 <a href="server/src/rooms/schema.ts.txt">schema.ts.txt</a>          <span class="desc"># Colyseus schemas</span>
+│
+└── 📂 <span class="folder">fnt/</span>
+    ├── 📄 PIXY.otf                              <span class="desc"># Retro font</span>
+    └── 📄 PIXY.ttf                              <span class="desc"># Retro font fallback</span>
+  </div>
+
+  <h2>🔗 Quick Links</h2>
+  <ul>
+    <li><a href="client/src/main.ts.txt">Client Entry Point (main.ts)</a></li>
+    <li><a href="client/src/features/battle/BattleManager.ts.txt">Battle Logic (BattleManager.ts)</a></li>
+    <li><a href="client/src/features/battle/BattleRenderer.ts.txt">Battle Renderer (BattleRenderer.ts)</a></li>
+    <li><a href="server/src/rooms/HoldingRoom.ts.txt">Server Room (HoldingRoom.ts)</a></li>
+    <li><a href="prompt.txt">AI Debugging Prompt (prompt.txt)</a></li>
+  </ul>
+
+  <h2>🐛 Known Issues</h2>
+  <ul>
+    <li><strong>BattleRenderer not showing virus cells</strong> - Grid size mismatch (640 vs 2304)</li>
+    <li><strong>PixiJS v8 deprecation warnings</strong> - beginFill, drawCircle, lineStyle</li>
+    <li><strong>Unregistered Colyseus messages</strong> - virusParamsUpdated, playerReadyStatus</li>
+  </ul>
+
+  <h2>📝 Instructions for AI</h2>
+  <ol>
+    <li>Read <a href="prompt.txt">prompt.txt</a> for detailed debugging instructions</li>
+    <li>Analyze the file structure above</li>
+    <li>Start with client/src/main.ts and client/src/features/battle/BattleRenderer.ts</li>
+    <li>Check console logs for "Grid size mismatch" errors</li>
+    <li>Ensure BattleRenderer.initGrid(20, 32) is called at battle start</li>
+  </ol>
+</body>
+</html>

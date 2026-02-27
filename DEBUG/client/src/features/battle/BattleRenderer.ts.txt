@@ -1,0 +1,126 @@
+========================================
+ORIGINAL FILE PATH: C:\__Qwen1\TOVCH\client\src\features\battle\BattleRenderer.ts
+========================================
+
+/**
+ * BattleRenderer — визуализация битвы вирусов
+ */
+
+import * as PIXI from 'pixi.js';
+
+export class BattleRenderer {
+  private container: PIXI.Container;
+  private cellContainers: Map<number, PIXI.Container> = new Map();
+  private linesContainer: PIXI.Graphics;
+
+  private gridWidth: number = 20;
+  private gridHeight: number = 32;
+  private totalCells: number = 640;
+
+  private readonly COLORS = {
+    empty: 0x1a1a1a,
+    virusA: 0xff3333,  // Яркий красный
+    virusB: 0x3333ff,  // Яркий синий
+  };
+
+  constructor(stage: PIXI.Container) {
+    this.container = new PIXI.Container();
+    this.linesContainer = new PIXI.Graphics();
+    this.container.addChild(this.linesContainer);
+
+    this.container.zIndex = 1000;  // На переднем плане
+    this.container.alpha = 0;
+    this.container.visible = false;
+
+    stage.addChild(this.container);
+  }
+
+  initGrid(width: number, height: number): void {
+    this.gridWidth = width;
+    this.gridHeight = height;
+    this.totalCells = width * height;
+
+    console.log(`[BattleRenderer] Init grid: ${width}×${height} = ${this.totalCells} cells`);
+
+    // Создаём клетки
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const idx = y * width + x;
+        const container = this.createCellContainer(x, y);
+        this.cellContainers.set(idx, container);
+        this.container.addChild(container);
+      }
+    }
+  }
+
+  updateGrid(grid: number[]): void {
+    if (grid.length !== this.totalCells) {
+      console.error('[BattleRenderer] Grid size mismatch:', grid.length, '!=', this.totalCells);
+      return;
+    }
+
+    let virusACount = 0;
+    let virusBCount = 0;
+
+    for (let i = 0; i < this.totalCells; i++) {
+      const cellValue = grid[i];
+      const container = this.cellContainers.get(i);
+      if (container) {
+        this.updateCell(container, cellValue);
+        if (cellValue === 1) virusACount++;
+        else if (cellValue === 2) virusBCount++;
+      }
+    }
+
+    console.log(`[BattleRenderer] Grid updated: RED=${virusACount}, BLUE=${virusBCount}`);
+  }
+
+  private updateCell(container: PIXI.Container, value: number): void {
+    const cell = (container as any).cellGraphics as PIXI.Graphics;
+    const glow = (container as any).glowGraphics as PIXI.Graphics;
+
+    cell.clear();
+    glow.clear();
+
+    const radius = 12.5;  // 25px diameter / 2
+
+    if (value === 0) {
+      // Пустая клетка
+      cell.beginFill(this.COLORS.empty, 1);
+      cell.drawCircle(0, 0, radius);
+      cell.endFill();
+    } else if (value === 1) {
+      // Virus A - КРАСНЫЙ
+      cell.beginFill(this.COLORS.virusA, 1);
+      cell.drawCircle(0, 0, radius);
+      cell.endFill();
+
+      // Свечение
+      glow.beginFill(this.COLORS.virusA, 0.8);
+      glow.drawCircle(0, 0, radius + 5);
+      glow.endFill();
+    } else if (value === 2) {
+      // Virus B - СИНИЙ
+      cell.beginFill(this.COLORS.virusB, 1);
+      cell.drawCircle(0, 0, radius);
+      cell.endFill();
+
+      // Свечение
+      glow.beginFill(this.COLORS.virusB, 0.8);
+      glow.drawCircle(0, 0, radius + 5);
+      glow.endFill();
+    }
+  }
+
+  show(): void {
+    this.container.alpha = 1;
+    this.container.visible = true;
+    console.log('[BattleRenderer] Show');
+  }
+
+  hide(): void {
+    this.container.alpha = 0;
+    this.container.visible = false;
+    console.log('[BattleRenderer] Hide');
+  }
+}

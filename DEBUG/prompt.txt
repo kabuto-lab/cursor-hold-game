@@ -1,0 +1,236 @@
+# TOVCH (VYRU5) — PROMPT для AI-отладки
+
+**Дата создания:** 2026-02-27  
+**Версия проекта:** v29  
+**Статус:** Рабочая версия с известными проблемами
+
+---
+
+## **КОНТЕКСТ ЗАДАЧИ**
+
+Ты — AI-разработчик (Grok), получивший доступ к полному исходному коду многопользовательской браузерной игры "TOVCH" (вирусная битва). Твоя задача — проанализировать код, найти и исправить баги, связанные с визуализацией битвы вирусов.
+
+---
+
+## **ОПИСАНИЕ ПРОБЛЕМЫ**
+
+### **Симптомы:**
+
+1. **Клетки вирусов не отображаются на canvas**
+   - Логи показывают распространение: `RED=1, BLUE=1 → RED=2, BLUE=2`
+   - Прогресс-бар в верхней панели заполняется correctly
+   - **НО:** На canvas не видно красных/синих клеток
+
+2. **Ошибки в консоли:**
+   ```
+   [BattleRenderer] Grid size mismatch: 640 != 2304
+   ```
+
+3. **Предупреждения PixiJS v8:**
+   ```
+   Graphics#beginFill is no longer needed
+   Graphics#drawCircle has been renamed to Graphics#circle
+   Graphics#lineStyle is no longer needed
+   ```
+
+### **Шаги воспроизведения:**
+
+1. Открыть https://cursor-hold-game.onrender.com
+2. Создать комнату (Create Room)
+3. Открыть вторую вкладку, присоединиться (Join Room + ID)
+4. Оба игрока распределяют 12 очков по параметрам вируса
+5. Оба нажимают READY
+6. Появляется обратный отсчёт 3-2-1
+7. Нажать кнопку СТАРТ
+8. **Ожидание:** Видно красные клетки (сверху) и синие (снизу)
+9. **Реальность:** Canvas пустой, клетки не видны
+
+---
+
+## **ТРЕБОВАНИЯ К ИСПРАВЛЕНИЮ**
+
+### **1. Критические (блокирующие):**
+
+- ✅ **BattleRenderer должен отображать клетки вирусов**
+  - Красные (0xff3333) для Player 1
+  - Синие (0x3333ff) для Player 2
+  - Размер клеток: 25px диаметр, 1px зазор
+  - Свечение: 0.8 alpha, +5px радиус
+
+- ✅ **Инициализация BattleRenderer должна происходить при старте битвы**
+  - НЕ в конструкторе MainApp
+  - В `networkManager.onVirusBattleStarted()`
+  - С правильными размерами: `initGrid(20, 32)`
+
+- ✅ **Сетка должна быть 20×32 = 640 клеток**
+  - НЕ 64×36 = 2304
+  - Server отправляет: `width: 20, height: 32`
+  - Client должен инициализировать: `battleRenderer.initGrid(20, 32)`
+
+### **2. Важные (функциональные):**
+
+- ⚠️ **Обновление клеток при каждом тике (500ms)**
+  - `BattleRenderer.updateGrid()` должен вызываться
+  - Клетки должны менять цвет (empty → virusA/virusB)
+
+- ⚠️ **z-index BattleRenderer = 1000**
+  - Сетка: z-index = 0 (задний план)
+  - Вирусы: z-index = 1000 (передний план)
+
+### **3. Желательные (косметические):**
+
+- 📝 **Убрать предупреждения PixiJS v8**
+  - Заменить `beginFill()` → `fill()`
+  - Заменить `drawCircle()` → `circle()`
+  - Заменить `lineStyle()` → `setStrokeStyle()`
+  - Заменить `new Text()` → `new PIXI.Text()`
+
+---
+
+## **ТЕХНИЧЕСКИЕ ДЕТАЛИ**
+
+### **Архитектура визуализации:**
+
+```
+BattleManager (логика)
+    ↓ onGridUpdate callback
+BattleRenderer (визуализация)
+    ↓ updateGrid(grid)
+PIXI.Graphics (клетки)
+    ↓ updateCell(value)
+Canvas (отображение)
+```
+
+### **Ключевые файлы:**
+
+| Файл | Назначение | Проблема |
+|------|------------|----------|
+| `client/src/main.ts` | Точка входа | Создавать BattleRenderer при старте битвы |
+| `client/src/features/battle/BattleManager.ts` | Логика битвы | Вызывать onGridUpdate при каждом тике |
+| `client/src/features/battle/BattleRenderer.ts` | Рендер | Инициализировать с 20×32, обновлять клетки |
+| `server/src/rooms/HoldingRoom.ts` | Сервер | Отправлять startCountdown с 20×32 |
+
+### **Алгоритм отладки:**
+
+1. **Проверить логи клиента:**
+   ```javascript
+   // В консоли браузера (F12)
+   [BattleRenderer] Init grid: 20×32 = 640 cells  ← Должно быть
+   [BattleRenderer] Grid updated: RED=1, BLUE=1   ← Должно быть
+   ```
+
+2. **Проверить размеры:**
+   ```javascript
+   console.log('Grid length:', grid.length);  // 640
+   console.log('Total cells:', totalCells);   // 640
+   ```
+
+3. **Проверить видимость:**
+   ```javascript
+   console.log('BattleRenderer container:', battleRenderer.container);
+   console.log('Container visible:', container.visible);
+   console.log('Container alpha:', container.alpha);
+   console.log('Container zIndex:', container.zIndex);
+   ```
+
+---
+
+## **ИНСТРУКЦИИ ДЛЯ AI**
+
+### **1. Начни с анализа:**
+
+```
+1. Прочитай client/src/main.ts
+   - Где создаётся BattleRenderer?
+   - Когда вызывается initGrid()?
+
+2. Прочитай client/src/features/battle/BattleRenderer.ts
+   - Какие размеры по умолчанию?
+   - Как работает updateGrid()?
+
+3. Прочитай server/src/rooms/HoldingRoom.ts
+   - Какие размеры отправляет сервер?
+   - Когда отправляет startCountdown?
+```
+
+### **2. Запусти локально:**
+
+```bash
+# Terminal 1: Server
+cd server && npm run dev
+
+# Terminal 2: Client
+cd client && npm run dev
+
+# Browser: http://localhost:3000
+# Open F12 Console
+```
+
+### **3. Внеси исправления:**
+
+```typescript
+// ❌ НЕПРАВИЛЬНО (в конструкторе):
+this.battleRenderer = new BattleRenderer(this.gameEngine.app!.stage);
+
+// ✅ ПРАВИЛЬНО (при старте битвы):
+this.networkManager.onVirusBattleStarted = (data) => {
+  if (!this.battleRenderer && this.gameEngine.app) {
+    this.battleRenderer = new BattleRenderer(this.gameEngine.app.stage);
+    this.battleRenderer.initGrid(data.width, data.height); // 20×32
+  }
+};
+```
+
+### **4. Протестируй:**
+
+```
+1. Создай комнату
+2. Присоединись вторым игроком
+3. READY оба
+4. Нажми СТАРТ
+5. Проверь консоль:
+   ✅ [BattleRenderer] Init grid: 20×32 = 640 cells
+   ✅ [BattleRenderer] Grid updated: RED=1, BLUE=1, EMPTY=638
+   ✅ [BattleRenderer] Grid updated: RED=2, BLUE=2, EMPTY=636
+6. Проверь canvas:
+   ✅ Видно красную клетку сверху
+   ✅ Видно синюю клетку снизу
+```
+
+---
+
+## **ОЖИДАЕМЫЙ РЕЗУЛЬТАТ**
+
+После исправления:
+
+1. **Консоль:**
+   ```
+   [BattleRenderer] Init grid: 20×32 = 640 cells
+   [BattleRenderer] Grid updated: RED=1, BLUE=1, EMPTY=638, TOTAL=640
+   [BattleRenderer] Grid updated: RED=2, BLUE=2, EMPTY=636, TOTAL=640
+   [BattleRenderer] Grid updated: RED=3, BLUE=3, EMPTY=634, TOTAL=640
+   ...
+   ```
+
+2. **Canvas:**
+   - Видно сетку 80px клетки (cyan, 30% alpha)
+   - Видно красную клетку вверху (центр)
+   - Видно синюю клетку внизу (центр)
+   - Клетки распространяются каждые 500ms
+
+3. **Прогресс-бар:**
+   - Красный заполняется слева
+   - Синий заполняется справа
+   - Обновляется при каждом тике
+
+---
+
+## **КОНТАКТЫ**
+
+- **Репозиторий:** https://github.com/kabuto-lab/cursor-hold-game
+- **Client:** https://cursor-hold-game.onrender.com
+- **Server:** https://cursor-hold-game-server.onrender.com/health
+
+---
+
+**УДАЧИ В ОТЛАДКЕ! 🚀**
