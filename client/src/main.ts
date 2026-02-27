@@ -180,7 +180,7 @@ class MainApp {
     this.battleManager.setOnCountdown((count) => {
       const overlay = document.getElementById('countdownOverlay');
       const countdownText = document.getElementById('countdownText');
-      
+
       if (!overlay || !countdownText) return;
 
       if (count > 0) {
@@ -188,27 +188,24 @@ class MainApp {
         overlay.style.display = 'flex';
         countdownText.textContent = count.toString();
       } else if (count === 0) {
-        // Показываем кнопку СТАРТ
-        overlay.style.display = 'none';
-        const startButton = document.getElementById('startButton');
-        if (startButton) {
-          startButton.style.display = 'flex';
-          
-          // Обработчик клика на кнопку СТАРТ
-          startButton.onclick = () => {
-            console.log('[MainApp] Start button clicked!');
-            startButton.style.display = 'none';
-            
-            // Отправляем серверу сигнал начать битву немедленно
-            this.networkManager.sendToRoom('startBattleNow', {});
-            
-            // Запускаем битву локально
-            const gridData = this.battleManager.getGridData();
-            if (gridData) {
-              this.battleManager.startBattle(gridData.grid, gridData.width, gridData.height);
-            }
-          };
+        // Показываем "БИТВА!" и запускаем битву автоматически
+        countdownText.textContent = 'БИТВА!';
+        countdownText.style.color = '#ff00ff';
+        
+        // Отправляем серверу сигнал начать битву
+        this.networkManager.sendToRoom('startBattleNow', {});
+
+        // Запускаем битву локально
+        const gridData = this.battleManager.getGridData();
+        if (gridData) {
+          this.battleManager.startBattle(gridData.grid, gridData.width, gridData.height);
         }
+
+        // Скрываем overlay через 1.5 секунды
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          countdownText.style.color = '#00ffff';
+        }, 1500);
       }
     });
 
