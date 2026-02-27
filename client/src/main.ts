@@ -208,6 +208,10 @@ class MainApp {
     // Network listeners для битвы
     this.networkManager.onVirusBattleStarted = (data) => {
       console.log('[MainApp] Virus battle started:', data);
+      
+      // Инициализируем BattleRenderer с правильными размерами
+      this.battleRenderer.initGrid(data.width, data.height);
+      
       // Запускаем обратный отсчёт
       this.battleManager.startCountdownAndBattle(data.battleGrid, data.width, data.height);
     };
