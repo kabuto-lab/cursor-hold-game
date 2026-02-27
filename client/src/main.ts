@@ -118,6 +118,20 @@ class MainApp {
     if (readyBtn) {
       readyBtn.addEventListener('click', () => {
         console.log('[MainApp] Ready button clicked');
+        
+        // Получаем параметры игрока
+        const playerParams = this.virusTubeManager.getParams();
+        
+        // Определяем, какой игрок (Player 1 или Player 2)
+        const isPlayer1 = this.uiController.getCurrentView() === 'room';
+        
+        // Устанавливаем параметры в BattleManager
+        if (isPlayer1) {
+          this.battleManager.setParamsA(playerParams);
+        } else {
+          this.battleManager.setParamsB(playerParams);
+        }
+        
         this.networkManager.sendToggleReady(true);
       });
     }
@@ -125,7 +139,7 @@ class MainApp {
     // BattleManager callbacks
     this.battleManager.setOnStateChange((state) => {
       console.log('[MainApp] Battle state changed:', state);
-      
+
       if (state.type === 'running') {
         this.battleRenderer.show();
       } else if (state.type === 'ended') {
