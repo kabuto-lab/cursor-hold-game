@@ -173,18 +173,27 @@ export class BattleRenderer {
 
   updateGrid(grid: number[]): void {
     if (grid.length !== this.totalCells) {
-      console.error('[BattleRenderer] Grid size mismatch');
+      console.error('[BattleRenderer] Grid size mismatch:', grid.length, '!=', this.totalCells);
       return;
     }
+
+    let virusACount = 0;
+    let virusBCount = 0;
+    let emptyCount = 0;
 
     for (let i = 0; i < this.totalCells; i++) {
       const cellValue = grid[i];
       const container = this.cellContainers.get(i);
-      
+
       if (container) {
         this.updateCell(container, cellValue);
+        if (cellValue === 1) virusACount++;
+        else if (cellValue === 2) virusBCount++;
+        else emptyCount++;
       }
     }
+
+    console.log(`[BattleRenderer] Grid updated: RED=${virusACount}, BLUE=${virusBCount}, EMPTY=${emptyCount}, TOTAL=${this.totalCells}`);
   }
 
   private updateCell(container: PIXI.Container, value: number): void {

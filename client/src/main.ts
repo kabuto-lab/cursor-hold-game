@@ -162,8 +162,9 @@ class MainApp {
     });
 
     this.battleManager.setOnGridUpdate((grid) => {
+      console.log('[MainApp] Grid update received, calling battleRenderer.updateGrid()');
       this.battleRenderer.updateGrid(grid);
-      
+
       // Обновляем прогресс битвы в верхней панели
       this.updateBattleProgress(grid);
     });
