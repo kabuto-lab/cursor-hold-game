@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>История коммитов - Cursor Hold Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff88;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #00ff88;
+            text-shadow: 0 0 10px #00ff88;
+        }
+        .repo-info {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        .repo-info a {
+            color: #00ffff;
+            text-decoration: none;
+        }
+        .repo-info a:hover {
+            text-decoration: underline;
+        }
+        .filter-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-section input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            color: #00ff88;
+            font-family: inherit;
+            border-radius: 4px;
+        }
+        .filter-section input:focus {
+            outline: none;
+            border-color: #00ff88;
+        }
+        .filter-section button {
+            padding: 10px 20px;
+            background: #00ff88;
+            color: #0a0a0a;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        .filter-section button:hover {
+            background: #00cc6a;
+        }
+        .commit {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        .commit:hover {
+            border-color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+        .commit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .commit-hash {
+            color: #00ffff;
+            font-weight: bold;
+        }
+        .commit-hash a {
+            color: inherit;
+            text-decoration: none;
+        }
+        .commit-hash a:hover {
+            text-decoration: underline;
+        }
+        .commit-date {
+            color: #888;
+            font-size: 0.9em;
+        }
+        .commit-message {
+            color: #ffcc00;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .commit-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9em;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-checkout {
+            background: #ff4444;
+            color: white;
+        }
+        .btn-checkout:hover {
+            background: #cc0000;
+        }
+        .btn-view {
+            background: #00ffff;
+            color: #0a0a0a;
+        }
+        .btn-view:hover {
+            background: #00cccc;
+        }
+        .btn-copy {
+            background: #888;
+            color: #0a0a0a;
+        }
+        .btn-copy:hover {
+            background: #aaa;
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #333;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .tag.head {
+            background: #00ff88;
+            color: #0a0a0a;
+        }
+        .tag.main {
+            background: #00ffff;
+            color: #0a0a0a;
+        }
+        .highlight {
+            background: #333;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .info-box {
+            background: #1a1a1a;
+            border: 1px solid #00ff88;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .info-box h3 {
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+        .info-box code {
+            background: #0a0a0a;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 2em;
+            color: #00ff88;
+            font-weight: bold;
+        }
+        .stat-card .label {
+            color: #888;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📜 История коммитов</h1>
+        
+        <div class="repo-info">
+            <strong>Репозиторий:</strong> 
+            <a href="https://github.com/kabuto-lab/cursor-hold-game" target="_blank">
+                https://github.com/kabuto-lab/cursor-hold-game
+            </a>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="number" id="totalCommits">0</div>
+                <div class="label">Всего коммитов</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="uniqueMessages">0</div>
+                <div class="label">Уникальных сообщений</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="firstCommit">-</div>
+                <div class="label">Первый коммит</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="lastCommit">-</div>
+                <div class="label">Последний коммит</div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>ℹ️ Как использовать</h3>
+            <p>1. Найдите коммит, когда игра работала нормально</p>
+            <p>2. Нажмите <strong>«Checkout»</strong> для переключения на эту версию</p>
+            <p>3. Или скопируйте хеш и выполните: <code>git checkout &lt;hash&gt;</code></p>
+            <p style="margin-top: 10px; color: #ff4444;">
+                <strong>⚠️ Внимание:</strong> Checkout переместит вас в состояние detached HEAD. 
+                Для создания ветки: <code>git checkout -b &lt;branch-name&gt; &lt;hash&gt;</code>
+            </p>
+        </div>
+
+        <div class="filter-section">
+            <input type="text" id="searchInput" placeholder="Поиск по сообщению коммита...">
+            <button onclick="filterCommits()">Поиск</button>
+            <button onclick="clearFilter()">Сброс</button>
+        </div>
+
+        <div id="commitsList"></div>
+    </div>
+
+    <script>
+        const commits = [
+            {hash: "38ae9bf", date: "2026-02-18 18:03:19", message: "Implement modular architecture with create/join rooms and chat functionality", tag: "HEAD, main"},
+            {hash: "2408217", date: "2026-02-18 17:56:51", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "7dd28f5", date: "2026-02-18 16:10:56", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "4d4c1d8", date: "2026-02-18 14:29:34", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "7c25375", date: "2026-02-18 01:33:56", message: "v13: Add virus battle system (neurons visualization, 64x36 grid, 100ms tick)", tag: ""},
+            {hash: "b2fbf6b", date: "2026-02-18 01:19:58", message: "docs: Add virus battle implementation spec (битва01.txt)", tag: ""},
+            {hash: "68ecd10", date: "2026-02-18 01:02:06", message: "v12: Apply PIXY retro font to all UI and PixiJS texts", tag: ""},
+            {hash: "7e3b1be", date: "2026-02-18 00:42:03", message: "docs: Add top panel redesign documentation", tag: ""},
+            {hash: "2f62ff9", date: "2026-02-18 00:40:46", message: "v11: Redesign top panel with player names (gradient wrapper, flex layout)", tag: ""},
+            {hash: "6b429b6", date: "2026-02-18 00:35:26", message: "docs: Add Virus Tubes implementation documentation", tag: ""},
+            {hash: "81c4d05", date: "2026-02-18 00:34:31", message: "v10: Add interactive virus tubes with animations (click +1/-1, randomize, ready)", tag: ""},
+            {hash: "92a6a66", date: "2026-02-18 00:14:16", message: "docs: Add comprehensive ARCHITECTURE.md for project replication", tag: ""},
+            {hash: "c5f60b3", date: "2026-02-18 00:07:43", message: "v9: Move player info to top panel (Всего игроков + ID), remove from left sidebar", tag: ""},
+            {hash: "79b6d8a", date: "2026-02-17 07:44:51", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "c92c599", date: "2026-02-17 07:08:06", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "3ec7a37", date: "2026-02-17 07:02:55", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "67c9f4c", date: "2026-02-17 06:49:26", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "59dd470", date: "2026-02-17 06:40:07", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "93ede47", date: "2026-02-17 06:28:56", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "490eee2", date: "2026-02-17 06:10:06", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "0661f2c", date: "2026-02-17 05:51:35", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "04a8b32", date: "2026-02-17 05:26:57", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "2824b1c", date: "2026-02-17 05:16:04", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "09d740c", date: "2026-02-17 05:08:00", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "bbcdc72", date: "2026-02-17 04:58:34", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "370d41e", date: "2026-02-17 04:52:43", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "2a11532", date: "2026-02-17 04:32:46", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "8de85f1", date: "2026-02-17 04:21:52", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "0568d6e", date: "2026-02-17 04:16:52", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "d2ed753", date: "2026-02-16 23:53:09", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "58deaf1", date: "2026-02-16 23:47:12", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "abb6dc4", date: "2026-02-16 23:11:50", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "b4cb70b", date: "2026-02-16 23:02:19", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "e46eae4", date: "2026-02-16 22:52:17", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "14c9f64", date: "2026-02-16 22:41:40", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "ad9144e", date: "2026-02-16 22:30:49", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "b49b6b5", date: "2026-02-16 22:26:21", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "b58fcd5", date: "2026-02-16 21:53:56", message: "v9: Добавлен ультра-детальный самоанализ в ядумал.txt (3 вопроса по 6000+ символов)", tag: ""},
+            {hash: "f7eb3e9", date: "2026-02-16 21:41:58", message: "v8: Откат к ретро-неон дизайну (до RADIX) + pointer-events fix", tag: ""},
+            {hash: "0fa4aca", date: "2026-02-16 21:32:10", message: "v7: Add pointer-events: none to PixiJS canvas element (Grok AI fix)", tag: ""},
+            {hash: "7a11c8b", date: "2026-02-16 21:16:54", message: "v6: Fix canvas z-index + pointer-events none for burger buttons", tag: ""},
+            {hash: "af4db28", date: "2026-02-16 21:13:48", message: "v5: Remove push claims from entity.md + add self-analysis to yadumal.txt", tag: ""},
+            {hash: "17f46ac", date: "2026-02-16 21:08:38", message: "v4: Add full paths rule to entity.md + clarify console location", tag: ""},
+            {hash: "048e781", date: "2026-02-16 20:52:27", message: "v3: Add setTimeout(0) + debug logs for burger button visibility fix", tag: ""},
+            {hash: "e1b1a06", date: "2026-02-16 20:39:48", message: "v2: Add version rule to entity.md + update badge to v2", tag: ""},
+            {hash: "c8db6ed", date: "2026-02-16 20:30:45", message: "Fix menu buttons: remove btn class, use ID positioning, increase z-index", tag: ""},
+            {hash: "97499bb", date: "2026-02-16 20:23:47", message: "Fix menu button styles: add padding and hover state", tag: ""},
+            {hash: "76b8d13", date: "2026-02-16 20:15:47", message: "Redesign UI in RADIX style: minimal, clean, accessible", tag: ""},
+            {hash: "188684c", date: "2026-02-16 20:05:01", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "68aa525", date: "2026-02-16 20:04:13", message: "Fix joinRoom: use joinById(roomId) instead of joinOrCreate", tag: ""},
+            {hash: "e0669b9", date: "2026-02-16 18:55:53", message: "Remove debug alerts, fix room ID display, update errors.txt", tag: ""},
+            {hash: "0666477", date: "2026-02-16 18:45:06", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "26f24f0", date: "2026-02-16 18:43:41", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "3612c43", date: "2026-02-16 18:38:07", message: "Fix PixiJS v8: move app/ticker creation inside async init()", tag: ""},
+            {hash: "67a02ac", date: "2026-02-16 18:33:34", message: "Fix PixiJS v8: make init() async and call with await", tag: ""},
+            {hash: "c8df96b", date: "2026-02-16 18:28:03", message: "Fix Vite config + disable lint-staged for Windows compatibility", tag: ""},
+            {hash: "934fb68", date: "2026-02-16 18:24:30", message: "Implement modular architecture with create/join rooms and chat functionality", tag: ""},
+            {hash: "1bb1a2b", date: "2026-02-16 18:23:57", message: "Add alert() debug + test.html for JS loading verification", tag: ""},
+            {hash: "b3c5b72", date: "2026-02-16 18:11:25", message: "Add debug logs at every level + hardcode server URL for testing", tag: ""},
+            {hash: "58d2351", date: "2026-02-16 18:05:39", message: "Add extensive logging to debug Create Room button click flow", tag: ""},
+            {hash: "43b01ca", date: "2026-02-16 17:52:29", message: "Fix main.ts: remove process.env.SERVER_URL, let NetworkManager use VITE_SERVER_URL", tag: ""},
+            {hash: "76bc984", date: "2026-02-16 17:46:57", message: "Add version counter (1) above title", tag: ""},
+            {hash: "ab9d83b", date: "2026-02-16 17:07:22", message: "Fix Render deployment: VITE_SERVER_URL, proper room creation/join, remove unused code", tag: ""},
+            {hash: "ff842fa", date: "2026-02-16 16:48:13", message: "Fix room join/create to use same roomId parameter for both players", tag: ""},
+            {hash: "822276a", date: "2026-02-16 16:24:22", message: "Fix GameEngine to use canvasContainer div instead of canvas element", tag: ""},
+            {hash: "f06a249", date: "2026-02-16 16:18:26", message: "Center chat and room ID with corner positioning circles", tag: ""},
+            {hash: "6add271", date: "2026-02-16 15:20:46", message: "Fix TypeScript compilation errors and improve type safety", tag: ""},
+            {hash: "5566292", date: "2026-02-16 14:54:48", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "593606f", date: "2026-02-16 14:53:28", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "d7c87e7", date: "2026-02-16 14:40:56", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "67203e6", date: "2026-02-16 13:30:37", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "970486c", date: "2026-02-16 00:37:53", message: "Fix all duplicate function implementations and complete module structure", tag: ""},
+            {hash: "4f89720", date: "2026-02-15 23:53:45", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "ff153ba", date: "2026-02-15 23:36:12", message: "Implement modular architecture with strict TypeScript settings and state machine for battle", tag: ""},
+            {hash: "9d0ff14", date: "2026-02-15 23:19:17", message: "Refactor architecture: split God class into specialized modules (GameStateManager, NetworkManager, GameRenderer, UIController)", tag: ""},
+            {hash: "da385fc", date: "2026-02-15 22:11:52", message: "Fix TS2322 error by allowing null for battleVisualization property", tag: ""},
+            {hash: "1950694", date: "2026-02-15 21:46:09", message: "Add null checks for otherCursor to prevent TypeScript errors", tag: ""},
+            {hash: "b754a00", date: "2026-02-15 21:26:53", message: "Initialize battle visualization objects to prevent null reference errors", tag: ""},
+            {hash: "8ee7440", date: "2026-02-15 21:16:16", message: "Center virus battle grid in the middle third of screen and add resize handling", tag: ""},
+            {hash: "7b70721", date: "2026-02-15 20:55:08", message: "Remove unused actualGridWidth variable to fix TS6133 error", tag: ""},
+            {hash: "40a3450", date: "2026-02-15 20:31:42", message: "Fix battle zone positioning to properly center in second third of screen", tag: ""},
+            {hash: "eb54483", date: "2026-02-15 20:20:36", message: "Fix unused variable error by commenting out detailLevel variable", tag: ""},
+            {hash: "e0cfc00", date: "2026-02-15 20:15:45", message: "Fix unused parameter error by using aggressionLevel in addAggressionSymbol method", tag: ""},
+            {hash: "0eb82f4", date: "2026-02-15 20:10:22", message: "Fix method placement: move showCopiedMessage inside Game class", tag: ""},
+            {hash: "c7728bf", date: "2026-02-15 19:51:49", message: "Fix remaining TypeScript errors: unused variables and missing method", tag: ""},
+            {hash: "9acb0a4", date: "2026-02-15 19:34:50", message: "Fix syntax errors in AggressionVisualizer class and update createKillEffect method", tag: ""},
+            {hash: "47bbbc3", date: "2026-02-15 19:14:33", message: "Add aggression parameter visualization class and integrate with battle grid rendering", tag: ""},
+            {hash: "3546fe1", date: "2026-02-15 18:13:38", message: "Set battle zone to start at second third of screen with fixed width of 640px", tag: ""},
+            {hash: "fc8126c", date: "2026-02-15 17:58:31", message: "Remove battleGrid element and move virus battle visualization to 33% position", tag: ""},
+            {hash: "badc649", date: "2026-02-15 17:48:00", message: "Remove unused variables in createBattleVisualization to fix TS6133 errors", tag: ""},
+            {hash: "c0c3639", date: "2026-02-15 17:42:48", message: "Fix remaining TS6133 errors by removing unused cellSizeX and cellSizeY variables", tag: ""},
+            {hash: "2b6f1c6", date: "2026-02-15 17:33:10", message: "Fix TS6133 error by removing unused cellSize variable in createBattleVisualization", tag: ""},
+            {hash: "404f988", date: "2026-02-15 17:29:01", message: "Place viruses at top and bottom center when battle starts", tag: ""},
+            {hash: "e158f9c", date: "2026-02-15 17:21:28", message: "Create separate battle layer to avoid mouse event conflicts during battle", tag: ""},
+            {hash: "3a94ab0", date: "2026-02-15 17:14:27", message: "Fix battle visualization positioning to match battleGrid element exactly", tag: ""},
+            {hash: "8509c08", date: "2026-02-15 17:11:14", message: "Fix game crash during battle by isolating mouse controls and cursor updates", tag: ""},
+            {hash: "d617e5e", date: "2026-02-15 16:59:01", message: "Fix TS6133 error by removing unused gridWidth variable", tag: ""},
+            {hash: "e7ddd7e", date: "2026-02-15 16:57:07", message: "Position virus battle visualization to match battleGrid area", tag: ""},
+            {hash: "7aba77c", date: "2026-02-15 16:40:38", message: "Remove player circle creation functionality to fix potential conflicts", tag: ""},
+            {hash: "61b4a0b", date: "2026-02-15 16:06:28", message: "Add server-side cursor update handler and fix client cursor update condition", tag: ""},
+            {hash: "7707101", date: "2026-02-15 15:50:31", message: "Remove unused createDropAnimation function to fix TS6133 error", tag: ""},
+            {hash: "843c33f", date: "2026-02-15 15:45:32", message: "Fix duplicate functions and add remote cursor functionality", tag: ""},
+            {hash: "1426d6b", date: "2026-02-15 15:39:28", message: "Fix virus battle visualization and implement server-side battle simulation", tag: ""},
+            {hash: "fe9469c", date: "2026-02-15 15:35:58", message: "Add test tube styling, drop animation, and randomize button for virus parameters", tag: ""},
+            {hash: "0b5c0aa", date: "2026-02-15 15:19:06", message: "Fix duplicate function implementations in game.ts", tag: ""},
+            {hash: "823d108", date: "2026-02-15 15:08:40", message: "Fix TypeScript errors in virus battle algebra implementation", tag: ""},
+            {hash: "b522ccf", date: "2026-02-15 15:03:09", message: "Add virus battle algebra implementation in TypeScript with battle visualization", tag: ""},
+            {hash: "3e2367b", date: "2026-02-15 14:59:33", message: "Add virus battle algebra implementation in Python", tag: ""},
+            {hash: "031087e", date: "2026-02-15 14:57:08", message: "Add virus parameter interface and hide scrollbar in right sidebar", tag: ""},
+            {hash: "4fcd6b7", date: "2026-02-15 14:03:18", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "64f4dd2", date: "2026-02-15 13:57:51", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "0139149", date: "2026-02-15 13:55:26", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "e842dd6", date: "2026-02-15 13:41:10", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "1e748bc", date: "2026-02-15 13:27:47", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "aa10d8f", date: "2026-02-15 13:07:56", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "18a999a", date: "2026-02-15 13:04:16", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "0c06c1e", date: "2026-02-15 12:59:47", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "5f5f180", date: "2026-02-15 06:19:16", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "bac188b", date: "2026-02-15 06:10:04", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "caac96c", date: "2026-02-15 06:04:21", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "e2266f3", date: "2026-02-15 05:56:54", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "fc6a67c", date: "2026-02-15 05:52:07", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "fd7925e", date: "2026-02-15 05:50:40", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "873073e", date: "2026-02-15 05:45:15", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "3c77306", date: "2026-02-15 05:37:39", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "16d0970", date: "2026-02-15 05:36:11", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "1307397", date: "2026-02-15 05:28:32", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "296a5d6", date: "2026-02-15 05:25:25", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "3290ba6", date: "2026-02-15 05:15:57", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "a5d1824", date: "2026-02-15 05:07:04", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "ef91455", date: "2026-02-15 04:50:27", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "5aaf749", date: "2026-02-15 04:24:21", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "6607d9f", date: "2026-02-15 04:18:53", message: "Add BALL and FOLLOWER buttons with draggable circles and follower functionality", tag: ""},
+            {hash: "8117241", date: "2026-02-15 04:05:31", message: "Add draggable circle object feature", tag: ""},
+            {hash: "36e4b93", date: "2026-02-15 03:38:56", message: "Add draggable circle object feature", tag: ""},
+            {hash: "41abec8", date: "2026-02-15 02:10:05", message: "Add draggable circle object feature", tag: ""},
+            {hash: "d4e7e9e", date: "2026-02-15 02:02:30", message: "Add draggable circle object feature", tag: ""},
+            {hash: "404ea48", date: "2026-02-15 00:17:22", message: "Fix room creation/joining: use actual Colyseus room IDs instead of custom IDs", tag: ""},
+            {hash: "97234d0", date: "2026-02-15 00:06:35", message: "Fix room joining: use joinById with just room ID, not room type + ID", tag: ""},
+            {hash: "73009e0", date: "2026-02-15 00:01:19", message: "Add client initialization checks to prevent undefined errors", tag: ""},
+            {hash: "27bc254", date: "2026-02-14 23:46:14", message: "Fix room creation: use client.create instead of client.joinOrCreate for proper room ID handling", tag: ""},
+            {hash: "746842e", date: "2026-02-14 23:33:22", message: "Fix Colyseus client: remove deprecated .on() calls for reconnection events", tag: ""},
+            {hash: "e92164e", date: "2026-02-14 23:15:52", message: "Improve error handling and add detailed logging for debugging connection issues", tag: ""},
+            {hash: "6fdd5cc", date: "2026-02-14 23:03:19", message: "Fix mixed content: use wss:// for Colyseus in production", tag: ""},
+            {hash: "e8fb471", date: "2026-02-14 22:53:53", message: "Fix PixiJS v8 deprecated methods: beginFill/endFill, drawCircle, polygon, lineStyle", tag: ""},
+            {hash: "83fcf4b", date: "2026-02-14 22:33:43", message: "Fix PixiJS v8 init and canvas deprecations", tag: ""},
+            {hash: "0d55dff", date: "2026-02-14 22:07:08", message: "Fix TS errors in client for Render deploy", tag: ""},
+            {hash: "f62a76c", date: "2026-02-14 21:17:12", message: "Fix TypeScript errors: cors types, schema properties, Colyseus lifecycle methods, and test fixes", tag: ""},
+            {hash: "f0e2136", date: "2026-02-14 20:51:43", message: "Initial commit: Project setup with client and server", tag: ""},
+            {hash: "249a1ba", date: "2026-02-14 20:50:37", message: "first commit", tag: ""}
+        ];
+
+        function renderCommits(commitsToRender) {
+            const container = document.getElementById('commitsList');
+            container.innerHTML = '';
+
+            commitsToRender.forEach(commit => {
+                const div = document.createElement('div');
+                div.className = 'commit';
+                
+                let tagHtml = '';
+                if (commit.tag) {
+                    const tags = commit.tag.split(', ').map(t => {
+                        if (t === 'HEAD') return '<span class="tag head">HEAD</span>';
+                        if (t === 'main') return '<span class="tag main">main</span>';
+                        return `<span class="tag">${t}</span>`;
+                    }).join('');
+                    tagHtml = tags;
+                }
+
+                div.innerHTML = `
+                    <div class="commit-header">
+                        <span class="commit-hash">
+                            <a href="https://github.com/kabuto-lab/cursor-hold-game/commit/${commit.hash}" target="_blank">${commit.hash}</a>
+                            ${tagHtml}
+                        </span>
+                        <span class="commit-date">${commit.date}</span>
+                    </div>
+                    <div class="commit-message">${highlightSearch(commit.message)}</div>
+                    <div class="commit-actions">
+                        <button class="btn btn-checkout" onclick="checkout('${commit.hash}')">Checkout</button>
+                        <button class="btn btn-copy" onclick="copyHash('${commit.hash}')">Копировать хеш</button>
+                        <a class="btn btn-view" href="https://github.com/kabuto-lab/cursor-hold-game/commit/${commit.hash}" target="_blank">View on GitHub</a>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function highlightSearch(text) {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            if (!search) return text;
+            return text.replace(new RegExp(`(${search})`, 'gi'), '<span class="highlight">$1</span>');
+        }
+
+        function filterCommits() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            if (!search) {
+                renderCommits(commits);
+                return;
+            }
+            const filtered = commits.filter(c => c.message.toLowerCase().includes(search));
+            renderCommits(filtered);
+        }
+
+        function clearFilter() {
+            document.getElementById('searchInput').value = '';
+            renderCommits(commits);
+        }
+
+        function checkout(hash) {
+            const confirmed = confirm(`Переключиться на коммит ${hash}?\n\nЭто поместит вас в состояние detached HEAD.\n\nДля создания ветки выполните:\ngit checkout -b <branch-name> ${hash}`);
+            if (confirmed) {
+                navigator.clipboard.writeText(`git checkout ${hash}`);
+                alert(`Команда скопирована в буфер:\ngit checkout ${hash}\n\nВставьте в терминал для выполнения.`);
+            }
+        }
+
+        function copyHash(hash) {
+            navigator.clipboard.writeText(hash);
+            alert(`Хеш ${hash} скопирован!`);
+        }
+
+        function updateStats() {
+            document.getElementById('totalCommits').textContent = commits.length;
+            const uniqueMessages = new Set(commits.map(c => c.message)).size;
+            document.getElementById('uniqueMessages').textContent = uniqueMessages;
+            document.getElementById('firstCommit').textContent = commits[commits.length - 1].date.split(' ')[0];
+            document.getElementById('lastCommit').textContent = commits[0].date.split(' ')[0];
+        }
+
+        // Initialize
+        renderCommits(commits);
+        updateStats();
+
+        // Search on Enter
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') filterCommits();
+        });
+    </script>
+</body>
+</html>
