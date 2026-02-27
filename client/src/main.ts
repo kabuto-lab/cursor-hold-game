@@ -120,7 +120,7 @@ class MainApp {
         console.log('[MainApp] Ready button clicked');
         
         // Получаем параметры игрока
-        const playerParams = this.virusTubeManager.getParams();
+        const playerParams = this.virusTubeManager.getParamsAsVirusParams();
         
         // Определяем, какой игрок (Player 1 или Player 2)
         const isPlayer1 = this.uiController.getCurrentView() === 'room';

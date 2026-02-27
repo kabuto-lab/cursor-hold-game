@@ -1,6 +1,6 @@
 /**
  * VirusTubeManager - управляет интерактивными пробирками параметров вируса
- * 
+ *
  * Функционал:
  * - 12 параметров вируса в сетке 3×4
  * - Максимум 12 очков на все параметры
@@ -9,6 +9,8 @@
  * - Анимация капли, всплеска, пузырьков
  * - Синхронизация с сервером через callback
  */
+
+import { VirusParams } from './BattleManager';
 
 export class VirusTubeManager {
   private params: Map<string, number>;
@@ -418,6 +420,27 @@ export class VirusTubeManager {
       result[key] = value;
     });
     return result;
+  }
+
+  /**
+   * Получить параметры как VirusParams
+   */
+  getParamsAsVirusParams(): VirusParams {
+    const params = this.getParams();
+    return {
+      aggression: params.aggression || 0,
+      mutation: params.mutation || 0,
+      speed: params.speed || 0,
+      defense: params.defense || 0,
+      reproduction: params.reproduction || 0,
+      stealth: params.stealth || 0,
+      virulence: params.virulence || 0,
+      resilience: params.resilience || 0,
+      mobility: params.mobility || 0,
+      intellect: params.intellect || 0,
+      contagiousness: params.contagiousness || 0,
+      lethality: params.lethality || 0
+    };
   }
 
   /**

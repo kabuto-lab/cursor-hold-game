@@ -371,4 +371,48 @@ export class BattleManager {
   isEnded(): boolean {
     return this.state.type === 'ended';
   }
+
+  // === Методы для обратной совместимости (сетевые события) ===
+
+  /**
+   * Обработать начало битвы (от сервера)
+   */
+  onBattleStarted(data: { battleGrid: number[]; width: number; height: number }): void {
+    console.log('[BattleManager] Battle started (network event)');
+    this.startBattle(data.battleGrid, data.width, data.height);
+  }
+
+  /**
+   * Обработать тик битвы (от сервера)
+   */
+  onBattleTick(data: { battleGrid: number[]; tick: number }): void {
+    if (this.state.type !== 'running') return;
+
+    this.gridData = {
+      grid: data.battleGrid,
+      width: this.gridData?.width || 64,
+      height: this.gridData?.height || 36
+    };
+
+    this.state = {
+      ...this.state,
+      tick: data.tick
+    };
+
+    if (this.onGridUpdateCallback && this.gridData) {
+      this.onGridUpdateCallback(this.gridData.grid);
+    }
+  }
+
+  /**
+   * Обработать окончание битвы (от сервера)
+   */
+  onBattleEnded(data: {
+    winner: 'A' | 'B' | 'draw';
+    virusACount: number;
+    virusBCount: number
+  }): void {
+    console.log('[BattleManager] Battle ended (network event):', data.winner);
+    this.endBattle(data.winner as 'A' | 'B', data.virusACount, data.virusBCount);
+  }
 }
