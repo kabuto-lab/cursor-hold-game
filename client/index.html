@@ -7,16 +7,19 @@
   <title>VYRU5 - Multiplayer Game</title>
   
   <!-- Preload PIXY font for faster loading -->
+  <link rel="preload" href="/fnt/PIXY.otf" as="font" type="font/otf" crossorigin="anonymous">
   <link rel="preload" href="/fnt/PIXY.ttf" as="font" type="font/ttf" crossorigin="anonymous">
-  
+
   <style>
     /* Подключение ретро-шрифтов */
     @font-face {
       font-family: 'PIXY';
-      src: url('/fnt/PIXY.ttf') format('truetype');
+      src: local('PIXY'),
+           url('/fnt/PIXY.otf') format('opentype'),
+           url('/fnt/PIXY.ttf') format('truetype');
       font-weight: normal;
       font-style: normal;
-      font-display: optional; /* Не блокирует рендеринг */
+      font-display: swap;
     }
 
     /* Fallback font stack для максимальной совместимости */

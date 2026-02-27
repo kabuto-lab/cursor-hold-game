@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { execSync } from 'child_process';
-import { writeFileSync } from 'fs';
+import { writeFileSync, copyFileSync, mkdirSync, existsSync } from 'fs';
 
 // Получаем текущий хэш коммита из Git
 function getGitCommitHash(): string {
@@ -30,7 +30,7 @@ export default defineConfig({
     emptyOutDir: true,
     assetsInlineLimit: 0,
   },
-  // Плагин для генерации version.txt
+  // Плагин для генерации version.txt и копирования шрифтов
   plugins: [{
     name: 'version-generator',
     closeBundle() {
@@ -42,6 +42,24 @@ export default defineConfig({
       const versionPath = resolve(__dirname, 'dist', 'version.txt');
       writeFileSync(versionPath, version);
       console.log(`[Version Generator] Created ${versionPath}`);
+      
+      // Копируем шрифты в dist/fnt
+      const fntDir = resolve(__dirname, 'dist', 'fnt');
+      if (!existsSync(fntDir)) {
+        mkdirSync(fntDir, { recursive: true });
+      }
+      
+      const fonts = ['PIXY.otf', 'PIXY.ttf'];
+      fonts.forEach(font => {
+        const src = resolve(__dirname, 'fnt', font);
+        const dest = resolve(fntDir, font);
+        try {
+          copyFileSync(src, dest);
+          console.log(`[Font Copy] Copied ${font} to dist/fnt/`);
+        } catch (error) {
+          console.warn(`[Font Copy] Failed to copy ${font}:`, error);
+        }
+      });
     }
   }]
 });
