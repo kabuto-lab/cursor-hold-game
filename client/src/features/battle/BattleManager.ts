@@ -339,10 +339,10 @@ export class BattleManager {
     const percentA = (countA / total) * 100;
     const percentB = (countB / total) * 100;
 
-    // Победа если 95% территории
-    if (percentA >= 95) {
+    // Победа если 99% территории
+    if (percentA >= 99) {
       this.endBattle('A', countA, countB);
-    } else if (percentB >= 95) {
+    } else if (percentB >= 99) {
       this.endBattle('B', countA, countB);
     }
     // Или если один вирус полностью уничтожен

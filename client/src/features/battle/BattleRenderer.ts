@@ -28,8 +28,8 @@ export class BattleRenderer {
   
   private readonly COLORS = {
     empty: 0x1a1a1a,
-    virusA: 0xff0000,
-    virusB: 0x0000ff,
+    virusA: 0xff0000,  // RED - Player 1 (room creator)
+    virusB: 0x0000ff,  // BLUE - Player 2 (joiner)
     lineEmpty: 0x333333,
     lineActive: 0x666666
   };

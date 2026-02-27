@@ -506,20 +506,20 @@ export class HoldingRoom extends Room<RoomState> {
       const playerB = players.find(p => !p.isRoomCreator) || players[1];
 
       // Initialize battle grid with starting positions
-      // Place initial virus for player A (top center)
-      const topCenterX = Math.floor(20 / 2); // Center of the grid (column 10)
-      const topCenterY = 0; // Top row
+      // Virus A (RED) - Player 1 (room creator) - starts at top
+      const topCenterX = Math.floor(20 / 2);
+      const topCenterY = 0;
       const topIndex = topCenterY * 20 + topCenterX;
       if (topIndex < this.state.battleGrid.length) {
-        this.state.battleGrid[topIndex] = 1; // 1 = VIRUS_A
+        this.state.battleGrid[topIndex] = 1; // 1 = VIRUS_A (RED)
       }
 
-      // Place initial virus for player B (bottom center)
-      const bottomCenterX = Math.floor(20 / 2); // Center of the grid (column 10)
-      const bottomCenterY = 31; // Bottom row (since we have 32 rows)
+      // Virus B (BLUE) - Player 2 (joiner) - starts at bottom
+      const bottomCenterX = Math.floor(20 / 2);
+      const bottomCenterY = 31;
       const bottomIndex = bottomCenterY * 20 + bottomCenterX;
       if (bottomIndex < this.state.battleGrid.length) {
-        this.state.battleGrid[bottomIndex] = 2; // 2 = VIRUS_B
+        this.state.battleGrid[bottomIndex] = 2; // 2 = VIRUS_B (BLUE)
       }
     }
 
@@ -625,24 +625,30 @@ export class HoldingRoom extends Room<RoomState> {
   }
 
   private checkWinConditions(): boolean {
-    // Check if one virus has taken over the grid or met other win conditions
+    // Check if one virus has taken over 99% of the grid
     const totalCells = this.state.battleGrid.length;
     let virusACount = 0;
     let virusBCount = 0;
-    
+
     for (const cell of this.state.battleGrid) {
       if (cell === 1) virusACount++;
       else if (cell === 2) virusBCount++;
     }
-    
+
     const virusAPercent = (virusACount / totalCells) * 100;
     const virusBPercent = (virusBCount / totalCells) * 100;
-    
+
     // Win condition: one virus controls 99% or more of the grid
-    if (virusAPercent >= 99 || virusBPercent >= 99) {
+    if (virusAPercent >= 99) {
+      console.log(`Virus A wins with ${virusAPercent.toFixed(2)}% (${virusACount}/${totalCells})`);
       return true;
     }
     
+    if (virusBPercent >= 99) {
+      console.log(`Virus B wins with ${virusBPercent.toFixed(2)}% (${virusBCount}/${totalCells})`);
+      return true;
+    }
+
     return false;
   }
 
