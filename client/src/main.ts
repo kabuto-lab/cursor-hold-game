@@ -234,20 +234,15 @@ console.log('[MainApp] Registering load event listener...');
 
 // Функция для получения версии из Git
 async function getVersion(): Promise<string> {
+  // Пытаемся получить короткий хэш коммита из файла (генерируется при билде)
   try {
-    // Пытаемся получить версию из Vite env
-    if (typeof import.meta !== 'undefined' && import.meta.env?.PACKAGE_VERSION) {
-      return import.meta.env.PACKAGE_VERSION;
-    }
-    
-    // Пытаемся получить короткий хэш коммита из файла (генерируется при билде)
     const response = await fetch('/version.txt');
     if (response.ok) {
       const version = await response.text();
       return version.trim();
     }
   } catch (error) {
-    console.log('[MainApp] Could not get version from file:', error);
+    console.log('[MainApp] Could not get version from version.txt:', error);
   }
   
   // Fallback: версия из package.json
