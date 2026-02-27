@@ -157,25 +157,35 @@ class MainApp {
     this.battleManager.setOnCountdown((count) => {
       const overlay = document.getElementById('countdownOverlay');
       const countdownText = document.getElementById('countdownText');
-      const startText = document.getElementById('startText');
       
-      if (!overlay || !countdownText || !startText) return;
+      if (!overlay || !countdownText) return;
 
       if (count > 0) {
         // Показываем цифру
         overlay.style.display = 'flex';
         countdownText.textContent = count.toString();
-        countdownText.style.display = 'block';
-        startText.style.display = 'none';
       } else if (count === 0) {
-        // Показываем "СТАРТ!"
-        countdownText.style.display = 'none';
-        startText.style.display = 'block';
-        
-        // Скрываем через 1 секунду
-        setTimeout(() => {
-          overlay.style.display = 'none';
-        }, 1000);
+        // Показываем кнопку СТАРТ
+        overlay.style.display = 'none';
+        const startButton = document.getElementById('startButton');
+        if (startButton) {
+          startButton.style.display = 'flex';
+          
+          // Обработчик клика на кнопку СТАРТ
+          startButton.onclick = () => {
+            console.log('[MainApp] Start button clicked!');
+            startButton.style.display = 'none';
+            
+            // Отправляем серверу сигнал начать битву немедленно
+            this.networkManager.sendToRoom('startBattleNow', {});
+            
+            // Запускаем битву локально
+            const gridData = this.battleManager.getGridData();
+            if (gridData) {
+              this.battleManager.startBattle(gridData.grid, gridData.width, gridData.height);
+            }
+          };
+        }
       }
     });
 

@@ -400,6 +400,16 @@ export class HoldingRoom extends Room<RoomState> {
       }
     });
 
+    // Handle battle start from client (when START button clicked)
+    this.onMessage('startBattleNow', (client) => {
+      console.log(`Client ${client.sessionId} requested immediate battle start`);
+      // Start battle immediately for all clients
+      if (this.state.battleActive && !this.state.battleGrid.some((cell: number) => cell !== 0)) {
+        // Battle grid is still empty, start simulation now
+        this.startBattleSimulation();
+      }
+    });
+
     // Handle virus parameter updates
     this.onMessage('updateVirusParams', (client, data) => {
       const player = this.state.players.get(client.sessionId);
@@ -521,10 +531,15 @@ export class HoldingRoom extends Room<RoomState> {
       height: 32
     });
 
-    // Start the battle simulation loop (после обратного отсчёта)
+    // Битва начнётся автоматически через 4 секунды (3-2-1-СТАРТ)
+    // Если игроки не нажмут кнопку раньше
     setTimeout(() => {
-      this.startBattleSimulation();
-    }, 4000); // 4 секунды (3-2-1-СТАРТ)
+      // Проверяем, не началась ли битва уже
+      if (this.state.battleActive && this.clients.length > 0) {
+        this.startBattleSimulation();
+        console.log('Battle started automatically after timeout');
+      }
+    }, 4000);
   }
 
   private startBattleSimulation(): void {
