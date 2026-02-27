@@ -51,6 +51,9 @@ export class BattleManager {
   // Таймер распространения
   private spreadInterval: number | null = null;
   private readonly SPREAD_INTERVAL_MS = 500; // 2 раза в секунду
+  
+  // Обратный отсчёт
+  private countdownCallback?: (count: number) => void;
 
   constructor() {
     console.log('[BattleManager] Created');
@@ -101,10 +104,66 @@ export class BattleManager {
   }
 
   /**
-   * Запустить битву
+   * Установить callback для обратного отсчёта
+   */
+  setOnCountdown(callback: (count: number) => void): void {
+    this.countdownCallback = callback;
+  }
+
+  /**
+   * Запустить обратный отсчёт и начать битву
+   */
+  startCountdownAndBattle(grid: number[], width: number, height: number): void {
+    console.log('[BattleManager] Starting countdown...');
+
+    let count = 3;
+    
+    // Показываем первую цифру
+    if (this.countdownCallback) {
+      this.countdownCallback(count);
+    }
+
+    const countdownInterval = setInterval(() => {
+      count--;
+      
+      if (count > 0) {
+        // Показываем следующую цифру
+        if (this.countdownCallback) {
+          this.countdownCallback(count);
+        }
+      } else if (count === 0) {
+        // Показываем "СТАРТ!"
+        if (this.countdownCallback) {
+          this.countdownCallback(0); // 0 = СТАРТ
+        }
+      } else {
+        // Начинаем битву
+        clearInterval(countdownInterval);
+        this.startBattle(grid, width, height);
+      }
+    }, 1000); // Каждую секунду
+  }
+
+  /**
+   * Запустить цикл распространения (2 раза в секунду)
+   */
+  private startSpreadCycle(): void {
+    if (this.spreadInterval) {
+      clearInterval(this.spreadInterval);
+    }
+
+    this.spreadInterval = window.setInterval(() => {
+      this.spreadTick();
+    }, this.SPREAD_INTERVAL_MS);
+
+    console.log('[BattleManager] Spread cycle started (500ms interval)');
+  }
+
+  /**
+   * Запустить битву (после обратного отсчёта)
    */
   startBattle(grid: number[], width: number, height: number): void {
-    console.log('[BattleManager] Starting battle');
+    console.log('[BattleManager] Battle starting now!');
 
     this.gridData = {
       grid: [...grid],
@@ -128,21 +187,6 @@ export class BattleManager {
 
     // Запускаем цикл распространения
     this.startSpreadCycle();
-  }
-
-  /**
-   * Запустить цикл распространения (2 раза в секунду)
-   */
-  private startSpreadCycle(): void {
-    if (this.spreadInterval) {
-      clearInterval(this.spreadInterval);
-    }
-
-    this.spreadInterval = window.setInterval(() => {
-      this.spreadTick();
-    }, this.SPREAD_INTERVAL_MS);
-
-    console.log('[BattleManager] Spread cycle started (500ms interval)');
   }
 
   /**

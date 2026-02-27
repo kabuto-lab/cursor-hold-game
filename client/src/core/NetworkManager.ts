@@ -36,6 +36,13 @@ export class NetworkManager {
     timestamp: number;
   }) => void;
 
+  // Обратный отсчёт
+  public onStartCountdown?: (data: {
+    battleGrid: number[];
+    width: number;
+    height: number;
+  }) => void;
+
   constructor(serverUrl?: string) {
     // Локальный сервер для разработки, прод-сервер для production
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -234,6 +241,13 @@ export class NetworkManager {
     this.currentRoom.onMessage('virusBattleEnded', (data) => {
       if (this.onVirusBattleEnded) {
         this.onVirusBattleEnded(data);
+      }
+    });
+
+    // Обратный отсчёт
+    this.currentRoom.onMessage('startCountdown', (data) => {
+      if (this.onStartCountdown) {
+        this.onStartCountdown(data);
       }
     });
   }

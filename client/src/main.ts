@@ -153,10 +153,37 @@ class MainApp {
       this.battleRenderer.updateGrid(grid);
     });
 
+    // Обратный отсчёт
+    this.battleManager.setOnCountdown((count) => {
+      const overlay = document.getElementById('countdownOverlay');
+      const countdownText = document.getElementById('countdownText');
+      const startText = document.getElementById('startText');
+      
+      if (!overlay || !countdownText || !startText) return;
+
+      if (count > 0) {
+        // Показываем цифру
+        overlay.style.display = 'flex';
+        countdownText.textContent = count.toString();
+        countdownText.style.display = 'block';
+        startText.style.display = 'none';
+      } else if (count === 0) {
+        // Показываем "СТАРТ!"
+        countdownText.style.display = 'none';
+        startText.style.display = 'block';
+        
+        // Скрываем через 1 секунду
+        setTimeout(() => {
+          overlay.style.display = 'none';
+        }, 1000);
+      }
+    });
+
     // Network listeners для битвы
     this.networkManager.onVirusBattleStarted = (data) => {
       console.log('[MainApp] Virus battle started:', data);
-      this.battleManager.onBattleStarted(data);
+      // Запускаем обратный отсчёт
+      this.battleManager.startCountdownAndBattle(data.battleGrid, data.width, data.height);
     };
 
     this.networkManager.onVirusTick = (tick, data) => {
@@ -170,6 +197,12 @@ class MainApp {
         virusACount: data.virusACount,
         virusBCount: data.virusBCount
       });
+    };
+
+    this.networkManager.onStartCountdown = (data) => {
+      console.log('[MainApp] Start countdown:', data);
+      // Запускаем обратный отсчёт
+      this.battleManager.startCountdownAndBattle(data.battleGrid, data.width, data.height);
     };
 
     this.uiController.onCreateRoom = async () => {

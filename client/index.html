@@ -815,6 +815,19 @@
         <div id="player2Name">Player 2</div>
       </div>
 
+      <!-- Обратный отсчёт перед битвой -->
+      <div id="countdownOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 99999; display: none; align-items: center; justify-content: center; flex-direction: column;">
+        <div id="countdownText" style="font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace; font-size: 15rem; color: #00ffff; text-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff; animation: pulse 0.5s ease-in-out infinite;">3</div>
+        <div id="startText" style="font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace; font-size: 5rem; color: #ff00ff; text-shadow: 0 0 20px #ff00ff; margin-top: 20px; display: none;">СТАРТ!</div>
+      </div>
+
+      <style>
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.8; }
+        }
+      </style>
+
       <!-- Left Sidebar -->
       <div id="leftSidebar" class="sidebar left-sidebar">
         <div class="sidebar-header">

@@ -483,18 +483,18 @@ export class HoldingRoom extends Room<RoomState> {
 
   private startVirusBattle(): void {
     console.log('Starting virus battle!');
-    
+
     // Initialize the virus battle state
     // Set up the battle grid (20x32 = 640 cells)
     this.state.battleGrid = new Array(20 * 32).fill(0); // 0 = EMPTY
     this.state.battleActive = true;
-    
+
     // Get player parameters for the simulation
     const players = Array.from(this.state.players.values());
     if (players.length >= 2) {
       const playerA = players.find(p => p.isRoomCreator) || players[0];
       const playerB = players.find(p => !p.isRoomCreator) || players[1];
-      
+
       // Initialize battle grid with starting positions
       // Place initial virus for player A (top center)
       const topCenterX = Math.floor(20 / 2); // Center of the grid (column 10)
@@ -503,7 +503,7 @@ export class HoldingRoom extends Room<RoomState> {
       if (topIndex < this.state.battleGrid.length) {
         this.state.battleGrid[topIndex] = 1; // 1 = VIRUS_A
       }
-      
+
       // Place initial virus for player B (bottom center)
       const bottomCenterX = Math.floor(20 / 2); // Center of the grid (column 10)
       const bottomCenterY = 31; // Bottom row (since we have 32 rows)
@@ -512,16 +512,19 @@ export class HoldingRoom extends Room<RoomState> {
         this.state.battleGrid[bottomIndex] = 2; // 2 = VIRUS_B
       }
     }
-    
-    // Broadcast the initial battle state
-    this.broadcast('virusBattleStarted', {
-      message: 'Virus battle has started!',
+
+    // Отправляем сигнал клиентам для запуска обратного отсчёта
+    this.broadcast('startCountdown', {
+      message: 'Start countdown!',
       battleGrid: this.state.battleGrid,
-      timestamp: Date.now()
+      width: 20,
+      height: 32
     });
-    
-    // Start the battle simulation loop
-    this.startBattleSimulation();
+
+    // Start the battle simulation loop (после обратного отсчёта)
+    setTimeout(() => {
+      this.startBattleSimulation();
+    }, 4000); // 4 секунды (3-2-1-СТАРТ)
   }
 
   private startBattleSimulation(): void {
