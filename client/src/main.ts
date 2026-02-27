@@ -232,9 +232,50 @@ class MainApp {
 // Запуск приложения при загрузке страницы
 console.log('[MainApp] Registering load event listener...');
 
+// Функция для получения версии из Git
+async function getVersion(): Promise<string> {
+  try {
+    // Пытаемся получить версию из Vite env
+    if (typeof import.meta !== 'undefined' && import.meta.env?.PACKAGE_VERSION) {
+      return import.meta.env.PACKAGE_VERSION;
+    }
+    
+    // Пытаемся получить короткий хэш коммита из файла (генерируется при билде)
+    const response = await fetch('/version.txt');
+    if (response.ok) {
+      const version = await response.text();
+      return version.trim();
+    }
+  } catch (error) {
+    console.log('[MainApp] Could not get version from file:', error);
+  }
+  
+  // Fallback: версия из package.json
+  try {
+    const pkg = await fetch('/package.json').then(r => r.json());
+    return `v${pkg.version}`;
+  } catch {
+    return 'v1.0.0';
+  }
+}
+
+// Обновляем бейдж с версией
+async function updateVersionBadge() {
+  const version = await getVersion();
+  const badge = document.getElementById('versionBadge');
+  if (badge) {
+    badge.textContent = version;
+    console.log('[MainApp] Version:', version);
+  }
+}
+
 window.addEventListener('load', () => {
   console.log('[MainApp] LOAD EVENT FIRED');
   console.log('Creating new MainApp()...');
+  
+  // Обновляем версию сразу
+  updateVersionBadge();
+  
   new MainApp();
   console.log('MainApp() created!');
 });
