@@ -6,20 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VYRU5 - Multiplayer Game</title>
   <style>
-    /* Подключение ретро-шрифтов */
-    @font-face {
-      font-family: 'PIXY';
-      src: url('/fnt/PIXY.eot');
-      src: url('/fnt/PIXY.eot?#iefix') format('embedded-opentype'),
-          url('/fnt/PIXY.woff2') format('woff2'),
-          url('/fnt/PIXY.woff') format('woff'),
-          url('/fnt/PIXY.ttf') format('truetype'),
-          url('/fnt/PIXY.svg#PIXY') format('svg');
-      font-weight: normal;
-      font-style: normal;
-      font-display: swap;
-    }
-
     body {
       margin: 0;
       padding: 0;
@@ -54,18 +40,15 @@
     }
 
     h1 {
-      font-family: 'PIXY', 'Courier New', monospace;
       font-size: 3.5rem;
       text-shadow: 2px 2px 0 #ff00ff, 4px 4px 0 rgba(0,0,0,0.5);
       margin-bottom: 2rem;
-      color: #ffff00;
-      letter-spacing: 3px;
-      text-transform: uppercase;
+      color: #ffff00; /* Yellow for title */
+      letter-spacing: 5px;
     }
 
     .btn {
-      font-family: 'PIXY', 'Courier New', monospace;
-      background-color: #ff00ff;
+      background-color: #ff00ff; /* Magenta */
       color: #0f0f23;
       border: none;
       padding: 12px 24px;
@@ -273,26 +256,24 @@
     .sidebar-header h3 {
       margin: 0;
       color: #00ff00;
-      font-family: 'PIXY', 'Courier New', monospace;
-      font-size: 1.3rem;
+      font-family: 'Courier New', monospace;
+      font-size: 1.2rem;
       flex-grow: 1;
-      text-transform: uppercase;
-      letter-spacing: 2px;
     }
-
+    
     .player-info {
       color: #00ff00;
-      font-family: 'PIXY', 'Courier New', monospace;
-      font-size: 1rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
       text-align: center;
       flex-grow: 1;
     }
-
+    
     #roomInfo {
       color: #00ff00;
-      font-family: 'PIXY', 'Courier New', monospace;
-      font-size: 0.95rem;
-      padding-left: 30px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      padding-left: 30px; /* To align with the controls below */
     }
     
     .sidebar-content {
@@ -347,11 +328,10 @@
       overflow-y: auto;
       margin-bottom: 10px;
       color: #00ff00;
-      font-family: 'PIXY', 'Courier New', monospace;
-      font-size: 0.85rem;
-      line-height: 1.4;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
     }
-
+    
     #chat-input-container {
       display: flex;
       gap: 5px;
@@ -363,10 +343,10 @@
       color: #00ff00;
       border: 1px solid #00ffff;
       padding: 5px;
-      font-family: 'PIXY', 'Courier New', monospace;
-      font-size: 0.85rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
     }
-
+    
     #chat-send-btn {
       background-color: #ff00ff;
       color: #0f0f23;
@@ -374,8 +354,8 @@
       padding: 5px 10px;
       margin-left: 5px;
       cursor: pointer;
-      font-family: 'PIXY', 'Courier New', monospace;
-      font-size: 0.85rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
     }
     
     /* Virus Parameter Styles */
@@ -392,11 +372,10 @@
       border: 1px solid #00ffff;
       padding: 5px;
       cursor: pointer;
-      transition: background-color 0.2s, transform 0.1s;
+      transition: background-color 0.2s;
       position: relative;
       border-radius: 0 0 5px 5px; /* Rounded bottom for test tube shape */
       overflow: hidden;
-      user-select: none;
     }
     
     .param-cell:hover {
@@ -410,18 +389,14 @@
     }
     
     .param-name {
-      font-size: 0.65rem;
+      font-size: 0.7rem;
       color: #00ff00;
-      font-family: 'PIXY', 'Courier New', monospace;
       margin-bottom: 3px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
     }
-
+    
     .param-value {
-      font-size: 1.1rem;
+      font-size: 1rem;
       color: #ffff00;
-      font-family: 'PIXY', 'Courier New', monospace;
       font-weight: bold;
     }
     
@@ -473,13 +448,25 @@
     }
     
     .param-cell.disabled {
-      opacity: 0.4;
+      opacity: 0.5;
       cursor: not-allowed;
     }
 
     /* Пробирки - интерактивность */
+    .param-cell {
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s;
+    }
+
     .param-cell:active {
       transform: scale(0.95);
+    }
+
+    .param-cell.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     /* Капля */
@@ -602,8 +589,8 @@
 
     #player1Name {
       color: #ff0000;
-      font-family: 'PIXY', 'Courier New', monospace;
-      font-size: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
       font-weight: bold;
       text-shadow: 0 0 10px rgba(255,0,0,0.5);
       z-index: 9999;
@@ -614,8 +601,8 @@
 
     #player2Name {
       color: #0000ff;
-      font-family: 'PIXY', 'Courier New', monospace;
-      font-size: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
       font-weight: bold;
       text-shadow: 0 0 10px rgba(0,0,255,0.5);
       z-index: 9999;
@@ -630,8 +617,8 @@
       color: #00ffff;
       padding: 8px 16px;
       border-radius: 20px;
-      font-family: 'PIXY', 'Courier New', monospace;
-      font-size: 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
       font-weight: bold;
       border: 2px solid #00ffff;
       z-index: 10000;
@@ -702,56 +689,9 @@
       bottom: 10px;
       right: 10px;
     }
-    /* Принудительный ландшафт */
-    #rotateScreen {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #0f0f23;
-      color: #00ff00;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      z-index: 99999;
-      font-family: 'PIXY', 'Courier New', monospace;
-    }
-
-    #rotateScreen {
-      display: none; /* Hidden by default - only shown on portrait orientation via JS check */
-    }
-
-    /* Mobile responsiveness */
-    @media (max-width: 768px) {
-      #topPanelWrapper {
-        width: calc(100% - 20px);
-        padding: 0 10px;
-      }
-
-      #player1Name, #player2Name {
-        font-size: 12px;
-        min-width: 60px;
-      }
-
-      #topRoomIdPanel {
-        font-size: 11px;
-        padding: 6px 10px;
-      }
-    }
   </style>
 </head>
 <body>
-  <!-- Экран поворота устройства -->
-  <div id="rotateScreen">
-    <div style="font-size: 3rem; margin-bottom: 20px;">📱</div>
-    <div style="font-size: 1.5rem;">Поверните устройство</div>
-    <div style="font-size: 1rem; color: #00ffff; margin-top: 10px;">
-      Требуется альбомная ориентация
-    </div>
-  </div>
-
   <div id="app">
     <div style="position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); color: #00ff00; padding: 4px 12px; font-family: 'Courier New', monospace; font-size: 0.75rem; border: 1px solid #00ffff;">v8</div>
     

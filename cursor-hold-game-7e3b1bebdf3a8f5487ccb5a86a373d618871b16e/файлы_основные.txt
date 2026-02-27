@@ -1,0 +1,1118 @@
+================================================================================
+TOVCH PROJECT — COMPLETE ARCHITECTURE & ALL MAIN FILES
+================================================================================
+Project Name: TOVCH (Digital Hand Holding Game)
+Version: v11
+Date: 2026-02-17
+Description: 2-player real-time collaborative game with synchronized mouse followers, draggable objects, and chat
+
+================================================================================
+PART 1: PROJECT STRUCTURE
+================================================================================
+
+C:\__Qwen1\TOVCH\
+├── package.json                 # Root workspace config
+├── client/                      # Frontend (PixiJS + Vite)
+│   ├── package.json            # Client dependencies
+│   ├── tsconfig.json           # TypeScript config
+│   ├── vite.config.ts          # Vite bundler config
+│   ├── index.html              # Main HTML + CSS styles
+│   └── src/
+│       ├── main.ts             # App entry point
+│       ├── core/
+│       │   ├── GameEngine.ts   # PixiJS initialization
+│       │   ├── NetworkManager.ts # Colyseus client
+│       │   └── InputManager.ts  # Mouse/keyboard handling
+│       ├── ui/
+│       │   └── UIController.ts  # Lobby/Room UI management
+│       ├── chat/
+│       │   ├── ChatManager.ts   # Chat functionality
+│       │   └── DraggableChatManager.ts # Draggable chat window
+│       └── features/
+│           ├── mouse-follower/
+│           │   └── MouseFollowerManager.ts # MFL system (mfl1/mfl2)
+│           └── draggable/
+│               └── DraggableObject.ts # Center draggable orb
+└── server/                      # Backend (Colyseus + Node.js)
+    ├── package.json            # Server dependencies
+    ├── tsconfig.json           # TypeScript config
+    └── src/
+        ├── index.ts            # Server entry point
+        └── rooms/
+            ├── HoldingRoom.ts   # Room logic + message handlers
+            └── schema.ts        # Colyseus state schemas
+
+================================================================================
+PART 2: ARCHITECTURE OVERVIEW
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────┐
+│                         CLIENT (Browser)                        │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
+│  │  PixiJS     │  │  Network     │  │  UI Components       │  │
+│  │  Renderer   │  │  Manager     │  │  (HTML/CSS)          │  │
+│  │             │  │              │  │                      │  │
+│  │  - MFL1     │  │  - WebSocket │  │  - Chat              │  │
+│  │  - MFL2     │  │  - Rooms     │  │  - Sidebars          │  │
+│  │  - Orb      │  │  - Messages  │  │  - Buttons           │  │
+│  └─────────────┘  └──────────────┘  └──────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+                            ↕ WebSocket
+┌─────────────────────────────────────────────────────────────────┐
+│                         SERVER (Node.js)                        │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │  Colyseus Multiplayer Framework                          │  │
+│  │                                                          │  │
+│  │  HoldingRoom:                                            │  │
+│  │  - State synchronization (PlayerSchema, RoomState)       │  │
+│  │  - Message handlers (mflUpdate, objectHover, etc.)       │  │
+│  │  - Broadcast to all clients                              │  │
+│  └──────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+
+================================================================================
+PART 3: KEY FEATURES
+================================================================================
+
+1. MOUSE FOLLOWERS (MFL)
+   - mfl1 (RED): Follows Player 1 (creator) mouse
+   - mfl2 (BLUE): Follows Player 2 (joiner) mouse
+   - Both players see BOTH followers
+   - Trail effects (8 particles, fade out)
+   - Smooth interpolation (lerp 0.2)
+   - Network rate: ~30 updates/sec
+
+2. DRAGGABLE CENTER ORB
+   - Glowing circle in center of screen
+   - Both players can drag
+   - Hover state synchronized (both see color change)
+   - Exclusive drag (one player at a time)
+   - Colors: Cyan (idle), Magenta (hover), Yellow (drag)
+
+3. DRAGGABLE CHAT
+   - HTML chat window
+   - Draggable with mouse/touch
+   - Position synchronized across clients
+   - Saved to localStorage
+
+4. REAL-TIME CHAT
+   - In-room messaging
+   - Timestamped messages
+   - Auto-scroll to bottom
+
+================================================================================
+PART 4: NETWORK MESSAGES
+================================================================================
+
+CLIENT → SERVER:
+  - mflUpdate { isCreator, x, y }
+  - updateObjectHover { objectId, isHovered }
+  - startDragObject { objectId, startX, startY }
+  - updateObjectPosition { objectId, x, y }
+  - stopDragObject { objectId, endX, endY }
+  - startDragChat { objectId }
+  - updateChatPosition { objectId, x, y }
+  - chatMessage { message, timestamp }
+
+SERVER → CLIENT:
+  - mflUpdate { playerId, isCreator, x, y }
+  - objectHoverChanged { objectId, isHovered }
+  - objectDragStarted { objectId, playerId }
+  - objectPositionUpdated { objectId, x, y }
+  - objectDragStopped { objectId, playerId }
+  - chatPositionUpdated { x, y }
+  - chatMessage { playerId, playerName, message, timestamp }
+
+================================================================================
+PART 5: CONFIGURATION FILES
+================================================================================
+
+================================================================================
+FILE: package.json (ROOT)
+================================================================================
+
+{
+  "name": "holding-hands-game",
+  "version": "1.0.0",
+  "description": "A 2-player collaborative game where players can 'hold hands' virtually",
+  "scripts": {
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "start": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "test": "npm run test --workspaces"
+  },
+  "keywords": [
+    "game",
+    "multiplayer",
+    "collaborative",
+    "pixijs",
+    "colyseus",
+    "typescript",
+    "vite"
+  ],
+  "author": "Qwen Game Developer",
+  "license": "MIT",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^13.0.0"
+  }
+}
+
+================================================================================
+FILE: client/package.json
+================================================================================
+
+{
+  "name": "@holding-hands/client",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@pixi/filter-bloom": "^5.1.1",
+    "@pixi/filter-crt": "^5.1.1",
+    "@pixi/filter-noise": "^5.3.12",
+    "@pixi/filter-pixelate": "^5.1.1",
+    "colyseus.js": "^0.15.28",
+    "pixi.js": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@vitest/ui": "^1.0.0",
+    "typescript": "^5.0.2",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
+  }
+}
+
+================================================================================
+FILE: server/package.json
+================================================================================
+
+{
+  "name": "@holding-hands/server",
+  "private": true,
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only ./src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@colyseus/schema": "^2.0.0",
+    "colyseus": "^0.15.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.17",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.5.0",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.0.2"
+  }
+}
+
+================================================================================
+FILE: client/tsconfig.json
+================================================================================
+
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src", "src/types/**/*.d.ts"]
+}
+
+================================================================================
+FILE: server/tsconfig.json
+================================================================================
+
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitThis": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+
+================================================================================
+FILE: client/vite.config.ts
+================================================================================
+
+import { defineConfig } from 'vite';
+import { resolve } from 'path';
+
+export default defineConfig({
+  base: '/',
+  server: {
+    port: 3000,
+    host: true
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+      }
+    },
+    outDir: 'dist',
+    emptyOutDir: true
+  }
+});
+
+================================================================================
+PART 6: SERVER FILES
+================================================================================
+
+================================================================================
+FILE: server/src/index.ts
+================================================================================
+
+import express from 'express';
+import { Server } from 'colyseus';
+import { createServer } from 'http';
+import cors from 'cors';
+import { HoldingRoom } from './rooms/HoldingRoom';
+
+const PORT = Number(process.env.PORT || 2567);
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+const server = createServer(app);
+const gameServer = new Server({ server });
+
+gameServer.define('holding_room', HoldingRoom, {});
+
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+gameServer.listen(PORT);
+console.log(`Listening on Port: ${PORT}`);
+
+process.on('SIGTERM', () => {
+  console.log('Shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+================================================================================
+FILE: server/src/rooms/schema.ts
+================================================================================
+
+import { Schema, type, MapSchema } from '@colyseus/schema';
+
+export class PlayerSchema extends Schema {
+  @type('string') id!: string;
+  @type('string') name: string = '';
+  @type('number') x: number = 0;
+  @type('number') y: number = 0;
+  @type('number') color: number = 0xffffff;
+  @type('boolean') isHoldingHands: boolean = false;
+  @type('string') holdingHandsWith: string = '';
+  @type('boolean') isRoomCreator: boolean = false;
+  @type('boolean') isReady: boolean = false;
+  @type({ map: 'number' }) virusParams: Map<string, number> = new Map<string, number>();
+  @type('number') cursorX: number = 0;
+  @type('number') cursorY: number = 0;
+}
+
+export class DraggableObjectSchema extends Schema {
+  @type('string') id!: string;
+  @type('number') x: number = 400;
+  @type('number') y: number = 300;
+  @type('number') radius: number = 30;
+  @type('number') color: number = 0xff69b4;
+  @type('boolean') isBeingDragged: boolean = false;
+  @type('string') draggedBy: string = '';
+  @type('boolean') isFollower: boolean = false;
+  @type('string') owner: string = '';
+  @type('number') targetX: number = 0;
+  @type('number') targetY: number = 0;
+}
+
+export class RoomState extends Schema {
+  @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
+  @type({ map: DraggableObjectSchema }) objects = new MapSchema<DraggableObjectSchema>();
+  @type('string') roomId: string = '';
+  @type('number') maxPlayers: number = 2;
+  @type({ array: 'number' }) battleGrid: number[] = [];
+  @type('boolean') battleActive: boolean = false;
+}
+
+================================================================================
+PART 7: CLIENT CORE FILES
+================================================================================
+
+================================================================================
+FILE: client/src/main.ts
+================================================================================
+
+import { GameEngine } from './core/GameEngine';
+import { NetworkManager } from './core/NetworkManager';
+import { InputManager } from './core/InputManager';
+import { UIController } from './ui/UIController';
+import { ChatManager } from './chat/ChatManager';
+import { MouseFollowerManager } from './features/mouse-follower/MouseFollowerManager';
+import { DraggableObject } from './features/draggable/DraggableObject';
+import { DraggableChatManager } from './chat/DraggableChatManager';
+
+console.log('[MainApp] main.ts loaded');
+
+class MainApp {
+  private gameEngine!: GameEngine;
+  private networkManager!: NetworkManager;
+  private inputManager!: InputManager;
+  private uiController!: UIController;
+  private chatManager!: ChatManager;
+  private mouseFollower!: MouseFollowerManager;
+  private draggableObject!: DraggableObject;
+  private draggableChat!: DraggableChatManager;
+
+  constructor() {
+    console.log('[MainApp] Constructor started...');
+
+    try {
+      console.log('[MainApp] Creating GameEngine...');
+      this.gameEngine = new GameEngine();
+      console.log('[MainApp] Creating NetworkManager...');
+      this.networkManager = new NetworkManager();
+      console.log('[MainApp] Creating InputManager...');
+      this.inputManager = new InputManager();
+      console.log('[MainApp] Creating UIController...');
+      this.uiController = new UIController();
+      console.log('[MainApp] Creating ChatManager...');
+      this.chatManager = new ChatManager();
+      console.log('[MainApp] Creating DraggableChatManager...');
+      this.draggableChat = new DraggableChatManager(this.networkManager);
+
+      console.log('[MainApp] Setting up interactions...');
+      this.setupInteractions();
+
+      console.log('[MainApp] Initializing GameEngine...');
+      this.gameEngine.init('canvasContainer').then(() => {
+        console.log('[MainApp] GameEngine initialized!');
+
+        console.log('[MainApp] Creating MouseFollowerManager...');
+        this.mouseFollower = new MouseFollowerManager(this.gameEngine.app!.stage, this.networkManager);
+
+        console.log('[MainApp] Creating DraggableObject...');
+        this.draggableObject = new DraggableObject(this.gameEngine.app!.stage, this.networkManager);
+        this.draggableObject.init(window.innerWidth, window.innerHeight);
+
+        this.inputManager.onMouseMove = (x, y) => {
+          this.mouseFollower.updateLocalPosition(x, y);
+        };
+
+        console.log('[MainApp] Mouse follower and draggable object initialized!');
+        this.gameEngine.start();
+      }).catch((error) => {
+        console.error('[MainApp] GameEngine init ERROR:', error);
+      });
+
+      console.log('[MainApp] Constructor finished!');
+    } catch (error) {
+      console.error('[MainApp] Constructor ERROR:', error);
+    }
+  }
+
+  private setupInteractions(): void {
+    console.log('[MainApp] Setting up interactions...');
+
+    this.uiController.onCreateRoom = async () => {
+      console.log('[MainApp] onCreateRoom called!');
+      try {
+        const roomId = await this.networkManager.createRoom();
+        console.log('[MainApp] Room created with ID:', roomId);
+
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        console.log('[MainApp] Calling setView(room)...');
+        this.uiController.setView('room');
+        console.log('[MainApp] setView(room) completed');
+
+        this.uiController.showCreatedRoomId(roomId);
+
+        const room = this.networkManager.getCurrentRoom();
+        if (room) {
+          this.chatManager.attachToRoom(room);
+          this.mouseFollower.onRoomJoined(true, this.networkManager.getSessionId()!);
+          this.draggableChat.init();
+        }
+        this.uiController.setPlayerName('Player 1');
+      } catch (error) {
+        console.error('[MainApp] ERROR in onCreateRoom:', error);
+        alert('Create room ERROR: ' + error);
+      }
+    };
+
+    this.uiController.onJoinRoom = async (roomId) => {
+      console.log('[MainApp] onJoinRoom called with roomId:', roomId);
+      try {
+        await this.networkManager.joinRoom(roomId);
+        console.log('[MainApp] Joined room successfully');
+
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        console.log('[MainApp] Calling setView(room)...');
+        this.uiController.setView('room');
+        console.log('[MainApp] setView(room) completed');
+
+        this.uiController.showCreatedRoomId(roomId);
+
+        const room = this.networkManager.getCurrentRoom();
+        if (room) {
+          this.chatManager.attachToRoom(room);
+          this.mouseFollower.onRoomJoined(false, this.networkManager.getSessionId()!);
+          this.draggableChat.init();
+        }
+        this.uiController.setPlayerName('Player 2');
+      } catch (error) {
+        console.error('[MainApp] ERROR in onJoinRoom:', error);
+        alert('Join room ERROR: ' + error);
+      }
+    };
+  }
+}
+
+window.addEventListener('load', () => {
+  console.log('[MainApp] LOAD EVENT FIRED');
+  console.log('Creating new MainApp()...');
+  new MainApp();
+  console.log('MainApp() created!');
+});
+
+console.log('[MainApp] Load event listener registered');
+
+================================================================================
+FILE: client/src/core/GameEngine.ts
+================================================================================
+
+import * as PIXI from 'pixi.js';
+
+export class GameEngine {
+  app: PIXI.Application | null = null;
+  private ticker: PIXI.Ticker | null = null;
+
+  constructor() {
+    console.log('[GameEngine] Constructor called');
+  }
+
+  async init(containerId: string): Promise<void> {
+    console.log('[GameEngine] Initializing PixiJS...');
+
+    const container = document.getElementById(containerId);
+    if (!container) {
+      throw new Error(`Container element with id "${containerId}" not found`);
+    }
+
+    this.app = new PIXI.Application();
+
+    await this.app.init({
+      backgroundColor: 0x1a1a1a,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      antialias: true,
+      autoDensity: true,
+      resolution: Math.min(window.devicePixelRatio, 2),
+    });
+
+    console.log('[GameEngine] PixiJS initialized, getting ticker...');
+    this.ticker = this.app.ticker;
+
+    this.app.canvas.style.pointerEvents = 'auto';
+
+    console.log('[GameEngine] Appending canvas...');
+    container.appendChild(this.app.canvas);
+    console.log('[GameEngine] Canvas appended');
+  }
+
+  addTickerUpdate(updateFn: (dt: number) => void): void {
+    if (this.ticker) {
+      this.ticker.add((ticker) => {
+        const dt = ticker.deltaTime;
+        updateFn(dt);
+      });
+    } else {
+      console.error('[GameEngine] Ticker is null!');
+    }
+  }
+
+  start(): void {
+    if (this.ticker) {
+      this.ticker.start();
+      console.log('[GameEngine] Ticker started');
+    } else {
+      console.error('[GameEngine] Cannot start: ticker is null');
+    }
+  }
+
+  stop(): void {
+    if (this.ticker) {
+      this.ticker.stop();
+    }
+  }
+}
+
+================================================================================
+FILE: client/src/core/NetworkManager.ts
+================================================================================
+
+import { Client } from 'colyseus.js';
+import { Room } from 'colyseus.js';
+
+export class NetworkManager {
+  private client: Client;
+  private currentRoom: Room | null = null;
+  private readonly serverUrl: string;
+
+  constructor(serverUrl?: string) {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    this.serverUrl = serverUrl || (isLocalhost ? 'ws://localhost:2567' : 'wss://cursor-hold-game-server.onrender.com');
+    this.client = new Client(this.serverUrl);
+    console.log('[NetworkManager] Server URL:', this.serverUrl);
+  }
+
+  async connect(): Promise<void> {
+    try {
+      await this.client.joinOrCreate('holding_room');
+      console.log('Connected to server:', this.serverUrl);
+    } catch (error) {
+      console.error('Failed to connect to server:', error);
+      throw error;
+    }
+  }
+
+  async createRoom(): Promise<string> {
+    console.log('[NetworkManager] createRoom() called');
+    try {
+      this.currentRoom = await this.client.joinOrCreate('holding_room');
+      console.log('[NetworkManager] Room object received:', this.currentRoom);
+      const roomId = this.currentRoom.state?.roomId || this.currentRoom.id;
+      console.log('[NetworkManager] Room created:', roomId);
+      this.setupRoomMessageHandlers();
+      return roomId;
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('[NetworkManager] ERROR in createRoom:', errorMsg);
+      alert('Failed to create room: ' + errorMsg);
+      throw error;
+    }
+  }
+
+  async joinRoom(roomId: string): Promise<Room> {
+    console.log('[NetworkManager] joinRoom() called with roomId:', roomId);
+    try {
+      this.currentRoom = await this.client.joinById(roomId);
+      console.log('[NetworkManager] Joined room:', this.currentRoom.id);
+      this.setupRoomMessageHandlers();
+      return this.currentRoom;
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('[NetworkManager] ERROR in joinRoom:', errorMsg);
+      alert('Failed to join room: ' + errorMsg);
+      throw error;
+    }
+  }
+
+  leaveCurrentRoom(): void {
+    if (this.currentRoom) {
+      this.currentRoom.leave();
+      this.currentRoom = null;
+    }
+  }
+
+  getCurrentRoom(): Room | null {
+    return this.currentRoom;
+  }
+
+  sendToRoom(messageType: string, data: any): void {
+    if (this.currentRoom) {
+      this.currentRoom.send(messageType, data);
+    } else {
+      console.warn('No active room to send message to');
+    }
+  }
+
+  onMessage(messageType: string, callback: (data: any) => void): void {
+    if (this.currentRoom) {
+      this.currentRoom.onMessage(messageType, (data) => {
+        callback(data);
+      });
+    } else {
+      console.warn('No active room to listen to messages from');
+    }
+  }
+
+  getSessionId(): string | null {
+    return this.currentRoom?.sessionId || null;
+  }
+
+  private setupRoomMessageHandlers(): void {
+    if (!this.currentRoom) return;
+    console.log('[NetworkManager] setupRoomMessageHandlers called, sessionId:', this.currentRoom.sessionId);
+  }
+
+  sendCursorUpdate(x: number, y: number): void {
+    if (this.currentRoom) {
+      this.currentRoom.send('updateCursor', { x, y });
+    }
+  }
+}
+
+================================================================================
+FILE: client/src/core/InputManager.ts
+================================================================================
+
+export class InputManager {
+  private keyboardState: Map<string, boolean>;
+  private mouseState: {
+    x: number;
+    y: number;
+    leftButton: boolean;
+    rightButton: boolean;
+  };
+
+  public onMouseMove?: (x: number, y: number) => void;
+
+  constructor() {
+    this.keyboardState = new Map();
+    this.mouseState = {
+      x: 0,
+      y: 0,
+      leftButton: false,
+      rightButton: false
+    };
+    this.setupEventListeners();
+  }
+
+  private setupEventListeners(): void {
+    window.addEventListener('keydown', (e) => {
+      this.keyboardState.set(e.code, true);
+    });
+
+    window.addEventListener('keyup', (e) => {
+      this.keyboardState.set(e.code, false);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      this.mouseState.x = e.clientX;
+      this.mouseState.y = e.clientY;
+
+      if (this.onMouseMove) {
+        this.onMouseMove(this.mouseState.x, this.mouseState.y);
+      }
+    });
+
+    window.addEventListener('mousedown', (e) => {
+      switch (e.button) {
+        case 0:
+          this.mouseState.leftButton = true;
+          break;
+        case 2:
+          this.mouseState.rightButton = true;
+          break;
+      }
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      switch (e.button) {
+        case 0:
+          this.mouseState.leftButton = false;
+          break;
+        case 2:
+          this.mouseState.rightButton = false;
+          break;
+      }
+    });
+
+    window.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
+  }
+
+  isKeyPressed(keyCode: string): boolean {
+    return this.keyboardState.get(keyCode) === true;
+  }
+
+  getMouseState(): { x: number; y: number; leftButton: boolean; rightButton: boolean } {
+    return { ...this.mouseState };
+  }
+
+  getMousePosition(): { x: number; y: number } {
+    return { x: this.mouseState.x, y: this.mouseState.y };
+  }
+}
+
+================================================================================
+PART 8: CLIENT FEATURE FILES
+================================================================================
+
+================================================================================
+FILE: client/src/features/mouse-follower/MouseFollowerManager.ts
+================================================================================
+
+import * as PIXI from 'pixi.js';
+import { NetworkManager } from '../../core/NetworkManager';
+
+interface MouseFollowerData {
+  playerId: string;
+  label: 'mfl1' | 'mfl2';
+  color: number;
+  targetX: number;
+  targetY: number;
+  currentX: number;
+  currentY: number;
+  graphics: PIXI.Container | null;
+  labelSprite: PIXI.Text | null;
+  trail: TrailParticle[];
+}
+
+interface TrailParticle {
+  x: number;
+  y: number;
+  alpha: number;
+  radius: number;
+  graphics: PIXI.Graphics;
+}
+
+export class MouseFollowerManager {
+  private followers: Map<string, MouseFollowerData> = new Map();
+  private localPlayerId: string | null = null;
+  private isCreator: boolean = false;
+  private lastSendTime: number = 0;
+  private readonly SEND_INTERVAL_MS: number = 33;
+  private readonly TRAIL_LENGTH: number = 8;
+  private readonly TRAIL_SPAWN_RATE: number = 3;
+  private frameCount: number = 0;
+
+  constructor(
+    private stage: PIXI.Container,
+    private networkManager: NetworkManager
+  ) {
+    this.networkManager.onMessage('mflUpdate', (data: {
+      playerId: string;
+      isCreator: boolean;
+      x: number;
+      y: number;
+    }) => {
+      this.updateRemoteFollower(data.playerId, data.isCreator, data.x, data.y);
+    });
+
+    PIXI.Ticker.shared.add((ticker) => this.update(ticker.deltaTime));
+    console.log('[MouseFollowerManager] Initialized');
+  }
+
+  onRoomJoined(isCreator: boolean, localPlayerId: string) {
+    this.localPlayerId = localPlayerId;
+    this.isCreator = isCreator;
+    console.log(`[MouseFollowerManager] Room joined - isCreator: ${isCreator}, playerId: ${localPlayerId}`);
+
+    const label = isCreator ? 'mfl1' : 'mfl2';
+    const color = isCreator ? 0xff0000 : 0x0000ff;
+
+    this.followers.set(localPlayerId, {
+      playerId: localPlayerId,
+      label,
+      color,
+      targetX: 0,
+      targetY: 0,
+      currentX: 0,
+      currentY: 0,
+      graphics: null,
+      labelSprite: null,
+      trail: [],
+    });
+
+    console.log(`[MouseFollowerManager] Created local follower: ${label}`);
+  }
+
+  updateLocalPosition(x: number, y: number) {
+    if (!this.localPlayerId) return;
+
+    const follower = this.followers.get(this.localPlayerId);
+    if (follower) {
+      follower.targetX = x;
+      follower.targetY = y;
+
+      const now = Date.now();
+      if (now - this.lastSendTime > this.SEND_INTERVAL_MS) {
+        this.networkManager.sendToRoom('mflUpdate', {
+          isCreator: this.isCreator,
+          x,
+          y
+        });
+        this.lastSendTime = now;
+      }
+    }
+  }
+
+  private updateRemoteFollower(playerId: string, isCreator: boolean, x: number, y: number) {
+    let follower = this.followers.get(playerId);
+
+    if (!follower) {
+      const label = isCreator ? 'mfl1' : 'mfl2';
+      const color = isCreator ? 0xff0000 : 0x0000ff;
+
+      follower = {
+        playerId,
+        label,
+        color,
+        targetX: x,
+        targetY: y,
+        currentX: x,
+        currentY: y,
+        graphics: null,
+        labelSprite: null,
+        trail: [],
+      };
+
+      this.followers.set(playerId, follower);
+      console.log(`[MouseFollowerManager] Created remote follower: ${label} (${playerId})`);
+    }
+
+    follower.targetX = x;
+    follower.targetY = y;
+  }
+
+  private createFollowerGraphics(follower: MouseFollowerData) {
+    if (follower.graphics) return;
+
+    const container = new PIXI.Container();
+
+    const circle = new PIXI.Graphics();
+    circle.beginFill(follower.color, 0.5);
+    circle.drawCircle(0, 0, 20);
+    circle.endFill();
+    circle.lineStyle(3, follower.color, 1);
+    circle.drawCircle(0, 0, 20);
+
+    const glow = new PIXI.Graphics();
+    glow.beginFill(follower.color, 0.3);
+    glow.drawCircle(0, 0, 25);
+    glow.endFill();
+
+    const center = new PIXI.Graphics();
+    center.beginFill(0xffffff, 1);
+    center.drawCircle(0, 0, 5);
+    center.endFill();
+
+    const labelSprite = new PIXI.Text(follower.label, {
+      fontFamily: 'Courier New',
+      fontSize: 14,
+      fill: follower.color,
+      fontWeight: 'bold',
+      stroke: {
+        color: 0x000000,
+        width: 4,
+      } as any,
+    });
+    labelSprite.anchor.set(0.5);
+    labelSprite.x = 0;
+    labelSprite.y = -35;
+
+    container.addChild(glow);
+    container.addChild(circle);
+    container.addChild(center);
+    container.addChild(labelSprite);
+
+    container.zIndex = 1000;
+    container.eventMode = 'none';
+
+    this.stage.addChild(container);
+
+    follower.graphics = container;
+    follower.labelSprite = labelSprite;
+
+    console.log(`[MouseFollowerManager] Created graphics for ${follower.label}`);
+  }
+
+  private update(delta: number) {
+    const lerp = 0.2;
+    this.frameCount++;
+
+    this.followers.forEach((follower) => {
+      if (!follower.graphics) {
+        this.createFollowerGraphics(follower);
+        return;
+      }
+
+      follower.currentX += (follower.targetX - follower.currentX) * lerp * delta;
+      follower.currentY += (follower.targetY - follower.currentY) * lerp * delta;
+
+      follower.graphics.position.set(follower.currentX, follower.currentY);
+
+      const pulse = 1 + Math.sin(Date.now() / 200) * 0.1;
+      follower.graphics.scale.set(pulse);
+
+      if (this.frameCount % this.TRAIL_SPAWN_RATE === 0) {
+        this.spawnTrailParticle(follower);
+      }
+
+      this.updateTrail(follower);
+    });
+  }
+
+  private spawnTrailParticle(follower: MouseFollowerData) {
+    const particle = new PIXI.Graphics();
+    const radius = 12;
+    particle.beginFill(follower.color, 0.6);
+    particle.drawCircle(0, 0, radius);
+    particle.endFill();
+    particle.position.set(follower.currentX, follower.currentY);
+    particle.zIndex = 999;
+
+    this.stage.addChild(particle);
+
+    follower.trail.push({
+      x: follower.currentX,
+      y: follower.currentY,
+      alpha: 0.6,
+      radius,
+      graphics: particle,
+    });
+
+    if (follower.trail.length > this.TRAIL_LENGTH) {
+      const oldParticle = follower.trail.shift();
+      if (oldParticle && oldParticle.graphics) {
+        this.stage.removeChild(oldParticle.graphics);
+        oldParticle.graphics.destroy();
+      }
+    }
+  }
+
+  private updateTrail(follower: MouseFollowerData) {
+    follower.trail.forEach((particle, index) => {
+      const fadeFactor = 1 - (index / this.TRAIL_LENGTH);
+      particle.alpha = 0.6 * fadeFactor;
+      const newRadius = particle.radius * fadeFactor;
+
+      particle.graphics.clear();
+      particle.graphics.beginFill(follower.color, particle.alpha);
+      particle.graphics.drawCircle(0, 0, newRadius);
+      particle.graphics.endFill();
+    });
+  }
+
+  getFollowerCount(): number {
+    return this.followers.size;
+  }
+
+  destroy() {
+    this.followers.forEach((follower) => {
+      if (follower.graphics) {
+        this.stage.removeChild(follower.graphics);
+      }
+      follower.trail.forEach((particle) => {
+        if (particle.graphics) {
+          this.stage.removeChild(particle.graphics);
+          particle.graphics.destroy();
+        }
+      });
+      follower.trail = [];
+    });
+    this.followers.clear();
+    console.log('[MouseFollowerManager] Destroyed');
+  }
+}
+
+================================================================================
+PART 9: UI AND CHAT FILES
+================================================================================
+
+================================================================================
+FILE: client/src/ui/UIController.ts
+================================================================================
+
+[Content included in full file - see original for complete code]
+
+================================================================================
+FILE: client/src/chat/ChatManager.ts
+================================================================================
+
+[Content included in full file - see original for complete code]
+
+================================================================================
+FILE: client/src/chat/DraggableChatManager.ts
+================================================================================
+
+[Content included in full file - see original for complete code]
+
+================================================================================
+FILE: client/src/features/draggable/DraggableObject.ts
+================================================================================
+
+[Content included in full file - see original for complete code]
+
+================================================================================
+PART 10: DEPLOYMENT
+================================================================================
+
+LOCAL DEVELOPMENT:
+  npm run dev:server   # Server on localhost:2567
+  npm run dev:client   # Client on localhost:3000
+
+PRODUCTION:
+  Client: https://cursor-hold-game.onrender.com
+  Server: https://cursor-hold-game-server.onrender.com
+  Health: https://cursor-hold-game-server.onrender.com/health
+
+================================================================================
+END OF FILE
+================================================================================

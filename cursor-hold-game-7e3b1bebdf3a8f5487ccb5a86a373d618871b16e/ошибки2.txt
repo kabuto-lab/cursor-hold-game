@@ -1,0 +1,1029 @@
+================================================================================
+MFL (MOUSE FOLLOWER) SYSTEM - ALL FILES
+================================================================================
+Дата: 2026-02-17
+Версия: v11
+Описание: Полная реализация системы mouse followers (mfl1/mfl2) с trail effects
+
+================================================================================
+ФАЙЛ 1: client/src/features/mouse-follower/MouseFollowerManager.ts
+================================================================================
+
+import * as PIXI from 'pixi.js';
+import { NetworkManager } from '../../core/NetworkManager';
+
+/**
+ * Mouse Follower System (MFL)
+ *
+ * Each player sees TWO followers in real-time:
+ * - mfl1 (RED): Follows Player 1's (creator) mouse
+ * - mfl2 (BLUE): Follows Player 2's (joiner) mouse
+ *
+ * Both players see BOTH followers on their screen.
+ */
+
+interface MouseFollowerData {
+  playerId: string;           // Server session ID
+  label: 'mfl1' | 'mfl2';     // Clear label
+  color: number;              // Red for mfl1, Blue for mfl2
+  targetX: number;            // Target position (from network)
+  targetY: number;
+  currentX: number;           // Interpolated position
+  currentY: number;
+  graphics: PIXI.Container | null;
+  labelSprite: PIXI.Text | null;
+  trail: TrailParticle[];     // Trail particles behind follower
+}
+
+interface TrailParticle {
+  x: number;
+  y: number;
+  alpha: number;
+  radius: number;
+  graphics: PIXI.Graphics;
+}
+
+export class MouseFollowerManager {
+  private followers: Map<string, MouseFollowerData> = new Map();
+  private localPlayerId: string | null = null;
+  private isCreator: boolean = false;
+  private lastSendTime: number = 0;
+  private readonly SEND_INTERVAL_MS: number = 33; // ~30 updates per second
+  private readonly TRAIL_LENGTH: number = 8;      // Number of trail particles
+  private readonly TRAIL_SPAWN_RATE: number = 3;  // Spawn trail every N frames
+  private frameCount: number = 0;
+
+  constructor(
+    private stage: PIXI.Container,
+    private networkManager: NetworkManager
+  ) {
+    // Subscribe to server messages
+    this.networkManager.onMessage('mflUpdate', (data: {
+      playerId: string;
+      isCreator: boolean;
+      x: number;
+      y: number;
+    }) => {
+      this.updateRemoteFollower(data.playerId, data.isCreator, data.x, data.y);
+    });
+
+    // Start interpolation ticker
+    PIXI.Ticker.shared.add((ticker) => this.update(ticker.deltaTime));
+
+    console.log('[MouseFollowerManager] Initialized');
+  }
+
+  /**
+   * Call when room is joined/created
+   */
+  onRoomJoined(isCreator: boolean, localPlayerId: string) {
+    this.localPlayerId = localPlayerId;
+    this.isCreator = isCreator;
+
+    console.log(`[MouseFollowerManager] Room joined - isCreator: ${isCreator}, playerId: ${localPlayerId}`);
+
+    // Create local follower entry (we'll update it every frame)
+    const label = isCreator ? 'mfl1' : 'mfl2';
+    const color = isCreator ? 0xff0000 : 0x0000ff; // Red for mfl1, Blue for mfl2
+
+    this.followers.set(localPlayerId, {
+      playerId: localPlayerId,
+      label,
+      color,
+      targetX: 0,
+      targetY: 0,
+      currentX: 0,
+      currentY: 0,
+      graphics: null,
+      labelSprite: null,
+      trail: [],
+    });
+
+    console.log(`[MouseFollowerManager] Created local follower: ${label}`);
+  }
+
+  /**
+   * Update local mouse position - called every frame from InputManager
+   */
+  updateLocalPosition(x: number, y: number) {
+    if (!this.localPlayerId) return;
+
+    const follower = this.followers.get(this.localPlayerId);
+    if (follower) {
+      follower.targetX = x;
+      follower.targetY = y;
+
+      // Send to server (rate-limited)
+      const now = Date.now();
+      if (now - this.lastSendTime > this.SEND_INTERVAL_MS) {
+        this.networkManager.sendToRoom('mflUpdate', {
+          isCreator: this.isCreator,
+          x,
+          y
+        });
+        this.lastSendTime = now;
+      }
+    }
+  }
+
+  /**
+   * Update remote follower position from server
+   */
+  private updateRemoteFollower(playerId: string, isCreator: boolean, x: number, y: number) {
+    let follower = this.followers.get(playerId);
+
+    if (!follower) {
+      // New remote player joined - create follower
+      const label = isCreator ? 'mfl1' : 'mfl2';
+      const color = isCreator ? 0xff0000 : 0x0000ff;
+
+      follower = {
+        playerId,
+        label,
+        color,
+        targetX: x,
+        targetY: y,
+        currentX: x,
+        currentY: y,
+        graphics: null,
+        labelSprite: null,
+        trail: [],
+      };
+
+      this.followers.set(playerId, follower);
+      console.log(`[MouseFollowerManager] Created remote follower: ${label} (${playerId})`);
+    }
+
+    // Update target position
+    follower.targetX = x;
+    follower.targetY = y;
+  }
+
+  /**
+   * Create visual representation for a follower
+   */
+  private createFollowerGraphics(follower: MouseFollowerData) {
+    if (follower.graphics) return; // Already created
+
+    const container = new PIXI.Container();
+
+    // Create the follower circle (glowing effect)
+    const circle = new PIXI.Graphics();
+    circle.beginFill(follower.color, 0.5); // Semi-transparent fill
+    circle.drawCircle(0, 0, 20);
+    circle.endFill();
+    circle.lineStyle(3, follower.color, 1); // Solid color border
+    circle.drawCircle(0, 0, 20);
+
+    // Inner glow
+    const glow = new PIXI.Graphics();
+    glow.beginFill(follower.color, 0.3);
+    glow.drawCircle(0, 0, 25);
+    glow.endFill();
+
+    // Center dot
+    const center = new PIXI.Graphics();
+    center.beginFill(0xffffff, 1);
+    center.drawCircle(0, 0, 5);
+    center.endFill();
+
+    // Create label text
+    const labelSprite = new PIXI.Text(follower.label, {
+      fontFamily: 'Courier New',
+      fontSize: 14,
+      fill: follower.color,
+      fontWeight: 'bold',
+      stroke: {
+        color: 0x000000,
+        width: 4,
+      } as any,
+    });
+    labelSprite.anchor.set(0.5);
+    labelSprite.x = 0;
+    labelSprite.y = -35; // Above the circle
+
+    // Assemble container
+    container.addChild(glow);
+    container.addChild(circle);
+    container.addChild(center);
+    container.addChild(labelSprite);
+
+    container.zIndex = 1000;
+
+    this.stage.addChild(container);
+
+    follower.graphics = container;
+    follower.labelSprite = labelSprite;
+
+    console.log(`[MouseFollowerManager] Created graphics for ${follower.label}`);
+  }
+
+  /**
+   * Update all followers (interpolation + rendering + trail)
+   */
+  private update(delta: number) {
+    const lerp = 0.2; // Smoother interpolation
+    this.frameCount++;
+
+    this.followers.forEach((follower) => {
+      if (!follower.graphics) {
+        // Create graphics on first update
+        this.createFollowerGraphics(follower);
+        return;
+      }
+
+      // Interpolate position
+      follower.currentX += (follower.targetX - follower.currentX) * lerp * delta;
+      follower.currentY += (follower.targetY - follower.currentY) * lerp * delta;
+
+      // Update position
+      follower.graphics.position.set(follower.currentX, follower.currentY);
+
+      // Pulse effect for active followers
+      const pulse = 1 + Math.sin(Date.now() / 200) * 0.1;
+      follower.graphics.scale.set(pulse);
+
+      // Spawn trail particles
+      if (this.frameCount % this.TRAIL_SPAWN_RATE === 0) {
+        this.spawnTrailParticle(follower);
+      }
+
+      // Update trail particles
+      this.updateTrail(follower);
+    });
+  }
+
+  /**
+   * Spawn a new trail particle at follower's current position
+   */
+  private spawnTrailParticle(follower: MouseFollowerData) {
+    // Create trail particle graphics
+    const particle = new PIXI.Graphics();
+    const radius = 12;
+    particle.beginFill(follower.color, 0.6);
+    particle.drawCircle(0, 0, radius);
+    particle.endFill();
+    particle.position.set(follower.currentX, follower.currentY);
+    particle.zIndex = 999; // Just below the main follower
+
+    this.stage.addChild(particle);
+
+    // Add to trail array
+    follower.trail.push({
+      x: follower.currentX,
+      y: follower.currentY,
+      alpha: 0.6,
+      radius,
+      graphics: particle,
+    });
+
+    // Limit trail length
+    if (follower.trail.length > this.TRAIL_LENGTH) {
+      const oldParticle = follower.trail.shift();
+      if (oldParticle && oldParticle.graphics) {
+        this.stage.removeChild(oldParticle.graphics);
+        oldParticle.graphics.destroy();
+      }
+    }
+  }
+
+  /**
+   * Update trail particles (fade out and shrink)
+   */
+  private updateTrail(follower: MouseFollowerData) {
+    follower.trail.forEach((particle, index) => {
+      // Fade out based on position in trail (older = more faded)
+      const fadeFactor = 1 - (index / this.TRAIL_LENGTH);
+      particle.alpha = 0.6 * fadeFactor;
+
+      // Shrink radius
+      const newRadius = particle.radius * fadeFactor;
+
+      // Update graphics
+      particle.graphics.clear();
+      particle.graphics.beginFill(follower.color, particle.alpha);
+      particle.graphics.drawCircle(0, 0, newRadius);
+      particle.graphics.endFill();
+    });
+  }
+
+  /**
+   * Get current follower count
+   */
+  getFollowerCount(): number {
+    return this.followers.size;
+  }
+
+  /**
+   * Clear all followers (on room leave)
+   */
+  destroy() {
+    this.followers.forEach((follower) => {
+      if (follower.graphics) {
+        this.stage.removeChild(follower.graphics);
+      }
+      // Clean up trail particles
+      follower.trail.forEach((particle) => {
+        if (particle.graphics) {
+          this.stage.removeChild(particle.graphics);
+          particle.graphics.destroy();
+        }
+      });
+      follower.trail = [];
+    });
+    this.followers.clear();
+    console.log('[MouseFollowerManager] Destroyed');
+  }
+}
+
+================================================================================
+ФАЙЛ 2: client/src/main.ts
+================================================================================
+
+import { GameEngine } from './core/GameEngine';
+import { NetworkManager } from './core/NetworkManager';
+import { InputManager } from './core/InputManager';
+import { UIController } from './ui/UIController';
+import { ChatManager } from './chat/ChatManager';
+import { MouseFollowerManager } from './features/mouse-follower/MouseFollowerManager';
+import { DraggableObject } from './features/draggable/DraggableObject';
+import { DraggableChatManager } from './chat/DraggableChatManager';
+
+console.log('[MainApp] main.ts loaded');
+
+class MainApp {
+  private gameEngine!: GameEngine;
+  private networkManager!: NetworkManager;
+  private inputManager!: InputManager;
+  private uiController!: UIController;
+  private chatManager!: ChatManager;
+  private mouseFollower!: MouseFollowerManager;
+  private draggableObject!: DraggableObject;
+  private draggableChat!: DraggableChatManager;
+
+  constructor() {
+    console.log('[MainApp] Constructor started...');
+
+    try {
+      console.log('[MainApp] Creating GameEngine...');
+      this.gameEngine = new GameEngine();
+      console.log('[MainApp] Creating NetworkManager...');
+      this.networkManager = new NetworkManager();
+      console.log('[MainApp] Creating InputManager...');
+      this.inputManager = new InputManager();
+      console.log('[MainApp] Creating UIController...');
+      this.uiController = new UIController();
+      console.log('[MainApp] Creating ChatManager...');
+      this.chatManager = new ChatManager();
+      console.log('[MainApp] Creating DraggableChatManager...');
+      this.draggableChat = new DraggableChatManager(this.networkManager);
+
+      console.log('[MainApp] Setting up interactions...');
+      this.setupInteractions();
+
+      // Инициализация PixiJS (асинхронно) — потом создаём mouse follower
+      console.log('[MainApp] Initializing GameEngine...');
+      this.gameEngine.init('canvasContainer').then(() => {
+        console.log('[MainApp] GameEngine initialized!');
+
+        // Создаём MouseFollowerManager ПОСЛЕ инициализации PixiJS
+        console.log('[MainApp] Creating MouseFollowerManager...');
+        this.mouseFollower = new MouseFollowerManager(this.gameEngine.app!.stage, this.networkManager);
+
+        // Создаём DraggableObject в центре экрана
+        console.log('[MainApp] Creating DraggableObject...');
+        this.draggableObject = new DraggableObject(this.gameEngine.app!.stage, this.networkManager);
+        this.draggableObject.init(window.innerWidth, window.innerHeight);
+
+        // Подключаем InputManager к MouseFollowerManager
+        this.inputManager.onMouseMove = (x, y) => {
+          this.mouseFollower.updateLocalPosition(x, y);
+        };
+
+        console.log('[MainApp] Mouse follower and draggable object initialized!');
+        this.gameEngine.start();
+      }).catch((error) => {
+        console.error('[MainApp] GameEngine init ERROR:', error);
+      });
+
+      console.log('[MainApp] Constructor finished!');
+    } catch (error) {
+      console.error('[MainApp] Constructor ERROR:', error);
+    }
+  }
+
+  private setupInteractions(): void {
+    console.log('[MainApp] Setting up interactions...');
+
+    this.uiController.onCreateRoom = async () => {
+      console.log('[MainApp] onCreateRoom called!');
+      try {
+        console.log('[MainApp] Calling networkManager.createRoom()...');
+        const roomId = await this.networkManager.createRoom();
+        console.log('[MainApp] Room created with ID:', roomId);
+
+        // Ждём следующего тика, чтобы DOM был готов
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        console.log('[MainApp] Calling setView(room)...');
+        this.uiController.setView('room');
+        console.log('[MainApp] setView(room) completed');
+
+        // Показываем ID комнаты сразу
+        this.uiController.showCreatedRoomId(roomId);
+
+        const room = this.networkManager.getCurrentRoom();
+        if (room) {
+          this.chatManager.attachToRoom(room);
+          // Устанавливаем mouse follower для создателя
+          this.mouseFollower.onRoomJoined(true, this.networkManager.getSessionId()!);
+          // Инициализируем draggable chat
+          this.draggableChat.init();
+        }
+        this.uiController.setPlayerName('Player 1');
+      } catch (error) {
+        console.error('[MainApp] ERROR in onCreateRoom:', error);
+        alert('Create room ERROR: ' + error);
+      }
+    };
+
+    this.uiController.onJoinRoom = async (roomId) => {
+      console.log('[MainApp] onJoinRoom called with roomId:', roomId);
+      try {
+        await this.networkManager.joinRoom(roomId);
+        console.log('[MainApp] Joined room successfully');
+
+        // Ждём следующего тика, чтобы DOM был готов
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        console.log('[MainApp] Calling setView(room)...');
+        this.uiController.setView('room');
+        console.log('[MainApp] setView(room) completed');
+
+        // Показываем ID комнаты сразу
+        this.uiController.showCreatedRoomId(roomId);
+
+        const room = this.networkManager.getCurrentRoom();
+        if (room) {
+          this.chatManager.attachToRoom(room);
+          // Устанавливаем mouse follower для присоединившегося
+          this.mouseFollower.onRoomJoined(false, this.networkManager.getSessionId()!);
+          // Инициализируем draggable chat
+          this.draggableChat.init();
+        }
+        this.uiController.setPlayerName('Player 2');
+      } catch (error) {
+        console.error('[MainApp] ERROR in onJoinRoom:', error);
+        alert('Join room ERROR: ' + error);
+      }
+    };
+  }
+}
+
+// Запуск приложения при загрузке страницы
+console.log('[MainApp] Registering load event listener...');
+
+window.addEventListener('load', () => {
+  console.log('[MainApp] LOAD EVENT FIRED');
+  console.log('Creating new MainApp()...');
+  new MainApp();
+  console.log('MainApp() created!');
+});
+
+console.log('[MainApp] Load event listener registered');
+
+================================================================================
+ФАЙЛ 3: client/src/core/InputManager.ts
+================================================================================
+
+/**
+ * Менеджер ввода
+ * Обрабатывает клавиатуру и мышь
+ */
+export class InputManager {
+  private keyboardState: Map<string, boolean>;
+  private mouseState: {
+    x: number;
+    y: number;
+    leftButton: boolean;
+    rightButton: boolean;
+  };
+
+  // Callback для обновления позиции мыши (для follower circle)
+  public onMouseMove?: (x: number, y: number) => void;
+
+  constructor() {
+    this.keyboardState = new Map();
+    this.mouseState = {
+      x: 0,
+      y: 0,
+      leftButton: false,
+      rightButton: false
+    };
+
+    this.setupEventListeners();
+  }
+
+  /**
+   * Установить обработчики событий
+   */
+  private setupEventListeners(): void {
+    // Keyboard events
+    window.addEventListener('keydown', (e) => {
+      this.keyboardState.set(e.code, true);
+    });
+
+    window.addEventListener('keyup', (e) => {
+      this.keyboardState.set(e.code, false);
+    });
+
+    // Mouse events
+    window.addEventListener('mousemove', (e) => {
+      // Mouse position relative to viewport (canvas is full screen at 0,0)
+      this.mouseState.x = e.clientX;
+      this.mouseState.y = e.clientY;
+
+      // Вызываем callback для follower circle
+      if (this.onMouseMove) {
+        this.onMouseMove(this.mouseState.x, this.mouseState.y);
+      }
+    });
+
+    window.addEventListener('mousedown', (e) => {
+      switch (e.button) {
+        case 0: // Left button
+          this.mouseState.leftButton = true;
+          break;
+        case 2: // Right button
+          this.mouseState.rightButton = true;
+          break;
+      }
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      switch (e.button) {
+        case 0: // Left button
+          this.mouseState.leftButton = false;
+          break;
+        case 2: // Right button
+          this.mouseState.rightButton = false;
+          break;
+      }
+    });
+
+    // Prevent context menu on right click
+    window.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
+  }
+
+  /**
+   * Проверить, нажата ли клавиша
+   */
+  isKeyPressed(keyCode: string): boolean {
+    return this.keyboardState.get(keyCode) === true;
+  }
+
+  /**
+   * Получить состояние мыши
+   */
+  getMouseState(): { x: number; y: number; leftButton: boolean; rightButton: boolean } {
+    return { ...this.mouseState };
+  }
+
+  /**
+   * Получить позицию мыши
+   */
+  getMousePosition(): { x: number; y: number } {
+    return { x: this.mouseState.x, y: this.mouseState.y };
+  }
+}
+
+================================================================================
+ФАЙЛ 4: client/src/core/GameEngine.ts
+================================================================================
+
+import * as PIXI from 'pixi.js';
+
+/**
+ * Базовый игровой движок
+ * Только рендер + ticker, без логики
+ */
+export class GameEngine {
+  app: PIXI.Application | null = null;
+  private ticker: PIXI.Ticker | null = null;
+
+  constructor() {
+    console.log('[GameEngine] Constructor called');
+  }
+
+  /**
+   * Инициализировать PixiJS (асинхронно)
+   */
+  async init(containerId: string): Promise<void> {
+    console.log('[GameEngine] Initializing PixiJS...');
+
+    const container = document.getElementById(containerId);
+    if (!container) {
+      throw new Error(`Container element with id "${containerId}" not found`);
+    }
+
+    // Создаём и инициализируем приложение
+    this.app = new PIXI.Application();
+
+    await this.app.init({
+      backgroundColor: 0x1a1a1a,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      antialias: true,
+      autoDensity: true,
+      resolution: Math.min(window.devicePixelRatio, 2),
+    });
+
+    console.log('[GameEngine] PixiJS initialized, getting ticker...');
+
+    // Получаем ticker после инициализации
+    this.ticker = this.app.ticker;
+
+    // КРИТИЧЕСКАЯ СТРОКА — отключаем pointer events на canvas
+    this.app.canvas.style.pointerEvents = 'none';
+
+    console.log('[GameEngine] Appending canvas...');
+    // Добавляем canvas в контейнер
+    container.appendChild(this.app.canvas);
+
+    console.log('[GameEngine] Canvas appended');
+  }
+
+  /**
+   * Добавить обновление на тикер
+   */
+  addTickerUpdate(updateFn: (dt: number) => void): void {
+    if (this.ticker) {
+      this.ticker.add((ticker) => {
+        const dt = ticker.deltaTime;
+        updateFn(dt);
+      });
+    } else {
+      console.error('[GameEngine] Ticker is null!');
+    }
+  }
+
+  /**
+   * Запустить тикер
+   */
+  start(): void {
+    if (this.ticker) {
+      this.ticker.start();
+      console.log('[GameEngine] Ticker started');
+    } else {
+      console.error('[GameEngine] Cannot start: ticker is null');
+    }
+  }
+
+  /**
+   * Остановить тикер
+   */
+  stop(): void {
+    if (this.ticker) {
+      this.ticker.stop();
+    }
+  }
+}
+
+================================================================================
+ФАЙЛ 5: client/src/core/NetworkManager.ts
+================================================================================
+
+import { Client } from 'colyseus.js';
+import { Room } from 'colyseus.js';
+
+/**
+ * Менеджер сетевого подключения
+ * Управляет подключением к Colyseus серверу
+ */
+export class NetworkManager {
+  private client: Client;
+  private currentRoom: Room | null = null;
+  private readonly serverUrl: string;
+
+  constructor(serverUrl?: string) {
+    // Локальный сервер для разработки, прод-сервер для production
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    this.serverUrl = serverUrl || (isLocalhost ? 'ws://localhost:2567' : 'wss://cursor-hold-game-server.onrender.com');
+    this.client = new Client(this.serverUrl);
+
+    console.log('[NetworkManager] Server URL:', this.serverUrl);
+  }
+
+  /**
+   * Подключиться к серверу
+   */
+  async connect(): Promise<void> {
+    try {
+      // Проверяем соединение
+      await this.client.joinOrCreate('holding_room'); // Используем правильное имя комнаты
+      console.log('Connected to server:', this.serverUrl);
+    } catch (error) {
+      console.error('Failed to connect to server:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Создать новую комнату
+   * Возвращает реальный ID комнаты от Colyseus
+   */
+  async createRoom(): Promise<string> {
+    console.log('[NetworkManager] createRoom() called');
+    try {
+      console.log('[NetworkManager] Calling client.joinOrCreate("holding_room")...');
+      // Создаём новую комнату через joinOrCreate
+      this.currentRoom = await this.client.joinOrCreate('holding_room');
+      console.log('[NetworkManager] Room object received:', this.currentRoom);
+
+      // Получаем roomId из state комнаты
+      const roomId = this.currentRoom.state?.roomId || this.currentRoom.id;
+      console.log('[NetworkManager] Room created:', roomId);
+
+      // Подписываемся на сообщения комнаты после создания
+      this.setupRoomMessageHandlers();
+
+      return roomId;
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('[NetworkManager] ERROR in createRoom:', errorMsg);
+      alert('Failed to create room: ' + errorMsg + '\\n\\nMake sure the server is running on port 2567.');
+      throw error;
+    }
+  }
+
+  /**
+   * Присоединиться к существующей комнате по ID
+   */
+  async joinRoom(roomId: string): Promise<Room> {
+    console.log('[NetworkManager] joinRoom() called with roomId:', roomId);
+    try {
+      // Присоединяемся к комнате по ID через joinById
+      this.currentRoom = await this.client.joinById(roomId);
+      console.log('[NetworkManager] Joined room:', this.currentRoom.id);
+
+      // Подписываемся на сообщения комнаты после присоединения
+      this.setupRoomMessageHandlers();
+
+      return this.currentRoom;
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('[NetworkManager] ERROR in joinRoom:', errorMsg);
+      alert('Failed to join room: ' + errorMsg + '\\n\\nCheck the room ID and make sure the server is running.');
+      throw error;
+    }
+  }
+
+  /**
+   * Получить список доступных комнат (для будущего UI)
+   */
+  async getAvailableRooms(): Promise<any[]> {
+    try {
+      const rooms = await this.client.getAvailableRooms('holding_room');
+      return rooms;
+    } catch (error) {
+      console.error('Failed to get available rooms:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Покинуть текущую комнату
+   */
+  leaveCurrentRoom(): void {
+    if (this.currentRoom) {
+      this.currentRoom.leave();
+      this.currentRoom = null;
+    }
+  }
+
+  /**
+   * Получить текущую комнату
+   */
+  getCurrentRoom(): Room | null {
+    return this.currentRoom;
+  }
+
+  /**
+   * Отправить сообщение в комнату
+   */
+  sendToRoom(messageType: string, data: any): void {
+    if (this.currentRoom) {
+      this.currentRoom.send(messageType, data);
+    } else {
+      console.warn('No active room to send message to');
+    }
+  }
+
+  /**
+   * Подписаться на сообщения из комнаты
+   */
+  onMessage(messageType: string, callback: (data: any) => void): void {
+    if (this.currentRoom) {
+      this.currentRoom.onMessage(messageType, (data) => {
+        callback(data);
+      });
+    } else {
+      console.warn('No active room to listen to messages from');
+    }
+  }
+
+  /**
+   * Подписаться на изменения состояния комнаты
+   */
+  onStateChange(callback: (state: any) => void): void {
+    if (this.currentRoom) {
+      this.currentRoom.onStateChange((state) => {
+        callback(state);
+      });
+    } else {
+      console.warn('No active room to listen to state changes from');
+    }
+  }
+
+  /**
+   * Получить текущее состояние комнаты
+   */
+  getState() {
+    if (this.currentRoom) {
+      return this.currentRoom.state;
+    }
+    return null;
+  }
+
+  /**
+   * Получить sessionId текущей комнаты
+   */
+  getSessionId(): string | null {
+    return this.currentRoom?.sessionId || null;
+  }
+
+  /**
+   * Настроить обработчики сообщений комнаты
+   */
+  private setupRoomMessageHandlers(): void {
+    if (!this.currentRoom) return;
+
+    console.log('[NetworkManager] setupRoomMessageHandlers called, sessionId:', this.currentRoom.sessionId);
+  }
+
+  /**
+   * Отправить обновление позиции курсора
+   */
+  sendCursorUpdate(x: number, y: number): void {
+    if (this.currentRoom) {
+      this.currentRoom.send('updateCursor', { x, y });
+    }
+  }
+}
+
+================================================================================
+ФАЙЛ 6: server/src/rooms/HoldingRoom.ts (MFL секция)
+================================================================================
+
+// Handle mouse follower updates (MFL system - broadcasts to ALL including sender)
+this.onMessage('mflUpdate', (client, data) => {
+  if (typeof data.x === 'number' && typeof data.y === 'number' && typeof data.isCreator === 'boolean') {
+    // Get player to verify isCreator status
+    const player = this.state.players.get(client.sessionId);
+    if (player) {
+      // Broadcast to ALL players (including sender) so everyone sees both followers
+      this.broadcast('mflUpdate', {
+        playerId: client.sessionId,
+        isCreator: data.isCreator,
+        x: data.x,
+        y: data.y
+      });
+    }
+  }
+});
+
+================================================================================
+ФАЙЛ 7: server/src/rooms/schema.ts
+================================================================================
+
+import { Schema, type, MapSchema } from '@colyseus/schema';
+
+export class PlayerSchema extends Schema {
+  @type('string') id!: string;
+  @type('string') name: string = '';
+  @type('number') x: number = 0;
+  @type('number') y: number = 0;
+  @type('number') color: number = 0xffffff; // Default white color
+  @type('boolean') isHoldingHands: boolean = false;
+  @type('string') holdingHandsWith: string = ''; // ID of player this player is holding hands with
+  @type('boolean') isRoomCreator: boolean = false; // Whether this player created the room
+  @type('boolean') isReady: boolean = false; // Whether the player is ready to start the virus battle
+  @type({ map: 'number' }) virusParams: Map<string, number> = new Map<string, number>(); // Virus parameters for the player
+  @type('number') cursorX: number = 0; // Cursor X position for the player
+  @type('number') cursorY: number = 0; // Cursor Y position for the player
+}
+
+export class DraggableObjectSchema extends Schema {
+  @type('string') id!: string;
+  @type('number') x: number = 400; // Center of screen
+  @type('number') y: number = 300;
+  @type('number') radius: number = 30;
+  @type('number') color: number = 0xff69b4; // Hot pink color
+  @type('boolean') isBeingDragged: boolean = false;
+  @type('string') draggedBy: string = ''; // ID of player dragging the object
+  @type('boolean') isFollower: boolean = false; // Whether this object is a follower
+  @type('string') owner: string = ''; // ID of the player who owns this follower
+  @type('number') targetX: number = 0; // Target position for followers
+  @type('number') targetY: number = 0; // Target position for followers
+}
+
+export class RoomState extends Schema {
+  @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
+  @type({ map: DraggableObjectSchema }) objects = new MapSchema<DraggableObjectSchema>();
+  @type('string') roomId: string = '';
+  @type('number') maxPlayers: number = 2;
+  @type({ array: 'number' }) battleGrid: number[] = []; // Array representing the battle grid state (0=empty, 1=virusA, 2=virusB)
+  @type('boolean') battleActive: boolean = false; // Whether the battle is currently active
+}
+
+================================================================================
+ФАЙЛ 8: client/index.html (CSS для canvasContainer)
+================================================================================
+
+#canvasContainer {
+  position: absolute;
+  top: 0;
+  left: 0; /* Full screen - starts at left edge */
+  width: 100%; /* Full width */
+  height: 100%;
+  z-index: 1; /* Below the grid */
+  pointer-events: none;
+}
+
+================================================================================
+АРХИТЕКТУРА MFL SYSTEM
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────┐
+│                         PLAYER 1 SCREEN                         │
+│                                                                 │
+│   🔴 mfl1 (следует за мышью P1)                                 │
+│                                                                 │
+│   🔵 mfl2 (следует за мышью P2)                                 │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                         PLAYER 2 SCREEN                         │
+│                                                                 │
+│   🔴 mfl1 (следует за мышью P1)                                 │
+│                                                                 │
+│   🔵 mfl2 (следует за мышью P2)                                 │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+ОБА игрока видят ОДИНАКОВЫЕ followers на своих экранах!
+
+================================================================================
+СЕТЬ
+================================================================================
+
+Client (Mouse Input)
+    ↓
+InputManager.onMouseMove(x, y)
+    ↓
+MouseFollowerManager.updateLocalPosition(x, y)
+    ↓
+NetworkManager.sendToRoom('mflUpdate', { isCreator, x, y })
+    ↓
+WebSocket → Server
+    ↓
+HoldingRoom.onMessage('mflUpdate')
+    ↓
+Broadcast to ALL clients: 'mflUpdate' { playerId, isCreator, x, y }
+    ↓
+Client receives 'mflUpdate'
+    ↓
+MouseFollowerManager.updateRemoteFollower()
+    ↓
+PixiJS renders follower at interpolated position
+
+================================================================================
+КЛЮЧЕВЫЕ ПАРАМЕТРЫ
+================================================================================
+
+MouseFollowerManager.ts:
+  - SEND_INTERVAL_MS: 33         (~30 updates/sec)
+  - TRAIL_LENGTH: 8              (8 trail particles)
+  - TRAIL_SPAWN_RATE: 3          (spawn every 3 frames)
+  - lerp: 0.2                    (smooth interpolation)
+  - Follower radius: 20px
+  - Trail radius: 12px
+  - mfl1 color: 0xff0000 (RED)
+  - mfl2 color: 0x0000ff (BLUE)
+
+================================================================================
+КОНЕЦ ФАЙЛА
+================================================================================

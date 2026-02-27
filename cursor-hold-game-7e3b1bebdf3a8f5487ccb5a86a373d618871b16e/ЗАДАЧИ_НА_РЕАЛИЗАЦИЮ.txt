@@ -1,0 +1,645 @@
+================================================================================
+TOVCH PROJECT — ЗАДАЧИ НА РЕАЛИЗАЦИЮ
+================================================================================
+Дата: 2026-02-17
+Версия: v12
+Статус: ТРЕБУЕТСЯ РЕАЛИЗАЦИЯ
+
+================================================================================
+ЧАСТЬ 1: ПРОБЛЕМЫ (ЧТО НЕ РАБОТАЕТ)
+================================================================================
+
+ПРОБЛЕМА 1: Чат не в левом сайдбаре
+────────────────────────────────────
+ЗАДАЧА: Поместить чат ВНУТРЬ левого выезжающего сайдбара
+ТЕКУЩЕЕ СОСТОЯНИЕ: Чат находится отдельно (не в сайдбаре)
+
+ЧТО НУЖНО:
+- При открытии левого сайдбара (кнопка ☰ слева) → чат должен быть внутри
+- Чат должен быть внизу сайдбара
+- Сайдбар должен корректно отображаться с чатом
+
+--------------------------------------------------------------------------------
+
+ПРОБЛЕМА 2: Room ID панель не сверху
+────────────────────────────────────
+ЗАДАЧА: Переместить панель с Room ID в верх экрана (по центру)
+ТЕКУЩЕЕ СОСТОЯНИЕ: Room ID отображается в центре экрана
+
+ЧТО НУЖНО:
+- Создать фиксированную панель сверху экрана (position: fixed; top: 20px)
+- Room ID должен быть по центру сверху
+- При клике на Room ID → копирование в буфер
+- Удалить центральную панель с Room ID
+
+--------------------------------------------------------------------------------
+
+ПРОБЛЕМА 3: Hover синхронизация не работает
+────────────────────────────────────────────
+ЗАДАЧА: Когда один игрок наводит мышь на центральный круг — второй игрок должен видеть это
+ТЕКУЩЕЕ СОСТОЯНИЕ: Рамка появляется только у того, кто навёл
+
+ЧТО НУЖНО:
+- Игрок 1 наводит мышь на круг → Игрок 2 видит изменение цвета рамки
+- Игрок 2 наводит мышь на круг → Игрок 1 видит изменение цвета рамки
+- Разные цвета для локального и удалённого hover:
+  * Локальный hover (я навёл): Magenta (0xff00ff)
+  * Удалённый hover (другой игрок навёл): Hot pink (0xff69b4)
+  * Никто не навёл: Cyan (0x00ffff)
+
+================================================================================
+ЧАСТЬ 2: ВСЕ ФАЙЛЫ ПРОЕКТА (ПОЛНЫЕ ПУТИ И СОДЕРЖИМОЕ)
+================================================================================
+
+================================================================================
+ФАЙЛ 1: client/index.html
+================================================================================
+ПУТЬ: C:\__Qwen1\TOVCH\client\index.html
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Digital Hand Holding - Connect with Someone Special</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Courier New', monospace;
+      background-color: #0f0f23;
+      color: #00ff00;
+      overflow: hidden;
+      height: 100vh;
+    }
+    #app { width: 100%; height: 100%; }
+    .screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      max-width: 600px;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2.5rem;
+      text-shadow: 2px 2px 0 #ff00ff, 4px 4px 0 rgba(0,0,0,0.5);
+      margin-bottom: 2rem;
+      color: #ffff00;
+      letter-spacing: 2px;
+    }
+    .btn {
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 12px 24px;
+      margin: 10px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 3px 3px 0 #00ffff;
+      transition: all 0.1s;
+      font-family: 'Courier New', monospace;
+    }
+    .btn:hover {
+      background-color: #00ffff;
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 #00ffff;
+    }
+    .no-border {
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 5px 10px;
+      margin-top: 10px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+    input[type="text"] {
+      background-color: #0f0f23;
+      color: #00ff00;
+      border: 2px solid #00ffff;
+      padding: 10px;
+      font-size: 1rem;
+      width: 250px;
+      margin: 10px;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+    }
+    .hidden { display: none; }
+    #canvasContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: auto;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      width: 33%;
+      height: 100%;
+      background: rgba(15, 15, 35, 0.7);
+      backdrop-filter: blur(10px);
+      border: 2px solid #00ffff;
+      z-index: 1000;
+      transition: left 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+    .left-sidebar {
+      left: -33%;
+    }
+    .left-sidebar.active {
+      left: 0;
+    }
+    .sidebar-header {
+      padding: 10px;
+      border-bottom: 1px solid #00ffff;
+    }
+    .sidebar-content {
+      padding: 10px;
+      overflow-y: auto;
+      flex-grow: 1;
+    }
+    #chat-container {
+      width: 100%;
+      background-color: rgba(15, 15, 35, 0.8);
+      border: 2px solid #00ffff;
+      padding: 10px;
+      margin-top: 20px;
+    }
+    #chat-messages {
+      height: 100px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      color: #00ff00;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+    }
+    #chat-input-container {
+      display: flex;
+      gap: 5px;
+    }
+    #chat-input {
+      flex-grow: 1;
+      background-color: #0f0f23;
+      color: #00ff00;
+      border: 1px solid #00ffff;
+      padding: 5px;
+      font-family: 'Courier New', monospace;
+    }
+    .close-btn {
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+    }
+    .copyable-id {
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .copyable-id:hover {
+      color: #00ffff;
+    }
+    .copied-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #00ff00;
+      padding: 10px 20px;
+      border: 2px solid #00ffff;
+      z-index: 10000;
+      font-family: 'Courier New', monospace;
+      font-size: 1.2rem;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- Landing Screen -->
+    <div id="landingScreen" class="screen">
+      <h1>DIGITAL HAND HOLDING</h1>
+      <p>Connect with someone special in a virtual space</p>
+      <button id="createRoomBtn" class="btn">CREATE ROOM</button>
+      <div style="margin-top: 20px;">
+        <input type="text" id="roomIdInput" placeholder="Enter Room ID">
+        <button id="joinRoomBtn" class="btn">JOIN ROOM</button>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen hidden">
+      <div id="canvasContainer"></div>
+
+      <!-- Room ID panel at top center -->
+      <div id="topRoomIdPanel" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #00ffff; padding: 10px 20px; border-radius: 20px; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; border: 2px solid #00ffff; z-index: 9999; pointer-events: none;">
+        <span style="color: #ffff00;">Room ID: </span>
+        <span id="topRoomId" class="copyable-id" style="color: #00ff00;"></span>
+      </div>
+
+      <!-- Left menu button -->
+      <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+
+      <!-- Right menu button -->
+      <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+
+      <!-- Left Sidebar -->
+      <div id="leftSidebar" class="sidebar left-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-controls">
+            <h3>Controls</h3>
+            <div id="playerName">Player 1 | Player 2</div>
+            <button id="closeLeftSidebarBtn" class="btn close-btn">✕</button>
+          </div>
+          <div id="roomInfo">Room: <span id="leftRoomId" class="copyable-id"></span></div>
+        </div>
+        <div class="sidebar-content">
+          <div id="hud">
+            <div id="playerCounter">Players: <span id="playerCount">0</span>/2</div>
+            <button id="leaveRoomBtn" class="btn no-border">LEAVE ROOM</button>
+          </div>
+          
+          <!-- Chat inside left sidebar -->
+          <div id="chat-container">
+            <div id="chat-messages"></div>
+            <div id="chat-input-container">
+              <input type="text" id="chat-input" placeholder="Type message...">
+              <button id="chat-send-btn">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Sidebar -->
+      <div id="sidebar" class="sidebar" style="right: -33%; left: auto; border-left: 2px solid #00ffff;">
+        <div class="sidebar-header">
+          <div class="sidebar-title-controls">
+            <h3>Virus Parameters</h3>
+            <button id="closeSidebarBtn" class="btn close-btn">✕</button>
+          </div>
+        </div>
+        <div class="sidebar-content">
+          <div id="virusParamsContainer">
+            <!-- Virus params here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
+
+================================================================================
+ФАЙЛ 2: client/src/main.ts
+================================================================================
+ПУТЬ: C:\__Qwen1\TOVCH\client\src\main.ts
+
+import { GameEngine } from './core/GameEngine';
+import { NetworkManager } from './core/NetworkManager';
+import { InputManager } from './core/InputManager';
+import { UIController } from './ui/UIController';
+import { ChatManager } from './chat/ChatManager';
+import { MouseFollowerManager } from './features/mouse-follower/MouseFollowerManager';
+import { DraggableObject } from './features/draggable/DraggableObject';
+
+console.log('[MainApp] main.ts loaded');
+
+class MainApp {
+  private gameEngine!: GameEngine;
+  private networkManager!: NetworkManager;
+  private inputManager!: InputManager;
+  private uiController!: UIController;
+  private chatManager!: ChatManager;
+  private mouseFollower!: MouseFollowerManager;
+  private draggableObject!: DraggableObject;
+
+  constructor() {
+    console.log('[MainApp] Constructor started...');
+
+    try {
+      console.log('[MainApp] Creating GameEngine...');
+      this.gameEngine = new GameEngine();
+      console.log('[MainApp] Creating NetworkManager...');
+      this.networkManager = new NetworkManager();
+      console.log('[MainApp] Creating InputManager...');
+      this.inputManager = new InputManager();
+      console.log('[MainApp] Creating UIController...');
+      this.uiController = new UIController();
+      console.log('[MainApp] Creating ChatManager...');
+      this.chatManager = new ChatManager();
+
+      console.log('[MainApp] Setting up interactions...');
+      this.setupInteractions();
+
+      console.log('[MainApp] Initializing GameEngine...');
+      this.gameEngine.init('canvasContainer').then(() => {
+        console.log('[MainApp] GameEngine initialized!');
+
+        console.log('[MainApp] Creating MouseFollowerManager...');
+        this.mouseFollower = new MouseFollowerManager(this.gameEngine.app!.stage, this.networkManager);
+
+        console.log('[MainApp] Creating DraggableObject...');
+        this.draggableObject = new DraggableObject(this.gameEngine.app!.stage, this.networkManager);
+        this.draggableObject.init(window.innerWidth, window.innerHeight);
+
+        this.inputManager.onMouseMove = (x, y) => {
+          this.mouseFollower.updateLocalPosition(x, y);
+        };
+
+        console.log('[MainApp] Mouse follower and draggable object initialized!');
+        this.gameEngine.start();
+      }).catch((error) => {
+        console.error('[MainApp] GameEngine init ERROR:', error);
+      });
+
+      console.log('[MainApp] Constructor finished!');
+    } catch (error) {
+      console.error('[MainApp] Constructor ERROR:', error);
+    }
+  }
+
+  private setupInteractions(): void {
+    console.log('[MainApp] Setting up interactions...');
+
+    this.uiController.onCreateRoom = async () => {
+      console.log('[MainApp] onCreateRoom called!');
+      try {
+        const roomId = await this.networkManager.createRoom();
+        console.log('[MainApp] Room created with ID:', roomId);
+
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        console.log('[MainApp] Calling setView(room)...');
+        this.uiController.setView('room');
+        console.log('[MainApp] setView(room) completed');
+
+        this.uiController.showCreatedRoomId(roomId);
+
+        const room = this.networkManager.getCurrentRoom();
+        if (room) {
+          this.chatManager.attachToRoom(room);
+          this.mouseFollower.onRoomJoined(true, this.networkManager.getSessionId()!);
+        }
+        this.uiController.setPlayerName('Player 1');
+      } catch (error) {
+        console.error('[MainApp] ERROR in onCreateRoom:', error);
+        alert('Create room ERROR: ' + error);
+      }
+    };
+
+    this.uiController.onJoinRoom = async (roomId) => {
+      console.log('[MainApp] onJoinRoom called with roomId:', roomId);
+      try {
+        await this.networkManager.joinRoom(roomId);
+        console.log('[MainApp] Joined room successfully');
+
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        console.log('[MainApp] Calling setView(room)...');
+        this.uiController.setView('room');
+        console.log('[MainApp] setView(room) completed');
+
+        this.uiController.showCreatedRoomId(roomId);
+
+        const room = this.networkManager.getCurrentRoom();
+        if (room) {
+          this.chatManager.attachToRoom(room);
+          this.mouseFollower.onRoomJoined(false, this.networkManager.getSessionId()!);
+        }
+        this.uiController.setPlayerName('Player 2');
+      } catch (error) {
+        console.error('[MainApp] ERROR in onJoinRoom:', error);
+        alert('Join room ERROR: ' + error);
+      }
+    };
+  }
+}
+
+window.addEventListener('load', () => {
+  console.log('[MainApp] LOAD EVENT FIRED');
+  console.log('Creating new MainApp()...');
+  new MainApp();
+  console.log('MainApp() created!');
+});
+
+console.log('[MainApp] Load event listener registered');
+
+================================================================================
+ФАЙЛ 3: client/src/core/GameEngine.ts
+================================================================================
+ПУТЬ: C:\__Qwen1\TOVCH\client\src\core\GameEngine.ts
+
+[ВСТАВИТЬ ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА]
+
+================================================================================
+ФАЙЛ 4: client/src/core/NetworkManager.ts
+================================================================================
+ПУТЬ: C:\__Qwen1\TOVCH\client\src\core\NetworkManager.ts
+
+[ВСТАВИТЬ ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА]
+
+================================================================================
+ФАЙЛ 5: client/src/core/InputManager.ts
+================================================================================
+ПУТЬ: C:\__Qwen1\TOVCH\client\src\core\InputManager.ts
+
+[ВСТАВИТЬ ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА]
+
+================================================================================
+ФАЙЛ 6: client/src/ui/UIController.ts
+================================================================================
+ПУТЬ: C:\__Qwen1\TOVCH\client\src\ui\UIController.ts
+
+[ВСТАВИТЬ ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА]
+
+================================================================================
+ФАЙЛ 7: client/src/chat/ChatManager.ts
+================================================================================
+ПУТЬ: C:\__Qwen1\TOVCH\client\src\chat\ChatManager.ts
+
+[ВСТАВИТЬ ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА]
+
+================================================================================
+ФАЙЛ 8: client/src/features/mouse-follower/MouseFollowerManager.ts
+================================================================================
+ПУТЬ: C:\__Qwen1\TOVCH\client\src\features\mouse-follower\MouseFollowerManager.ts
+
+[ВСТАВИТЬ ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА]
+
+================================================================================
+ФАЙЛ 9: client/src/features/draggable/DraggableObject.ts
+================================================================================
+ПУТЬ: C:\__Qwen1\TOVCH\client\src\features\draggable\DraggableObject.ts
+
+[ВСТАВИТЬ ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА]
+
+================================================================================
+ФАЙЛ 10: server/src/index.ts
+================================================================================
+ПУТЬ: C:\__Qwen1\TOVCH\server\src\index.ts
+
+[ВСТАВИТЬ ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА]
+
+================================================================================
+ФАЙЛ 11: server/src/rooms/HoldingRoom.ts
+================================================================================
+ПУТЬ: C:\__Qwen1\TOVCH\server\src\rooms\HoldingRoom.ts
+
+[ВСТАВИТЬ ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА]
+
+================================================================================
+ФАЙЛ 12: server/src/rooms/schema.ts
+================================================================================
+ПУТЬ: C:\__Qwen1\TOVCH\server\src\rooms\schema.ts
+
+[ВСТАВИТЬ ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА]
+
+================================================================================
+ЧАСТЬ 3: ИНСТРУКЦИИ ПО РЕАЛИЗАЦИИ
+================================================================================
+
+ЗАДАЧА 1: Чат в левом сайдбаре
+──────────────────────────────
+1. Открыть client/index.html
+2. Найти <div id="leftSidebar">
+3. Внутри <div class="sidebar-content"> добавить:
+   ```html
+   <div id="chat-container">
+     <div id="chat-messages"></div>
+     <div id="chat-input-container">
+       <input type="text" id="chat-input" placeholder="Type message...">
+       <button id="chat-send-btn">Send</button>
+     </div>
+   </div>
+   ```
+4. Удалить отдельный #chat-container из центра экрана
+5. Обновить CSS для #chat-container (убрать position: absolute)
+
+--------------------------------------------------------------------------------
+
+ЗАДАЧА 2: Room ID панель сверху
+───────────────────────────────
+1. Открыть client/index.html
+2. После <div id="gameScreen"> добавить:
+   ```html
+   <div id="topRoomIdPanel" style="position: fixed; top: 20px; left: 50%; 
+       transform: translateX(-50%); background: rgba(0,0,0,0.7); 
+       color: #00ffff; padding: 10px 20px; border-radius: 20px; 
+       font-family: 'Courier New', monospace; font-size: 14px; 
+       font-weight: bold; border: 2px solid #00ffff; z-index: 9999;">
+     <span style="color: #ffff00;">Room ID: </span>
+     <span id="topRoomId" class="copyable-id" style="color: #00ff00;"></span>
+   </div>
+   ```
+3. Обновить client/src/ui/UIController.ts:
+   - В showCreatedRoomId() использовать 'topRoomId' вместо 'currentRoomId'
+4. Удалить центральную панель с Room ID из HTML
+
+--------------------------------------------------------------------------------
+
+ЗАДАЧА 3: Hover синхронизация
+────────────────────────────
+1. Проверить client/src/features/draggable/DraggableObject.ts:
+   - Есть ли поля: localHover, remoteHover, remoteHoverPlayer?
+   - Есть ли разделение локального и удалённого hover?
+   
+2. Проверить server/src/rooms/HoldingRoom.ts:
+   - Есть ли обработчик 'updateObjectHover'?
+   - Broadcast'ится ли 'objectHoverChanged' с hoveredBy?
+   
+3. Проверить server/src/rooms/schema.ts:
+   - Есть ли в DraggableObjectSchema поля: isHovered, hoveredBy?
+
+4. Тестировать:
+   - Игрок 1 наводит → видит Magenta
+   - Игрок 2 видит Hot pink (не Cyan!)
+   - Игрок 1 убирает → оба видят Cyan
+
+================================================================================
+ЧАСТЬ 4: АРХИТЕКТУРА ПРОЕКТА
+================================================================================
+
+КЛИЕНТ (TypeScript + PixiJS + Vite):
+├── main.ts — точка входа
+├── core/
+│   ├── GameEngine.ts — PixiJS инициализация
+│   ├── NetworkManager.ts — Colyseus клиент
+│   └── InputManager.ts — мышь/клавиатура
+├── ui/
+│   └── UIController.ts — lobby/room UI
+├── chat/
+│   └── ChatManager.ts — чат
+└── features/
+    ├── mouse-follower/
+    │   └── MouseFollowerManager.ts — mfl1/mfl2
+    └── draggable/
+        └── DraggableObject.ts — центральный объект
+
+СЕРВЕР (Node.js + Colyseus):
+├── index.ts — точка входа
+└── rooms/
+    ├── HoldingRoom.ts — логика комнаты
+    └── schema.ts — Colyseus схемы
+
+СЕТЬ:
+Client → Server:
+  - mflUpdate { isCreator, x, y }
+  - updateObjectHover { objectId, isHovered }
+  - startDragObject, updateObjectPosition, stopDragObject
+  - chatMessage { message }
+
+Server → Client:
+  - mflUpdate { playerId, isCreator, x, y }
+  - objectHoverChanged { objectId, isHovered, hoveredBy }
+  - objectDragStarted, objectPositionUpdated, objectDragStopped
+  - chatMessage { playerId, message, timestamp }
+
+================================================================================
+ЧАСТЬ 5: ТЕКУЩИЙ СТАТУС
+================================================================================
+
+✅ Работает:
+- Создание/присоединение к комнате
+- Mouse followers (mfl1/mfl2) с trail effects
+- Drag-and-drop центрального объекта
+- Чат (отправка/получение сообщений)
+- Room ID (копирование по клику)
+
+❌ Не работает:
+- Чат НЕ в левом сайдбаре (отдельно)
+- Room ID НЕ сверху (в центре экрана)
+- Hover синхронизация НЕ работает (рамка только локально)
+
+⚠️ Требует проверки:
+- pointer-events на canvas (должен быть 'auto')
+- eventMode на MFL followers (должен быть 'none')
+- z-index чата (должен быть выше canvas)
+
+================================================================================
+ЧАСТЬ 6: КОНТАКТЫ И ССЫЛКИ
+================================================================================
+
+Репозиторий: https://github.com/kabuto-lab/cursor-hold-game
+Render Client: https://cursor-hold-game.onrender.com
+Render Server: https://cursor-hold-game-server.onrender.com
+Health Check: https://cursor-hold-game-server.onrender.com/health
+
+================================================================================
+КОНЕЦ ФАЙЛА
+================================================================================
