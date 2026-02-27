@@ -21,6 +21,9 @@ class MainApp {
   private battleManager!: BattleManager;
   private battleRenderer!: BattleRenderer;
 
+  // Метод для обновления прогресса битвы
+  private updateBattleProgress!: (grid: number[]) => void;
+
   constructor() {
     console.log('[DIAGNOSTIC] main.ts started');
     console.log('[DIAGNOSTIC] URL:', window.location.href);
@@ -160,6 +163,9 @@ class MainApp {
 
     this.battleManager.setOnGridUpdate((grid) => {
       this.battleRenderer.updateGrid(grid);
+      
+      // Обновляем прогресс битвы в верхней панели
+      this.updateBattleProgress(grid);
     });
 
     // Обратный отсчёт
@@ -222,6 +228,36 @@ class MainApp {
       console.log('[MainApp] Start countdown:', data);
       // Запускаем обратный отсчёт
       this.battleManager.startCountdownAndBattle(data.battleGrid, data.width, data.height);
+    };
+
+    // Инициализация метода обновления прогресса
+    this.updateBattleProgress = (grid: number[]) => {
+      let countA = 0;
+      let countB = 0;
+
+      for (const cell of grid) {
+        if (cell === 1) countA++;
+        else if (cell === 2) countB++;
+      }
+
+      const total = countA + countB;
+      const percentA = total > 0 ? (countA / total) * 100 : 0;
+      const percentB = total > 0 ? (countB / total) * 100 : 0;
+
+      const progressEl = document.getElementById('battleProgress');
+      if (progressEl) {
+        // Обновляем градиент: красный слева, синий справа
+        const redEnd = percentA;
+        const blueStart = 100 - percentB;
+        
+        progressEl.style.background = `linear-gradient(90deg, 
+          rgba(255, 0, 0, 0.4) 0%, 
+          rgba(255, 0, 0, 0.4) ${redEnd}%, 
+          rgba(0, 0, 0, 0.5) ${redEnd}%, 
+          rgba(0, 0, 0, 0.5) ${blueStart}%, 
+          rgba(0, 0, 255, 0.4) ${blueStart}%, 
+          rgba(0, 0, 255, 0.4) 100%)`;
+      }
     };
 
     this.uiController.onCreateRoom = async () => {
