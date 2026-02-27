@@ -19,7 +19,7 @@ class MainApp {
   private mouseFollower!: MouseFollowerManager;
   private virusTubeManager!: VirusTubeManager;
   private battleManager!: BattleManager;
-  private battleRenderer!: BattleRenderer;
+  private battleRenderer: BattleRenderer | null = null;  // Инициализируется позже
 
   // Метод для обновления прогресса битвы
   private updateBattleProgress!: (grid: number[]) => void;
@@ -69,16 +69,16 @@ class MainApp {
         console.log('[MainApp] Creating MouseFollowerManager...');
         this.mouseFollower = new MouseFollowerManager(this.gameEngine.app!.stage, this.networkManager);
 
-        // Создаём BattleRenderer ПОСЛЕ инициализации PixiJS
-        console.log('[MainApp] Creating BattleRenderer...');
-        this.battleRenderer = new BattleRenderer(this.gameEngine.app!.stage);
+        // BattleRenderer создаётся позже, при старте битвы
+        // console.log('[MainApp] Creating BattleRenderer...');
+        // this.battleRenderer = new BattleRenderer(this.gameEngine.app!.stage);
 
         // Подключаем InputManager к MouseFollowerManager
         this.inputManager.onMouseMove = (x, y) => {
           this.mouseFollower.updateLocalPosition(x, y);
         };
 
-        console.log('[MainApp] Mouse follower and battle renderer initialized!');
+        console.log('[MainApp] Mouse follower initialized!');
         this.gameEngine.start();
         
         // Обработчик изменения размера окна
@@ -144,26 +144,33 @@ class MainApp {
       console.log('[MainApp] Battle state changed:', state);
 
       if (state.type === 'running') {
-        this.battleRenderer.show();
+        console.log('[MainApp] Showing battle renderer');
+        if (this.battleRenderer) {
+          this.battleRenderer.show();
+        }
       } else if (state.type === 'ended') {
         // Определяем победителя по цвету вируса
-        const winnerText = state.winner === 'A' 
-          ? 'RED (Player 1)' 
-          : state.winner === 'B' 
-            ? 'BLUE (Player 2)' 
+        const winnerText = state.winner === 'A'
+          ? 'RED (Player 1)'
+          : state.winner === 'B'
+            ? 'BLUE (Player 2)'
             : 'Draw';
-        const percent = state.winner !== 'draw' 
-          ? ((state.winner === 'A' ? state.virusACount : state.virusBCount) / 
+        const percent = state.winner !== 'draw'
+          ? ((state.winner === 'A' ? state.virusACount : state.virusBCount) /
              (state.virusACount + state.virusBCount) * 100).toFixed(1)
           : '0';
         alert(`Battle ended!\nWinner: ${winnerText}\nTerritory: ${percent}%`);
-        this.battleRenderer.hide();
+        if (this.battleRenderer) {
+          this.battleRenderer.hide();
+        }
       }
     });
 
     this.battleManager.setOnGridUpdate((grid) => {
       console.log('[MainApp] Grid update received, calling battleRenderer.updateGrid()');
-      this.battleRenderer.updateGrid(grid);
+      if (this.battleRenderer) {
+        this.battleRenderer.updateGrid(grid);
+      }
 
       // Обновляем прогресс битвы в верхней панели
       this.updateBattleProgress(grid);
@@ -209,8 +216,15 @@ class MainApp {
     this.networkManager.onVirusBattleStarted = (data) => {
       console.log('[MainApp] Virus battle started:', data);
       
-      // Инициализируем BattleRenderer с правильными размерами
-      this.battleRenderer.initGrid(data.width, data.height);
+      // Создаём BattleRenderer с правильными размерами
+      if (!this.battleRenderer && this.gameEngine.app) {
+        this.battleRenderer = new BattleRenderer(this.gameEngine.app.stage);
+      }
+      
+      // Инициализируем сетку
+      if (this.battleRenderer) {
+        this.battleRenderer.initGrid(data.width, data.height);
+      }
       
       // Запускаем обратный отсчёт
       this.battleManager.startCountdownAndBattle(data.battleGrid, data.width, data.height);
