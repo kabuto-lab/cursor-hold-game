@@ -45,8 +45,19 @@ export class UIController {
     this.closeLeftSidebarBtn = document.getElementById('closeLeftSidebarBtn') as HTMLButtonElement;
     this.closeSidebarBtn = document.getElementById('closeSidebarBtn') as HTMLButtonElement;
 
+    console.log('[UIController] Constructor started');
+    console.log('[UIController] Initial state before setView:');
+    console.log('  - landingScreen display:', this.lobbyContainer.style.display);
+    console.log('  - gameScreen display:', this.roomContainer.style.display);
+    console.log('  - landingScreen hidden class:', this.lobbyContainer.classList.contains('hidden'));
+    console.log('  - gameScreen hidden class:', this.roomContainer.classList.contains('hidden'));
+
     this.setupEventListeners();
+    
+    // Устанавливаем lobby view явно
+    console.log('[UIController] Calling setView(lobby)...');
     this.setView('lobby');
+    console.log('[UIController] Constructor finished');
   }
 
   /**
@@ -130,17 +141,35 @@ export class UIController {
    */
   setView(view: 'lobby' | 'room'): void {
     console.log('[UIController] setView called with:', view);
+    console.trace('[UIController] setView stack trace');
     this.currentView = view;
 
     if (view === 'lobby') {
       console.log('[UIController] Showing landing screen, hiding game screen');
       this.lobbyContainer.style.display = 'flex';
       this.roomContainer.style.display = 'none';
+      this.lobbyContainer.classList.remove('hidden');
+      this.roomContainer.classList.add('hidden');
+      
+      // Проверка после установки
+      console.log('[UIController] After setView(lobby):');
+      console.log('  - landingScreen.style.display:', this.lobbyContainer.style.display);
+      console.log('  - gameScreen.style.display:', this.roomContainer.style.display);
+      console.log('  - landingScreen.hidden:', this.lobbyContainer.classList.contains('hidden'));
+      console.log('  - gameScreen.hidden:', this.roomContainer.classList.contains('hidden'));
     } else {
       console.log('[UIController] Showing game screen, hiding landing screen');
       this.lobbyContainer.style.display = 'none';
       this.roomContainer.style.display = 'flex';
-      console.log('[UIController] gameScreen display:', this.roomContainer.style.display);
+      this.lobbyContainer.classList.add('hidden');
+      this.roomContainer.classList.remove('hidden');
+      
+      // Проверка после установки
+      console.log('[UIController] After setView(room):');
+      console.log('  - landingScreen.style.display:', this.lobbyContainer.style.display);
+      console.log('  - gameScreen.style.display:', this.roomContainer.style.display);
+      console.log('  - landingScreen.hidden:', this.lobbyContainer.classList.contains('hidden'));
+      console.log('  - gameScreen.hidden:', this.roomContainer.classList.contains('hidden'));
     }
   }
 

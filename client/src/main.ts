@@ -26,16 +26,27 @@ class MainApp {
     console.log('[DIAGNOSTIC] URL:', window.location.href);
     console.log('[DIAGNOSTIC] referrer:', document.referrer);
     console.log('[MainApp] Constructor started...');
+    console.log('[MainApp] === INITIAL STATE: Should be in LOBBY ===');
 
     try {
       console.log('[MainApp] Creating GameEngine...');
       this.gameEngine = new GameEngine();
-      console.log('[MainApp] Creating NetworkManager...');
+      console.log('[MainApp] Creating NetworkManager... (NO room connection yet)');
       this.networkManager = new NetworkManager();
       console.log('[MainApp] Creating InputManager...');
       this.inputManager = new InputManager();
-      console.log('[MainApp] Creating UIController...');
+      console.log('[MainApp] Creating UIController... (will set view to lobby)');
       this.uiController = new UIController();
+      
+      // Проверка: убеждаемся, что мы в лобби после создания UIController
+      const landingScreen = document.getElementById('landingScreen');
+      const gameScreen = document.getElementById('gameScreen');
+      console.log('[MainApp] After UIController creation:');
+      console.log('  - landingScreen.style.display:', landingScreen?.style.display);
+      console.log('  - gameScreen.style.display:', gameScreen?.style.display);
+      console.log('  - landingScreen has hidden class:', landingScreen?.classList.contains('hidden'));
+      console.log('  - gameScreen has hidden class:', gameScreen?.classList.contains('hidden'));
+      
       console.log('[MainApp] Creating ChatManager...');
       this.chatManager = new ChatManager();
       console.log('[MainApp] Creating VirusTubeManager...');
