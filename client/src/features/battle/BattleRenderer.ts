@@ -28,8 +28,8 @@ export class BattleRenderer {
   
   private readonly COLORS = {
     empty: 0x1a1a1a,
-    virusA: 0xff0000,  // RED - Player 1 (room creator)
-    virusB: 0x0000ff,  // BLUE - Player 2 (joiner)
+    virusA: 0xff3333,  // Яркий красный
+    virusB: 0x3333ff,  // Яркий синий
     lineEmpty: 0x333333,
     lineActive: 0x666666
   };
@@ -43,14 +43,14 @@ export class BattleRenderer {
     this.container.addChild(this.linesContainer);
     
     this.config = {
-      cellDiameter: 15,
-      cellGap: 2,
+      cellDiameter: 25,  // Увеличили размер клеток
+      cellGap: 1,
       pulseSpeed: 2000,
       contestedFlickerSpeed: 200,
       ...config
     };
 
-    this.container.zIndex = 100;
+    this.container.zIndex = 1000;  // На переднем плане
     this.container.alpha = 0;
     this.container.visible = false;
 
@@ -200,6 +200,7 @@ export class BattleRenderer {
     const radius = diameter / 2;
 
     if (value === 0) {
+      // Пустая клетка - тёмная
       cell.beginFill(this.COLORS.empty, 1);
       cell.drawCircle(0, 0, radius);
       cell.endFill();
@@ -208,22 +209,26 @@ export class BattleRenderer {
       glow.drawCircle(0, 0, radius + 2);
       glow.endFill();
     } else if (value === 1) {
+      // Virus A - ЯРКИЙ КРАСНЫЙ с сильным свечением
       const pulse = this.getPulseValue();
       cell.beginFill(this.COLORS.virusA, 1);
       cell.drawCircle(0, 0, radius * pulse);
       cell.endFill();
 
-      glow.beginFill(this.COLORS.virusA, 0.5);
-      glow.drawCircle(0, 0, radius * pulse + 3);
+      // Сильное свечение
+      glow.beginFill(this.COLORS.virusA, 0.8);
+      glow.drawCircle(0, 0, radius * pulse + 5);
       glow.endFill();
     } else if (value === 2) {
+      // Virus B - ЯРКИЙ СИНИЙ с сильным свечением
       const pulse = this.getPulseValue();
       cell.beginFill(this.COLORS.virusB, 1);
       cell.drawCircle(0, 0, radius * pulse);
       cell.endFill();
 
-      glow.beginFill(this.COLORS.virusB, 0.5);
-      glow.drawCircle(0, 0, radius * pulse + 3);
+      // Сильное свечение
+      glow.beginFill(this.COLORS.virusB, 0.8);
+      glow.drawCircle(0, 0, radius * pulse + 5);
       glow.endFill();
     }
   }
