@@ -829,15 +829,14 @@
               <div id="playerCounter">Players: <span id="playerCount">0</span>/2</div>
               <button id="leaveRoomBtn" class="btn no-border">LEAVE ROOM</button>
             </div>
-            
-            <!-- Чат внутри левого сайдбара -->
-            <div id="chat-container" style="position: static; bottom: auto; left: auto; transform: none; width: 100%; margin-top: 20px;">
-              <div id="chat-messages"></div>
-              <div id="chat-input-container">
-                <input type="text" id="chat-input" placeholder="Type your message..." style="width: 70%;">
-                <button id="chat-send-btn">Send</button>
-              </div>
-            </div>
+          </div>
+        </div>
+        <!-- Чат в левом нижнем углу сайдбара -->
+        <div id="chat-container" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(15, 15, 35, 0.9); border-top: 2px solid #00ffff; padding: 10px;">
+          <div id="chat-messages" style="height: 120px; overflow-y: auto; margin-bottom: 10px; color: #00ff00; font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace; font-size: 0.85rem;"></div>
+          <div id="chat-input-container" style="display: flex; gap: 5px;">
+            <input type="text" id="chat-input" placeholder="Type message..." style="flex-grow: 1; background: #0f0f23; color: #00ff00; border: 1px solid #00ffff; padding: 5px; font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;">
+            <button id="chat-send-btn" style="background: #ff00ff; color: #0f0f23; border: none; padding: 5px 10px; cursor: pointer; font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;">Send</button>
           </div>
         </div>
       </div>

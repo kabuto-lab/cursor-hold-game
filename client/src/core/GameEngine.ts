@@ -7,6 +7,14 @@ import * as PIXI from 'pixi.js';
 export class GameEngine {
   app: PIXI.Application | null = null;
   private ticker: PIXI.Ticker | null = null;
+  private gridGraphics: PIXI.Graphics | null = null;
+  
+  // Настройки сетки
+  private readonly CELL_WIDTH: number = 80;
+  private readonly CELL_HEIGHT: number = 45;
+  private readonly GRID_COLOR: number = 0x00ffff;
+  private readonly GRID_ALPHA: number = 0.3;
+  private readonly GRID_LINE_WIDTH: number = 1;
 
   constructor() {
     console.log('[GameEngine] Constructor called');
@@ -48,7 +56,77 @@ export class GameEngine {
     // Добавляем canvas в контейнер
     container.appendChild(this.app.canvas);
 
+    // Рисуем сетку
+    this.drawGrid();
+
     console.log('[GameEngine] Canvas appended');
+  }
+
+  /**
+   * Нарисовать сетку с ячейками 80x45
+   */
+  private drawGrid(): void {
+    if (!this.app) return;
+
+    console.log('[GameEngine] Drawing grid (80x45 cells)...');
+
+    this.gridGraphics = new PIXI.Graphics();
+    this.gridGraphics.zIndex = 0; // Сетка на заднем плане
+
+    const width = this.app.screen.width;
+    const height = this.app.screen.height;
+
+    // Вертикальные линии
+    for (let x = 0; x <= width; x += this.CELL_WIDTH) {
+      this.gridGraphics.moveTo(x, 0);
+      this.gridGraphics.lineTo(x, height);
+    }
+
+    // Горизонтальные линии
+    for (let y = 0; y <= height; y += this.CELL_HEIGHT) {
+      this.gridGraphics.moveTo(0, y);
+      this.gridGraphics.lineTo(width, y);
+    }
+
+    this.gridGraphics.stroke({
+      width: this.GRID_LINE_WIDTH,
+      color: this.GRID_COLOR,
+      alpha: this.GRID_ALPHA,
+    });
+
+    this.app.stage.addChild(this.gridGraphics);
+    console.log('[GameEngine] Grid drawn');
+  }
+
+  /**
+   * Перерисовать сетку при изменении размера
+   */
+  resizeGrid(): void {
+    if (!this.app || !this.gridGraphics) return;
+
+    // Очищаем старую сетку
+    this.gridGraphics.clear();
+
+    const width = this.app.screen.width;
+    const height = this.app.screen.height;
+
+    // Вертикальные линии
+    for (let x = 0; x <= width; x += this.CELL_WIDTH) {
+      this.gridGraphics.moveTo(x, 0);
+      this.gridGraphics.lineTo(x, height);
+    }
+
+    // Горизонтальные линии
+    for (let y = 0; y <= height; y += this.CELL_HEIGHT) {
+      this.gridGraphics.moveTo(0, y);
+      this.gridGraphics.lineTo(width, y);
+    }
+
+    this.gridGraphics.stroke({
+      width: this.GRID_LINE_WIDTH,
+      color: this.GRID_COLOR,
+      alpha: this.GRID_ALPHA,
+    });
   }
 
   /**

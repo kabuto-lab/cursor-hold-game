@@ -77,6 +77,14 @@ class MainApp {
 
         console.log('[MainApp] Mouse follower and battle renderer initialized!');
         this.gameEngine.start();
+        
+        // Обработчик изменения размера окна
+        window.addEventListener('resize', () => {
+          if (this.gameEngine.app) {
+            this.gameEngine.app.renderer.resize(window.innerWidth, window.innerHeight);
+            this.gameEngine.resizeGrid();
+          }
+        });
       }).catch((error) => {
         console.error('[MainApp] GameEngine init ERROR:', error);
       });
