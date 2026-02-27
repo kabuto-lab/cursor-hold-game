@@ -1,7 +1,7 @@
-# TOVCH (VYRU5) — PROMPT для AI-отладки
+# TOVCH (VYRU5) — PROMPT для AI-отладки (Grok)
 
 **Дата создания:** 2026-02-27  
-**Версия проекта:** v29  
+**Версия проекта:** v30  
 **Статус:** Рабочая версия с известными проблемами
 
 ---
@@ -83,91 +83,57 @@
   - Заменить `beginFill()` → `fill()`
   - Заменить `drawCircle()` → `circle()`
   - Заменить `lineStyle()` → `setStrokeStyle()`
-  - Заменить `new Text()` → `new PIXI.Text()`
 
 ---
 
-## **ТЕХНИЧЕСКИЕ ДЕТАЛИ**
+## **СТРУКТУРА ФАЙЛОВ В ЭТОЙ ПАПКЕ**
 
-### **Архитектура визуализации:**
+Все файлы находятся в корне DEBUG папки (плоская структура). Имена файлов содержат префиксы, указывающие на их расположение в проекте:
 
 ```
-BattleManager (логика)
-    ↓ onGridUpdate callback
-BattleRenderer (визуализация)
-    ↓ updateGrid(grid)
-PIXI.Graphics (клетки)
-    ↓ updateCell(value)
-Canvas (отображение)
+DEBUG/
+├── package.json.txt                      # Корневой package.json
+├── client.package.json.txt               # client/package.json
+├── client.src.main.ts.txt                # client/src/main.ts
+├── client.src.core.GameEngine.ts.txt     # client/src/core/GameEngine.ts
+├── client.src.core.NetworkManager.ts.txt # client/src/core/NetworkManager.ts
+├── client.src.features.battle.BattleManager.ts.txt
+├── client.src.features.battle.BattleRenderer.ts.txt
+├── server.src.rooms.HoldingRoom.ts.txt   # server/src/rooms/HoldingRoom.ts
+├── server.src.rooms.schema.ts.txt        # server/src/rooms/schema.ts
+├── prompt.txt                            # ЭТОТ ФАЙЛ
+└── index.html                            # Навигация по файлам
 ```
 
-### **Ключевые файлы:**
+### **Формат каждого файла:**
 
-| Файл | Назначение | Проблема |
-|------|------------|----------|
-| `client/src/main.ts` | Точка входа | Создавать BattleRenderer при старте битвы |
-| `client/src/features/battle/BattleManager.ts` | Логика битвы | Вызывать onGridUpdate при каждом тике |
-| `client/src/features/battle/BattleRenderer.ts` | Рендер | Инициализировать с 20×32, обновлять клетки |
-| `server/src/rooms/HoldingRoom.ts` | Сервер | Отправлять startCountdown с 20×32 |
+```txt
+========================================
+ORIGINAL FILE PATH: C:\__Qwen1\TOVCH\client\src\main.ts
+========================================
 
-### **Алгоритм отладки:**
-
-1. **Проверить логи клиента:**
-   ```javascript
-   // В консоли браузера (F12)
-   [BattleRenderer] Init grid: 20×32 = 640 cells  ← Должно быть
-   [BattleRenderer] Grid updated: RED=1, BLUE=1   ← Должно быть
-   ```
-
-2. **Проверить размеры:**
-   ```javascript
-   console.log('Grid length:', grid.length);  // 640
-   console.log('Total cells:', totalCells);   // 640
-   ```
-
-3. **Проверить видимость:**
-   ```javascript
-   console.log('BattleRenderer container:', battleRenderer.container);
-   console.log('Container visible:', container.visible);
-   console.log('Container alpha:', container.alpha);
-   console.log('Container zIndex:', container.zIndex);
-   ```
+[полное содержимое файла...]
+```
 
 ---
 
-## **ИНСТРУКЦИИ ДЛЯ AI**
+## **КЛЮЧЕВЫЕ ФАЙЛЫ ДЛЯ АНАЛИЗА**
 
-### **1. Начни с анализа:**
+Начни анализ с этих файлов (в порядке приоритета):
 
-```
-1. Прочитай client/src/main.ts
-   - Где создаётся BattleRenderer?
-   - Когда вызывается initGrid()?
+1. **client.src.main.ts.txt** — точка входа, создание BattleRenderer
+2. **client.src.features.battle.BattleRenderer.ts.txt** — визуализация клеток
+3. **client.src.features.battle.BattleManager.ts.txt** — логика битвы
+4. **server.src.rooms.HoldingRoom.ts.txt** — серверная логика
+5. **client.src.core.GameEngine.ts.txt** — инициализация PixiJS
 
-2. Прочитай client/src/features/battle/BattleRenderer.ts
-   - Какие размеры по умолчанию?
-   - Как работает updateGrid()?
+---
 
-3. Прочитай server/src/rooms/HoldingRoom.ts
-   - Какие размеры отправляет сервер?
-   - Когда отправляет startCountdown?
-```
+## **АЛГОРИТМ ОТЛАДКИ**
 
-### **2. Запусти локально:**
+### **Шаг 1: Проверь создание BattleRenderer**
 
-```bash
-# Terminal 1: Server
-cd server && npm run dev
-
-# Terminal 2: Client
-cd client && npm run dev
-
-# Browser: http://localhost:3000
-# Open F12 Console
-```
-
-### **3. Внеси исправления:**
-
+Открой `client.src.main.ts.txt`, найди:
 ```typescript
 // ❌ НЕПРАВИЛЬНО (в конструкторе):
 this.battleRenderer = new BattleRenderer(this.gameEngine.app!.stage);
@@ -181,20 +147,58 @@ this.networkManager.onVirusBattleStarted = (data) => {
 };
 ```
 
-### **4. Протестируй:**
+### **Шаг 2: Проверь размеры сетки**
 
+Открой `client.src.features.battle.BattleRenderer.ts.txt`, найди:
+```typescript
+initGrid(width: number, height: number): void {
+  this.gridWidth = width;   // Должно быть 20
+  this.gridHeight = height; // Должно быть 32
+  this.totalCells = width * height; // 640
+  // ...
+}
 ```
-1. Создай комнату
-2. Присоединись вторым игроком
-3. READY оба
-4. Нажми СТАРТ
-5. Проверь консоль:
-   ✅ [BattleRenderer] Init grid: 20×32 = 640 cells
-   ✅ [BattleRenderer] Grid updated: RED=1, BLUE=1, EMPTY=638
-   ✅ [BattleRenderer] Grid updated: RED=2, BLUE=2, EMPTY=636
-6. Проверь canvas:
-   ✅ Видно красную клетку сверху
-   ✅ Видно синюю клетку снизу
+
+### **Шаг 3: Проверь updateGrid**
+
+Убедись, что `updateGrid` вызывается при каждом тике:
+```typescript
+// В BattleManager.ts
+private spreadTick(): void {
+  // ... логика распространения ...
+  
+  // Обновляем сетку
+  this.gridData.grid = newGrid;
+  
+  // Вызываем callback
+  if (this.onGridUpdateCallback) {
+    this.onGridUpdateCallback(this.gridData.grid);
+  }
+}
+```
+
+### **Шаг 4: Запусти локально**
+
+```bash
+# Terminal 1: Server
+cd server && npm run dev
+
+# Terminal 2: Client
+cd client && npm run dev
+
+# Browser: http://localhost:3000
+# Open F12 Console
+```
+
+### **Шаг 5: Проверь логи**
+
+В консоли браузера должно быть:
+```
+[BattleRenderer] Init grid: 20×32 = 640 cells
+[BattleRenderer] Grid updated: RED=1, BLUE=1, EMPTY=638, TOTAL=640
+[BattleRenderer] Grid updated: RED=2, BLUE=2, EMPTY=636, TOTAL=640
+[BattleRenderer] Grid updated: RED=3, BLUE=3, EMPTY=634, TOTAL=640
+...
 ```
 
 ---
@@ -208,14 +212,12 @@ this.networkManager.onVirusBattleStarted = (data) => {
    [BattleRenderer] Init grid: 20×32 = 640 cells
    [BattleRenderer] Grid updated: RED=1, BLUE=1, EMPTY=638, TOTAL=640
    [BattleRenderer] Grid updated: RED=2, BLUE=2, EMPTY=636, TOTAL=640
-   [BattleRenderer] Grid updated: RED=3, BLUE=3, EMPTY=634, TOTAL=640
-   ...
    ```
 
 2. **Canvas:**
-   - Видно сетку 80px клетки (cyan, 30% alpha)
-   - Видно красную клетку вверху (центр)
-   - Видно синюю клетку внизу (центр)
+   - Видно сетку (cyan, 30% alpha)
+   - Видно красную клетку сверху (центр)
+   - Видно синюю клетку снизу (центр)
    - Клетки распространяются каждые 500ms
 
 3. **Прогресс-бар:**

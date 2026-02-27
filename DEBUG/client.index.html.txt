@@ -1,0 +1,294 @@
+========================================
+ORIGINAL FILE PATH: C:\__Qwen1\TOVCH\client\index.html
+========================================
+
+[ПОЛНОЕ СОДЕРЖИМОЕ ФАЙЛА - 989 строк]
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VYRU5 - Multiplayer Game</title>
+
+  <!-- Preload PIXY font for faster loading -->
+  <link rel="preload" href="/fnt/PIXY.otf" as="font" type="font/otf" crossorigin="anonymous">
+  <link rel="preload" href="/fnt/PIXY.ttf" as="font" type="font/ttf" crossorigin="anonymous">
+
+  <style>
+    /* Подключение ретро-шрифтов */
+    @font-face {
+      font-family: 'PIXY';
+      src: local('PIXY'),
+           url('/fnt/PIXY.otf') format('opentype'),
+           url('/fnt/PIXY.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    /* Fallback font stack для максимальной совместимости */
+    @font-face {
+      font-family: 'PIXY Fallback';
+      src: local('Courier New');
+      ascent-override: 100%;
+      descent-override: 25%;
+      line-gap-override: 0%;
+    }
+
+    /* Глобальные стили для улучшения рендеринга шрифтов */
+    * {
+      -webkit-font-smoothing: antialiased; /* Safari, Chrome */
+      -moz-osx-font-smoothing: grayscale; /* Firefox */
+      text-rendering: optimizeLegibility; /* Все браузеры */
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Courier New', monospace;
+      background-color: #0f0f23; /* Dark blue background */
+      color: #00ff00; /* Green text for retro feel */
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      max-width: 600px;
+      padding: 20px;
+    }
+
+    h1 {
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      font-size: 3.5rem;
+      text-shadow: 2px 2px 0 #ff00ff, 4px 4px 0 rgba(0,0,0,0.5);
+      margin-bottom: 2rem;
+      color: #ffff00;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .btn {
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 12px 24px;
+      margin: 10px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 3px 3px 0 #00ffff; /* Cyan outline */
+      transition: all 0.1s;
+      font-family: 'Courier New', monospace;
+    }
+
+    .btn:hover {
+      background-color: #00ffff; /* Cyan on hover */
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 #00ffff;
+    }
+
+    .btn:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0px 0px 0 #00ffff;
+    }
+
+    .no-border {
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 5px 10px;
+      margin-top: 10px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+
+    input[type="text"] {
+      background-color: #0f0f23;
+      color: #00ff00;
+      border: 2px solid #00ffff;
+      padding: 10px;
+      font-size: 1rem;
+      width: 250px;
+      margin: 10px;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #canvasContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: auto;
+    }
+
+    /* ... [CSS continues for ~600 lines] ... */
+  </style>
+</head>
+<body>
+  <div id="rotateScreen">
+    <div style="font-size: 3rem; margin-bottom: 20px;">📱</div>
+    <div style="font-size: 1.5rem;">Поверните устройство</div>
+    <div style="font-size: 1rem; color: #00ffff; margin-top: 10px;">
+      Требуется альбомная ориентация
+    </div>
+  </div>
+
+  <div id="app">
+    <div id="versionBadge" style="position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); color: #00ff00; padding: 4px 12px; font-family: 'Courier New', monospace; font-size: 0.75rem; border: 1px solid #00ffff;">Loading...</div>
+
+    <!-- Landing Screen -->
+    <div id="landingScreen" class="screen">
+      <div style="font-size: 3rem; color: #ff00ff; font-family: 'Courier New', monospace; font-weight: bold; margin-bottom: 0.5rem;">1</div>
+      <h1>VYRU5</h1>
+      <p style="font-size: 1.2rem; color: #00ffff;">Multiplayer Viral Battle Arena</p>
+
+      <button id="createRoomBtn" class="btn">CREATE ROOM</button>
+      <div style="margin-top: 20px;">
+        <input type="text" id="roomIdInput" placeholder="Enter Room ID">
+        <button id="joinRoomBtn" class="btn">JOIN ROOM</button>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen hidden">
+      <div id="canvasContainer"></div>
+
+      <!-- 4 желтых круга по углам экрана -->
+      <div class="corner-circle top-left"></div>
+      <div class="corner-circle top-right"></div>
+      <div class="corner-circle bottom-left"></div>
+      <div class="corner-circle bottom-right"></div>
+
+      <!-- Left menu button -->
+      <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+
+      <!-- Menu button in top right corner -->
+      <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+
+      <!-- Top panel wrapper with player names and room ID -->
+      <div id="topPanelWrapper">
+        <div id="player1Name">Player 1</div>
+        <div id="topRoomIdPanel">
+          <span style="color: #ffff00;">Всего игроков: </span>
+          <span id="playerCountTop" style="color: #00ff00;">0</span>
+          <span style="color: #ffff00;">/2</span>
+          <span style="color: #00ffff; margin-left: 8px;">|</span>
+          <span id="topRoomId" class="copyable-id" style="color: #00ff00; margin-left: 8px;"></span>
+        </div>
+        <div id="player2Name">Player 2</div>
+
+        <!-- Прогресс битвы (фон панели) -->
+        <div id="battleProgress" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 25px; overflow: hidden; z-index: -1; background: linear-gradient(90deg,
+          rgba(255, 0, 0, 0.3) 0%,
+          rgba(255, 0, 0, 0.3) 0%,
+          rgba(0, 0, 0, 0.5) 50%,
+          rgba(0, 0, 255, 0.3) 50%,
+          rgba(0, 0, 255, 0.3) 100%);"></div>
+      </div>
+
+      <!-- Обратный отсчёт перед битвой -->
+      <div id="countdownOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 99999; display: none; align-items: center; justify-content: center; flex-direction: column;">
+        <div id="countdownText" style="font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace; font-size: 15rem; color: #00ffff; text-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff; animation: pulse 0.5s ease-in-out infinite;">3</div>
+      </div>
+
+      <!-- Кнопка СТАРТ в левом нижнем углу -->
+      <div id="startButton" style="position: fixed; bottom: 30px; left: 30px; width: 100px; height: 100px; background: radial-gradient(circle, #ff00ff 0%, #990099 100%); border: 3px solid #00ffff; border-radius: 50%; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 99998; box-shadow: 0 0 20px #ff00ff, 0 0 40px #ff00ff; animation: pulseButton 1s ease-in-out infinite;">
+        <span style="font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace; font-size: 1.5rem; color: #00ffff; font-weight: bold; text-shadow: 0 0 10px #00ffff;">СТАРТ</span>
+      </div>
+
+      <!-- Left Sidebar -->
+      <div id="leftSidebar" class="sidebar left-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-controls">
+            <h3>Controls</h3>
+            <button id="closeLeftSidebarBtn" class="btn close-btn">✕</button>
+          </div>
+        </div>
+        <div class="sidebar-content" style="display: flex; flex-direction: column; justify-content: space-between; padding: 0;">
+          <div class="control-panel" style="padding: 10px;">
+            <div id="hud">
+              <div id="playerCounter">Players: <span id="playerCount">0</span>/2</div>
+              <button id="leaveRoomBtn" class="btn no-border">LEAVE ROOM</button>
+            </div>
+          </div>
+          <!-- Чат в левом нижнем углу сайдбара - полная ширина -->
+          <div id="chat-container" style="width: 100%; background: rgba(15, 15, 35, 0.9); border-top: 2px solid #00ffff; padding: 10px; box-sizing: border-box;">
+            <div id="chat-messages" style="height: 120px; overflow-y: auto; margin-bottom: 10px; color: #00ff00; font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace; font-size: 0.85rem;"></div>
+            <div id="chat-input-container" style="display: flex; gap: 5px;">
+              <input type="text" id="chat-input" placeholder="Type message..." style="flex-grow: 1; background: #0f0f23; color: #00ff00; border: 1px solid #00ffff; padding: 5px; font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;">
+              <button id="chat-send-btn" style="background: #ff00ff; color: #0f0f23; border: none; padding: 5px 10px; cursor: pointer; font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Sidebar -->
+      <div id="sidebar" class="sidebar right-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-controls">
+            <h3>Virus Parameters</h3>
+            <button id="closeSidebarBtn" class="btn close-btn">✕</button>
+          </div>
+        </div>
+        <div class="sidebar-content">
+          <!-- Virus Parameter Selection -->
+          <div class="setting-item">
+            <h4>Virus Parameters (12 points total)</h4>
+            <div id="virusParamsContainer">
+              <!-- 12 virus parameter test tubes in 3×4 grid -->
+              <!-- Row 1 -->
+              <div class="param-row">
+                <div class="param-cell" data-param="aggression">
+                  <div class="param-emoji">⚔️</div>
+                  <div class="param-name">Aggression</div>
+                  <div class="param-value" id="param-aggression">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <!-- ... other params ... -->
+              </div>
+              <!-- ... more rows ... -->
+            </div>
+            <div id="pointsRemaining" class="points-summary">Points remaining: <span id="points-remaining">12</span></div>
+            <button id="randomizeBtn" class="btn no-border">RANDOMIZE</button>
+            <button id="readyBtn" class="btn no-border" disabled>READY</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
