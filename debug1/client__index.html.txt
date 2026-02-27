@@ -1,0 +1,1011 @@
+// ========================================
+// ORIGINAL PATH: client/index.html
+// ========================================
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VYRU5 - Multiplayer Game</title>
+
+  <!-- Preload PIXY font for faster loading -->
+  <link rel="preload" href="/fnt/PIXY.otf" as="font" type="font/otf" crossorigin="anonymous">
+  <link rel="preload" href="/fnt/PIXY.ttf" as="font" type="font/ttf" crossorigin="anonymous">
+
+  <style>
+    /* Подключение ретро-шрифтов */
+    @font-face {
+      font-family: 'PIXY';
+      src: local('PIXY'),
+           url('/fnt/PIXY.otf') format('opentype'),
+           url('/fnt/PIXY.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    /* Fallback font stack для максимальной совместимости */
+    @font-face {
+      font-family: 'PIXY Fallback';
+      src: local('Courier New');
+      ascent-override: 100%;
+      descent-override: 25%;
+      line-gap-override: 0%;
+    }
+
+    /* Глобальные стили для улучшения рендеринга шрифтов */
+    * {
+      -webkit-font-smoothing: antialiased; /* Safari, Chrome */
+      -moz-osx-font-smoothing: grayscale; /* Firefox */
+      text-rendering: optimizeLegibility; /* Все браузеры */
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Courier New', monospace;
+      background-color: #0f0f23; /* Dark blue background */
+      color: #00ff00; /* Green text for retro feel */
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      max-width: 600px;
+      padding: 20px;
+    }
+
+    h1 {
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      font-size: 3.5rem;
+      text-shadow: 2px 2px 0 #ff00ff, 4px 4px 0 rgba(0,0,0,0.5);
+      margin-bottom: 2rem;
+      color: #ffff00;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .btn {
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 12px 24px;
+      margin: 10px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 3px 3px 0 #00ffff; /* Cyan outline */
+      transition: all 0.1s;
+      font-family: 'Courier New', monospace;
+    }
+
+    .btn:hover {
+      background-color: #00ffff; /* Cyan on hover */
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 #00ffff;
+    }
+
+    .btn:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0px 0px 0 #00ffff;
+    }
+
+    .no-border {
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 5px 10px;
+      margin-top: 10px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+
+    input[type="text"] {
+      background-color: #0f0f23;
+      color: #00ff00;
+      border: 2px solid #00ffff;
+      padding: 10px;
+      font-size: 1rem;
+      width: 250px;
+      margin: 10px;
+      font-family: 'Courier New', monospace;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #gameContainer {
+      width: 100%;
+      height: 100%;
+    }
+
+    #canvasContainer {
+      position: absolute;
+      top: 0;
+      left: 0; /* Full screen - starts at left edge */
+      width: 100%; /* Full width */
+      height: 100%;
+      z-index: 1; /* Below the grid */
+      pointer-events: auto; /* Allow mouse events for drag-and-drop */
+    }
+
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 100;
+      background-color: rgba(15, 15, 35, 0.7);
+      padding: 10px;
+      border-radius: 0;
+      font-size: 0.9rem;
+    }
+
+
+    .connection-status {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    .connected {
+      background-color: #00ff00;
+    }
+
+    .disconnected {
+      background-color: #ff0000;
+    }
+
+    .connecting {
+      background-color: #ffff00;
+    }
+
+    #roomLink {
+      word-break: break-all;
+      max-width: 300px;
+    }
+
+    .pixel-art {
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      right: -33%; /* Hidden by default */
+      width: 33%;
+      height: 100%;
+      background: rgba(15, 15, 35, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-left: 2px solid #00ffff;
+      z-index: 1000;
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      box-shadow:
+        0 0 20px rgba(0, 255, 255, 0.3),
+        inset 0 0 20px rgba(0, 255, 255, 0.1);
+      /* Liquid glass effect */
+      background: linear-gradient(135deg, rgba(15, 15, 35, 0.7) 0%, rgba(15, 15, 35, 0.5) 100%);
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      border-radius: 0;
+    }
+
+    /* Adjust right sidebar position to account for battle grid */
+    .right-sidebar {
+      right: -33%; /* Hidden by default */
+      left: auto;
+    }
+
+    .right-sidebar.active {
+      right: 0;
+      left: auto;
+    }
+
+    .sidebar.active {
+      right: 0;
+    }
+
+    .left-sidebar {
+      right: auto;
+      left: -33%; /* Hidden by default */
+      width: 33%; /* 33.3% width for desktop */
+      transition: left 0.3s ease;
+    }
+
+    .left-sidebar.active {
+      left: 0;
+      right: auto;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+      }
+
+      .right-sidebar {
+        right: -100%;
+      }
+
+      .left-sidebar {
+        left: -100%;
+      }
+
+      .right-sidebar.active {
+        right: 0;
+      }
+
+      .left-sidebar.active {
+        left: 0;
+      }
+
+      #canvasContainer {
+        left: 0;
+        width: 100%;
+      }
+
+    }
+
+    .sidebar-header {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      border-bottom: 1px solid #00ffff;
+    }
+
+    .sidebar-title-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    .sidebar-header h3 {
+      margin: 0;
+      color: #00ff00;
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      font-size: 1.3rem;
+      flex-grow: 1;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .player-info {
+      color: #00ff00;
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      font-size: 1rem;
+      text-align: center;
+      flex-grow: 1;
+    }
+
+    #roomInfo {
+      color: #00ff00;
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      font-size: 0.95rem;
+      padding-left: 30px;
+    }
+
+    .sidebar-content {
+      padding: 10px;
+      overflow-y: hidden; /* Changed from auto to hide scrollbar */
+      flex-grow: 1;
+    }
+
+    .setting-item {
+      margin-bottom: 15px;
+    }
+
+    .setting-item label {
+      display: block;
+      color: #00ff00;
+      margin-bottom: 5px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .setting-item input[type="range"],
+    .setting-item select {
+      width: 100%;
+      padding: 5px;
+      background-color: #0f0f23;
+      color: #00ff00;
+      border: 1px solid #00ffff;
+      font-family: 'Courier New', monospace;
+    }
+
+    .close-btn {
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      width: auto;
+    }
+
+    #chat-container {
+      width: 100%;
+      background-color: rgba(15, 15, 35, 0.8);
+      border: 2px solid #00ffff;
+      border-radius: 0;
+      padding: 10px;
+      margin-top: 20px;
+    }
+
+    #chat-messages {
+      height: 100px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      color: #00ff00;
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+
+    #chat-input-container {
+      display: flex;
+      gap: 5px;
+    }
+
+    #chat-input {
+      flex-grow: 1;
+      background-color: #0f0f23;
+      color: #00ff00;
+      border: 1px solid #00ffff;
+      padding: 5px;
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      font-size: 0.85rem;
+    }
+
+    #chat-send-btn {
+      background-color: #ff00ff;
+      color: #0f0f23;
+      border: none;
+      padding: 5px 10px;
+      margin-left: 5px;
+      cursor: pointer;
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      font-size: 0.85rem;
+    }
+
+    /* Virus Parameter Styles */
+    .param-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px; /* Reduced margin to save space */
+    }
+
+    .param-cell {
+      width: 30%;
+      text-align: center;
+      background-color: rgba(0, 0, 0, 0.3);
+      border: 1px solid #00ffff;
+      padding: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      position: relative;
+      border-radius: 0 0 5px 5px; /* Rounded bottom for test tube shape */
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .param-cell:hover {
+      background-color: rgba(0, 255, 255, 0.2);
+    }
+
+    .param-emoji {
+      font-size: 1.5rem;
+      margin-bottom: 3px;
+      display: block;
+    }
+
+    .param-name {
+      font-size: 0.65rem;
+      color: #00ff00;
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .param-value {
+      font-size: 1.1rem;
+      color: #ffff00;
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      font-weight: bold;
+    }
+
+    /* Test tube liquid effect */
+    .param-liquid {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 0%;
+      transition: height 0.5s ease;
+      z-index: 1;
+    }
+
+    /* Emoji-specific colors for liquids */
+    .param-cell[data-param="aggression"] .param-liquid { background-color: rgba(255, 0, 0, 0.6); } /* Red for ⚔️ */
+    .param-cell[data-param="mutation"] .param-liquid { background-color: rgba(128, 0, 128, 0.6); } /* Purple for 🧬 */
+    .param-cell[data-param="speed"] .param-liquid { background-color: rgba(255, 165, 0, 0.6); } /* Orange for ⚡ */
+    .param-cell[data-param="defense"] .param-liquid { background-color: rgba(0, 0, 255, 0.6); } /* Blue for 🛡️ */
+    .param-cell[data-param="reproduction"] .param-liquid { background-color: rgba(0, 128, 0, 0.6); } /* Green for 🦠 */
+    .param-cell[data-param="stealth"] .param-liquid { background-color: rgba(128, 128, 128, 0.6); } /* Gray for 👻 */
+    .param-cell[data-param="virulence"] .param-liquid { background-color: rgba(128, 0, 0, 0.6); } /* Maroon for ☣️ */
+    .param-cell[data-param="resilience"] .param-liquid { background-color: rgba(255, 192, 203, 0.6); } /* Pink for 💪 */
+    .param-cell[data-param="mobility"] .param-liquid { background-color: rgba(139, 69, 19, 0.6); } /* Brown for 🚶 */
+    .param-cell[data-param="intellect"] .param-liquid { background-color: rgba(255, 255, 0, 0.6); } /* Yellow for 🧠 */
+    .param-cell[data-param="contagiousness"] .param-liquid { background-color: rgba(0, 255, 255, 0.6); } /* Cyan for 🫁 */
+    .param-cell[data-param="lethality"] .param-liquid { background-color: rgba(0, 0, 0, 0.6); } /* Black for 💀 */
+
+    /* Drop animation */
+    .drop-animation {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: currentColor; /* Will inherit the color from parent */
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .points-summary {
+      margin: 10px 0;
+      color: #00ff00;
+      font-size: 0.9rem;
+    }
+
+    #readyBtn {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .param-cell.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Пробирки - интерактивность */
+    .param-cell:active {
+      transform: scale(0.95);
+    }
+
+    /* Капля */
+    .tube-drop {
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--tube-color, #00ffff);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .tube-drop.falling {
+      animation: dropFall 0.5s ease-in forwards;
+    }
+
+    @keyframes dropFall {
+      0% { top: 5px; opacity: 1; }
+      100% { top: 70%; opacity: 0.8; }
+    }
+
+    /* Всплеск */
+    .tube-splash {
+      position: absolute;
+      bottom: 10%;
+      left: 50%;
+      transform: translateX(-50%) scale(0);
+      width: 30px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.6);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .tube-splash.active {
+      animation: splashEffect 0.4s ease-out forwards;
+    }
+
+    @keyframes splashEffect {
+      0% { transform: translateX(-50%) scale(0); opacity: 0.8; }
+      100% { transform: translateX(-50%) scale(2); opacity: 0; }
+    }
+
+    /* Пузырьки */
+    .tube-bubble {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: bubbleRise 1.5s ease-out forwards;
+    }
+
+    @keyframes bubbleRise {
+      0% { transform: translateY(0) scale(1); opacity: 0.6; }
+      100% { transform: translateY(-40px) scale(0.3); opacity: 0; }
+    }
+
+    /* Жидкость */
+    .param-liquid {
+      transition: height 0.3s ease;
+    }
+
+    /* Кликабельные элементы для уменьшения */
+    .param-emoji,
+    .param-name,
+    .param-value {
+      cursor: pointer;
+      position: relative;
+      z-index: 5;
+      transition: transform 0.1s;
+    }
+
+    .param-emoji:hover,
+    .param-name:hover,
+    .param-value:hover {
+      transform: scale(1.1);
+      text-shadow: 0 0 10px currentColor;
+    }
+
+    .copyable-id {
+      cursor: pointer;
+      text-decoration: underline;
+      transition: color 0.2s;
+    }
+
+    .copyable-id:hover {
+      color: #00ffff;
+    }
+
+    /* Верхняя панель с именами игроков */
+    #topPanelWrapper {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 600px;
+      max-width: calc(100% - 40px);
+      height: 44px;
+      background: linear-gradient(90deg,
+        rgba(255,0,0,0.15) 0%,
+        rgba(0,0,0,0.7) 20%,
+        rgba(0,0,0,0.7) 80%,
+        rgba(0,0,255,0.15) 100%);
+      border: 2px solid #00ffff;
+      border-radius: 25px;
+      z-index: 9998;
+      padding: 0 20px;
+      box-sizing: border-box;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+
+    #player1Name {
+      color: #ff0000;
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      font-size: 16px;
+      font-weight: bold;
+      text-shadow: 0 0 10px rgba(255,0,0,0.5);
+      z-index: 9999;
+      white-space: nowrap;
+      min-width: 80px;
+      text-align: left;
+    }
+
+    #player2Name {
+      color: #0000ff;
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      font-size: 16px;
+      font-weight: bold;
+      text-shadow: 0 0 10px rgba(0,0,255,0.5);
+      z-index: 9999;
+      white-space: nowrap;
+      min-width: 80px;
+      text-align: right;
+    }
+
+    #topRoomIdPanel {
+      position: relative;
+      background: rgba(0,0,0,0.7);
+      color: #00ffff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+      font-size: 14px;
+      font-weight: bold;
+      border: 2px solid #00ffff;
+      z-index: 10000;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    #topRoomIdPanel:hover {
+      background: rgba(0, 255, 255, 0.1);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    }
+
+    .copied-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #00ff00;
+      padding: 10px 20px;
+      border: 2px solid #00ffff;
+      border-radius: 0;
+      font-family: 'Courier New', monospace;
+      font-size: 1.2rem;
+      z-index: 10000;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    /* Hide scrollbar for sidebar */
+    .sidebar-content::-webkit-scrollbar {
+      display: none; /* For Chrome, Safari, and Opera */
+    }
+
+    .sidebar-content {
+      -ms-overflow-style: none;  /* IE and Edge */
+      scrollbar-width: none;  /* Firefox */
+    }
+
+    /* 4 желтых круга по углам экрана для проверки позиционирования */
+    .corner-circle {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: #ffff00;
+      z-index: 50;
+      border: 3px solid #ff00ff;
+    }
+
+    .corner-circle.top-left {
+      top: 10px;
+      left: 10px;
+    }
+
+    .corner-circle.top-right {
+      top: 10px;
+      right: 10px;
+    }
+
+    .corner-circle.bottom-left {
+      bottom: 10px;
+      left: 10px;
+    }
+
+    .corner-circle.bottom-right {
+      bottom: 10px;
+      right: 10px;
+    }
+    /* Принудительный ландшафт */
+    #rotateScreen {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0f0f23;
+      color: #00ff00;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 99999;
+      font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
+    }
+
+    #rotateScreen {
+      display: none; /* Hidden by default - only shown on portrait orientation via JS check */
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      #topPanelWrapper {
+        width: calc(100% - 20px);
+        padding: 0 10px;
+      }
+
+      #player1Name, #player2Name {
+        font-size: 12px;
+        min-width: 60px;
+      }
+
+      #topRoomIdPanel {
+        font-size: 11px;
+        padding: 6px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Экран поворота устройства -->
+  <div id="rotateScreen">
+    <div style="font-size: 3rem; margin-bottom: 20px;">📱</div>
+    <div style="font-size: 1.5rem;">Поверните устройство</div>
+    <div style="font-size: 1rem; color: #00ffff; margin-top: 10px;">
+      Требуется альбомная ориентация
+    </div>
+  </div>
+
+  <div id="app">
+    <div id="versionBadge" style="position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); color: #00ff00; padding: 4px 12px; font-family: 'Courier New', monospace; font-size: 0.75rem; border: 1px solid #00ffff;">Loading...</div>
+
+    <!-- Landing Screen -->
+    <div id="landingScreen" class="screen">
+      <div style="font-size: 3rem; color: #ff00ff; font-family: 'Courier New', monospace; font-weight: bold; margin-bottom: 0.5rem;">1</div>
+      <h1>VYRU5</h1>
+      <p style="font-size: 1.2rem; color: #00ffff;">Multiplayer Viral Battle Arena</p>
+
+      <button id="createRoomBtn" class="btn">CREATE ROOM</button>
+      <div style="margin-top: 20px;">
+        <input type="text" id="roomIdInput" placeholder="Enter Room ID">
+        <button id="joinRoomBtn" class="btn">JOIN ROOM</button>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen hidden">
+      <div id="canvasContainer"></div>
+
+      <!-- 4 желтых круга по углам экрана для проверки позиционирования -->
+      <div class="corner-circle top-left"></div>
+      <div class="corner-circle top-right"></div>
+      <div class="corner-circle bottom-left"></div>
+      <div class="corner-circle bottom-right"></div>
+
+      <!-- Left menu button -->
+      <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+
+      <!-- Menu button in top right corner -->
+      <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+
+      <!-- Top panel wrapper with player names and room ID -->
+      <div id="topPanelWrapper">
+        <div id="player1Name">Player 1</div>
+        <div id="topRoomIdPanel">
+          <span style="color: #ffff00;">Всего игроков: </span>
+          <span id="playerCountTop" style="color: #00ff00;">0</span>
+          <span style="color: #ffff00;">/2</span>
+          <span style="color: #00ffff; margin-left: 8px;">|</span>
+          <span id="topRoomId" class="copyable-id" style="color: #00ff00; margin-left: 8px;"></span>
+        </div>
+        <div id="player2Name">Player 2</div>
+
+        <!-- Прогресс битвы (фон панели) -->
+        <div id="battleProgress" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 25px; overflow: hidden; z-index: -1; background: linear-gradient(90deg,
+          rgba(255, 0, 0, 0.3) 0%,
+          rgba(255, 0, 0, 0.3) 0%,
+          rgba(0, 0, 0, 0.5) 50%,
+          rgba(0, 0, 255, 0.3) 50%,
+          rgba(0, 0, 255, 0.3) 100%);"></div>
+      </div>
+
+      <!-- Обратный отсчёт перед битвой -->
+      <div id="countdownOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 99999; display: none; align-items: center; justify-content: center; flex-direction: column;">
+        <div id="countdownText" style="font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace; font-size: 15rem; color: #00ffff; text-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff; animation: pulse 0.5s ease-in-out infinite;">3</div>
+      </div>
+
+      <style>
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        @keyframes pulseButton {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 20px #ff00ff, 0 0 40px #ff00ff; }
+          50% { transform: scale(1.05); box-shadow: 0 0 30px #ff00ff, 0 0 60px #ff00ff; }
+        }
+      </style>
+
+      <!-- Left Sidebar -->
+      <div id="leftSidebar" class="sidebar left-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-controls">
+            <h3>Controls</h3>
+            <button id="closeLeftSidebarBtn" class="btn close-btn">✕</button>
+          </div>
+        </div>
+        <div class="sidebar-content" style="display: flex; flex-direction: column; justify-content: space-between; padding: 0;">
+          <div class="control-panel" style="padding: 10px;">
+            <div id="hud">
+              <div id="playerCounter">Players: <span id="playerCount">0</span>/2</div>
+              <button id="leaveRoomBtn" class="btn no-border">LEAVE ROOM</button>
+            </div>
+          </div>
+          <!-- Чат в левом нижнем углу сайдбара - полная ширина -->
+          <div id="chat-container" style="width: 100%; background: rgba(15, 15, 35, 0.9); border-top: 2px solid #00ffff; padding: 10px; box-sizing: border-box;">
+            <div id="chat-messages" style="height: 120px; overflow-y: auto; margin-bottom: 10px; color: #00ff00; font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace; font-size: 0.85rem;"></div>
+            <div id="chat-input-container" style="display: flex; gap: 5px;">
+              <input type="text" id="chat-input" placeholder="Type message..." style="flex-grow: 1; background: #0f0f23; color: #00ff00; border: 1px solid #00ffff; padding: 5px; font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;">
+              <button id="chat-send-btn" style="background: #ff00ff; color: #0f0f23; border: none; padding: 5px 10px; cursor: pointer; font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Sidebar -->
+      <div id="sidebar" class="sidebar right-sidebar">
+        <div class="sidebar-header">
+          <div class="sidebar-title-controls">
+            <h3>Virus Parameters</h3>
+            <button id="closeSidebarBtn" class="btn close-btn">✕</button>
+          </div>
+        </div>
+        <div class="sidebar-content">
+          <!-- Virus Parameter Selection -->
+          <div class="setting-item">
+            <h4>Virus Parameters (12 points total)</h4>
+            <div id="virusParamsContainer">
+              <!-- Row 1 -->
+              <div class="param-row">
+                <div class="param-cell" data-param="aggression">
+                  <div class="param-emoji">⚔️</div>
+                  <div class="param-name">Aggression</div>
+                  <div class="param-value">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="mutation">
+                  <div class="param-emoji">🧬</div>
+                  <div class="param-name">Mutation</div>
+                  <div class="param-value">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="speed">
+                  <div class="param-emoji">⚡</div>
+                  <div class="param-name">Speed</div>
+                  <div class="param-value">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+              </div>
+              <!-- Row 2 -->
+              <div class="param-row">
+                <div class="param-cell" data-param="defense">
+                  <div class="param-emoji">🛡️</div>
+                  <div class="param-name">Defense</div>
+                  <div class="param-value">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="reproduction">
+                  <div class="param-emoji">🦠</div>
+                  <div class="param-name">Reproduction</div>
+                  <div class="param-value">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="stealth">
+                  <div class="param-emoji">👻</div>
+                  <div class="param-name">Stealth</div>
+                  <div class="param-value">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+              </div>
+              <!-- Row 3 -->
+              <div class="param-row">
+                <div class="param-cell" data-param="virulence">
+                  <div class="param-emoji">☣️</div>
+                  <div class="param-name">Virulence</div>
+                  <div class="param-value">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="resilience">
+                  <div class="param-emoji">💪</div>
+                  <div class="param-name">Resilience</div>
+                  <div class="param-value">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="mobility">
+                  <div class="param-emoji">🚶</div>
+                  <div class="param-name">Mobility</div>
+                  <div class="param-value">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+              </div>
+              <!-- Row 4 -->
+              <div class="param-row">
+                <div class="param-cell" data-param="intellect">
+                  <div class="param-emoji">🧠</div>
+                  <div class="param-name">Intellect</div>
+                  <div class="param-value">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="contagiousness">
+                  <div class="param-emoji">🫁</div>
+                  <div class="param-name">Contagious</div>
+                  <div class="param-value">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+                <div class="param-cell" data-param="lethality">
+                  <div class="param-emoji">💀</div>
+                  <div class="param-name">Lethality</div>
+                  <div class="param-value">0</div>
+                  <div class="param-liquid"></div>
+                </div>
+              </div>
+            </div>
+            <div class="points-summary">
+              Points remaining: <span id="points-remaining">12</span>
+            </div>
+            <button id="randomizeBtn" class="btn" style="width: 100%; margin-top: 10px;">RANDOMIZE</button>
+            <button id="readyBtn" class="btn" style="width: 100%; margin-top: 10px;" disabled>READY</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+
+  <script>
+    // Проверка ориентации устройства
+    function checkOrientation() {
+      const rotateScreen = document.getElementById('rotateScreen');
+      if (!rotateScreen) return;
+
+      const isPortrait = window.innerHeight > window.innerWidth;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+      if (isMobile && isPortrait) {
+        rotateScreen.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      } else {
+        rotateScreen.style.display = 'none';
+        document.body.style.overflow = '';
+      }
+    }
+
+    // Проверяем при загрузке
+    window.addEventListener('load', checkOrientation);
+
+    // Проверяем при изменении размера
+    window.addEventListener('resize', checkOrientation);
+
+    // Проверяем при изменении ориентации
+    window.addEventListener('orientationchange', checkOrientation);
+  </script>
+</body>
+</html>
