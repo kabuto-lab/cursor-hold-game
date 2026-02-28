@@ -244,6 +244,15 @@ class MainApp {
       if (this.battleRenderer) {
         this.battleRenderer.initGrid(data.width, data.height);
 
+        // Устанавливаем параметры вирусов для визуализации защиты
+        const paramsA = this.virusTubeManager.getParamsAsVirusParams();
+        const paramsB = { defense: 0 };  // Will be updated from network
+
+        this.battleRenderer.setVirusParams(
+          { defense: paramsA.defense },
+          { defense: paramsB.defense }
+        );
+
         // Подписываем BattleRenderer на ticker для анимации
         this.gameEngine.addTickerUpdate((delta) => {
           this.battleRenderer!.update(delta);

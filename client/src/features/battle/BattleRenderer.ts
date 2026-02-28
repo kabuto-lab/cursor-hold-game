@@ -14,6 +14,8 @@ export interface BattleRendererConfig {
   cellGap: number;
   pulseSpeed: number;
   contestedFlickerSpeed: number;
+  defenseRingCount?: number;  // Number of defense rings (0-4)
+  defenseShimmerSpeed?: number;  // Speed of shield shimmer animation
 }
 
 export class BattleRenderer {
@@ -22,6 +24,10 @@ export class BattleRenderer {
   private linesContainer: PIXI.Graphics;
   private config: BattleRendererConfig;
   private currentGrid: number[] | null = null;  // Текущее состояние сетки для анимации
+
+  // Virus params for defense visualization
+  private paramsA: { defense: number } | null = null;
+  private paramsB: { defense: number } | null = null;
 
   private gridWidth: number = 32;
   private gridHeight: number = 20;
@@ -38,8 +44,13 @@ export class BattleRenderer {
     virusA: 0xff3333,  // Яркий красный
     virusB: 0x3333ff,  // Яркий синий
     lineEmpty: 0x333333,
-    lineActive: 0x666666
+    lineActive: 0x666666,
+    defenseShield: 0x00ffff,  // Cyan shield border
+    defenseGlow: 0x00aaaa,  // Darker cyan for glow
   };
+
+  // Defense visualization
+  private defenseRingGraphics: Map<number, PIXI.Graphics> = new Map();  // Per-cell defense rings
 
   constructor(
     stage: PIXI.Container,
@@ -54,6 +65,8 @@ export class BattleRenderer {
       cellGap: 1,
       pulseSpeed: 2000,
       contestedFlickerSpeed: 200,
+      defenseRingCount: 0,
+      defenseShimmerSpeed: 1500,
       ...config
     };
 
@@ -164,28 +177,99 @@ export class BattleRenderer {
 
   private createCellContainer(x: number, y: number): PIXI.Container {
     const container = new PIXI.Container();
-    
+
     const cell = new PIXI.Graphics();
     const diameter = this.config.cellDiameter;
     const radius = diameter / 2;
-    
+
     cell.beginFill(this.COLORS.empty, 1);
     cell.drawCircle(0, 0, radius);
     cell.endFill();
-    
+
     const glow = new PIXI.Graphics();
     glow.beginFill(this.COLORS.empty, 0.3);
     glow.drawCircle(0, 0, radius + 2);
     glow.endFill();
 
+    // Create defense shield rings (hollow border effect)
+    const defenseRings = this.createDefenseRings(radius);
+
+    container.addChild(defenseRings);  // Rings behind cell
     container.addChild(glow);
     container.addChild(cell);
     container.name = `cell_${x}_${y}`;
 
     (container as any).cellGraphics = cell;
     (container as any).glowGraphics = glow;
+    (container as any).defenseRings = defenseRings;
 
     return container;
+  }
+
+  /**
+   * Create concentric defense shield rings (hollow border)
+   * Returns a container with up to 4 rings based on defense level
+   */
+  private createDefenseRings(baseRadius: number): PIXI.Container {
+    const container = new PIXI.Container();
+    
+    // Create 4 concentric rings (max defense = 12 points = 4 rings)
+    // Each ring represents 3 points of defense
+    for (let i = 0; i < 4; i++) {
+      const ring = new PIXI.Graphics();
+      const ringRadius = baseRadius + 3 + (i * 3);  // Spaced 3px apart
+      const thickness = 2;  // Ring thickness
+      
+      // Start invisible - will be shown based on defense value
+      ring.lineStyle(thickness, this.COLORS.defenseShield, 0);  // Alpha 0 initially
+      ring.drawCircle(0, 0, ringRadius);
+      
+      // Add outer glow
+      const glow = new PIXI.Graphics();
+      glow.lineStyle(thickness + 2, this.COLORS.defenseGlow, 0);
+      glow.drawCircle(0, 0, ringRadius);
+      
+      container.addChild(glow);
+      container.addChild(ring);
+    }
+    
+    return container;
+  }
+
+  /**
+   * Update defense shield rings based on defense parameter value
+   */
+  private updateDefenseRings(container: PIXI.Container, defenseValue: number, virusType: number): void {
+    const defenseRings = (container as any).defenseRings as PIXI.Container;
+    if (!defenseRings) return;
+
+    // Clamp defense between 0-12
+    const defense = Math.max(0, Math.min(12, defenseValue));
+    
+    // Calculate number of active rings (1 ring per 3 defense points)
+    const activeRings = Math.ceil(defense / 3);
+    
+    // Virus color for shield tint
+    const shieldColor = virusType === 1 ? this.COLORS.virusA : this.COLORS.virusB;
+    const shieldGlowColor = virusType === 1 ? 0xaa0000 : 0x0000aa;
+
+    for (let i = 0; i < 4; i++) {
+      const ring = defenseRings.children[i * 2] as PIXI.Graphics;  // Ring graphics
+      const glow = defenseRings.children[i * 2 + 1] as PIXI.Graphics;  // Glow graphics
+      
+      if (!ring || !glow) continue;
+
+      if (i < activeRings) {
+        // Show ring with brightness based on defense level
+        const alpha = 0.6 + (defense / 12) * 0.4;  // 0.6 - 1.0 alpha
+        ring.lineStyle(2, shieldColor, alpha);
+        glow.lineStyle(4, shieldGlowColor, alpha * 0.5);
+      } else {
+        // Hide ring
+        ring.lineStyle(2, this.COLORS.defenseShield, 0);
+        glow.lineStyle(4, this.COLORS.defenseGlow, 0);
+      }
+    }
   }
 
   private drawSynapses(): void {
@@ -383,6 +467,9 @@ export class BattleRenderer {
       glow.beginFill(this.COLORS.empty, 0.3);
       glow.drawCircle(0, 0, radius + 2);
       glow.endFill();
+
+      // Hide defense rings for empty cells
+      this.updateDefenseRings(container, 0, 0);
     } else if (value === 1) {
       // Virus A - ЯРКИЙ КРАСНЫЙ с сильным свечением
       const pulse = this.getPulseValue();
@@ -394,6 +481,9 @@ export class BattleRenderer {
       glow.beginFill(this.COLORS.virusA, 0.8);
       glow.drawCircle(0, 0, radius * pulse + 5);
       glow.endFill();
+
+      // Update defense shield rings
+      this.updateDefenseRings(container, this.paramsA?.defense || 0, 1);
     } else if (value === 2) {
       // Virus B - ЯРКИЙ СИНИЙ с сильным свечением
       const pulse = this.getPulseValue();
@@ -405,6 +495,26 @@ export class BattleRenderer {
       glow.beginFill(this.COLORS.virusB, 0.8);
       glow.drawCircle(0, 0, radius * pulse + 5);
       glow.endFill();
+
+      // Update defense shield rings
+      this.updateDefenseRings(container, this.paramsB?.defense || 0, 2);
+    }
+  }
+
+  /**
+   * Set virus parameters for defense visualization
+   */
+  setVirusParams(paramsA: { defense: number }, paramsB: { defense: number }): void {
+    this.paramsA = paramsA;
+    this.paramsB = paramsB;
+    console.log('[BattleRenderer] Virus params set:', { 
+      paramsA: this.paramsA, 
+      paramsB: this.paramsB 
+    });
+
+    // Refresh current grid visualization if exists
+    if (this.currentGrid) {
+      this.updateGrid(this.currentGrid);
     }
   }
 
