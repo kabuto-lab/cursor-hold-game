@@ -23,10 +23,16 @@ export class BattleRenderer {
   private config: BattleRendererConfig;
   private currentGrid: number[] | null = null;  // Текущее состояние сетки для анимации
 
-  private gridWidth: number = 64;
-  private gridHeight: number = 36;
+  private gridWidth: number = 32;
+  private gridHeight: number = 20;
   private totalCells: number = this.gridWidth * this.gridHeight;
-  
+
+  // Responsive sizing
+  private baseCellDiameter: number = 25;
+  private currentCellDiameter: number = 25;
+  private currentCellGap: number = 1;
+  private scaleFactor: number = 1;
+
   private readonly COLORS = {
     empty: 0x1a1a1a,
     virusA: 0xff3333,  // Яркий красный
@@ -42,26 +48,28 @@ export class BattleRenderer {
     this.container = new PIXI.Container();
     this.linesContainer = new PIXI.Graphics();
     this.container.addChild(this.linesContainer);
-    
+
     this.config = {
-      cellDiameter: 25,  // Увеличили размер клеток
+      cellDiameter: 25,
       cellGap: 1,
       pulseSpeed: 2000,
       contestedFlickerSpeed: 200,
       ...config
     };
 
+    this.baseCellDiameter = this.config.cellDiameter;
+
     this.container.zIndex = 1000;  // На переднем плане
     this.container.alpha = 0;
     this.container.visible = false;
 
     stage.addChild(this.container);
-    
+
     // Сортируем children stage по zIndex
     if (stage.sortChildren) {
       stage.sortChildren();
     }
-    
+
     console.log('[BattleRenderer] Created', {
       stageChildren: stage.children.length,
       containerZIndex: this.container.zIndex,
@@ -85,19 +93,23 @@ export class BattleRenderer {
     this.cellContainers.clear();
     this.linesContainer.clear();
 
+    // Рассчитываем адаптивный размер клеток
+    this.calculateResponsiveSizing();
+
     // Создание клеток с ПРАВИЛЬНЫМ позиционированием
-    const diameter = this.config.cellDiameter;
-    const step = diameter + this.config.cellGap;
+    const diameter = this.currentCellDiameter;
+    const gap = this.currentCellGap;
+    const step = diameter + gap;
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const idx = y * width + x;
         const container = this.createCellContainer(x, y);
-        
+
         // Устанавливаем позицию сразу при создании
         container.position.x = x * step + step / 2;
         container.position.y = y * step + step / 2;
-        
+
         this.cellContainers.set(idx, container);
         this.container.addChild(container);
       }
@@ -105,11 +117,49 @@ export class BattleRenderer {
 
     // Рисуем линии после того, как все позиции установлены
     this.drawSynapses();
-    
+
     // Центрируем весь контейнер на экране
     this.centerGrid();
 
     console.log(`[BattleRenderer] Grid positioned at:`, this.container.position);
+  }
+
+  /**
+   * Calculate responsive cell sizing based on screen dimensions
+   */
+  private calculateResponsiveSizing(): void {
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+
+    // Account for sidebars (33% each) - grid should fit in remaining space
+    const availableWidth = screenWidth * 0.9;  // Leave some margin
+    const availableHeight = screenHeight * 0.85;  // Leave space for top panel
+
+    // Calculate cell size to fit grid in available space
+    const cellSizeByWidth = availableWidth / this.gridWidth;
+    const cellSizeByHeight = availableHeight / this.gridHeight;
+
+    // Take the smaller to ensure grid fits
+    const idealCellSize = Math.min(cellSizeByWidth, cellSizeByHeight);
+
+    // Clamp between min and max sizes
+    this.currentCellDiameter = Math.max(8, Math.min(40, idealCellSize - 2));
+    this.currentCellGap = Math.max(1, Math.min(4, this.currentCellDiameter * 0.1));
+
+    // Calculate scale factor for smooth animations
+    this.scaleFactor = this.currentCellDiameter / this.baseCellDiameter;
+
+    console.log(`[BattleRenderer] Responsive sizing:`, {
+      screenWidth,
+      screenHeight,
+      availableWidth,
+      availableHeight,
+      cellSizeByWidth: cellSizeByWidth.toFixed(2),
+      cellSizeByHeight: cellSizeByHeight.toFixed(2),
+      cellDiameter: this.currentCellDiameter.toFixed(2),
+      cellGap: this.currentCellGap.toFixed(2),
+      scaleFactor: this.scaleFactor.toFixed(3)
+    });
   }
 
   private createCellContainer(x: number, y: number): PIXI.Container {
@@ -179,8 +229,8 @@ export class BattleRenderer {
   }
 
   private centerGrid(): void {
-    const diameter = this.config.cellDiameter;
-    const gap = this.config.cellGap;
+    const diameter = this.currentCellDiameter;
+    const gap = this.currentCellGap;
     const step = diameter + gap;
 
     const gridWidthPx = this.gridWidth * step;
@@ -189,6 +239,96 @@ export class BattleRenderer {
     // Центрируем только контейнер, позиции клеток уже установлены
     this.container.position.x = (window.innerWidth - gridWidthPx) / 2;
     this.container.position.y = (window.innerHeight - gridHeightPx) / 2;
+  }
+
+  /**
+   * Handle window resize - recalculate sizing and reposition
+   */
+  onResize(): void {
+    if (this.cellContainers.size === 0) return;
+
+    // Recalculate responsive sizing
+    this.calculateResponsiveSizing();
+
+    // Update all cell positions and sizes
+    const diameter = this.currentCellDiameter;
+    const gap = this.currentCellGap;
+    const step = diameter + gap;
+
+    for (let y = 0; y < this.gridHeight; y++) {
+      for (let x = 0; x < this.gridWidth; x++) {
+        const idx = y * this.gridWidth + x;
+        const container = this.cellContainers.get(idx);
+
+        if (container) {
+          // Update position
+          container.position.x = x * step + step / 2;
+          container.position.y = y * step + step / 2;
+
+          // Update cell size
+          this.updateCellSize(container, diameter);
+        }
+      }
+    }
+
+    // Redraw synapse lines
+    this.drawSynapses();
+
+    // Re-center the grid
+    this.centerGrid();
+
+    console.log('[BattleRenderer] Resized for new window dimensions');
+  }
+
+  /**
+   * Update cell graphics size
+   */
+  private updateCellSize(container: PIXI.Container, diameter: number): void {
+    const cell = (container as any).cellGraphics as PIXI.Graphics;
+    const glow = (container as any).glowGraphics as PIXI.Graphics;
+
+    if (!cell || !glow) return;
+
+    const radius = diameter / 2;
+    const gap = this.currentCellGap;
+
+    // Clear and redraw
+    cell.clear();
+    glow.clear();
+
+    // Get current cell value from grid
+    const x = Math.floor(container.position.x / (diameter + gap));
+    const y = Math.floor(container.position.y / (diameter + gap));
+    const idx = y * this.gridWidth + x;
+    const value = this.currentGrid ? this.currentGrid[idx] : 0;
+
+    if (value === 0) {
+      cell.beginFill(this.COLORS.empty, 1);
+      cell.drawCircle(0, 0, radius);
+      cell.endFill();
+
+      glow.beginFill(this.COLORS.empty, 0.3);
+      glow.drawCircle(0, 0, radius + 2);
+      glow.endFill();
+    } else if (value === 1) {
+      const pulse = this.getPulseValue();
+      cell.beginFill(this.COLORS.virusA, 1);
+      cell.drawCircle(0, 0, radius * pulse);
+      cell.endFill();
+
+      glow.beginFill(this.COLORS.virusA, 0.8);
+      glow.drawCircle(0, 0, radius * pulse + 5);
+      glow.endFill();
+    } else if (value === 2) {
+      const pulse = this.getPulseValue();
+      cell.beginFill(this.COLORS.virusB, 1);
+      cell.drawCircle(0, 0, radius * pulse);
+      cell.endFill();
+
+      glow.beginFill(this.COLORS.virusB, 0.8);
+      glow.drawCircle(0, 0, radius * pulse + 5);
+      glow.endFill();
+    }
   }
 
   updateGrid(grid: number[]): void {

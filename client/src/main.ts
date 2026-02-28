@@ -91,6 +91,10 @@ class MainApp {
           if (this.gameEngine.app) {
             this.gameEngine.app.renderer.resize(window.innerWidth, window.innerHeight);
           }
+          // Update battle renderer if battle is active
+          if (this.battleRenderer) {
+            this.battleRenderer.onResize();
+          }
         });
       }).catch((error) => {
         console.error('[MainApp] GameEngine init ERROR:', error);
