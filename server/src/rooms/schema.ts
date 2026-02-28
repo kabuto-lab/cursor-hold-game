@@ -36,6 +36,6 @@ export class RoomState extends Schema {
   @type({ map: DraggableObjectSchema }) objects = new MapSchema<DraggableObjectSchema>();
   @type('string') roomId: string = '';
   @type('number') maxPlayers: number = 2;
-  @type({ array: 'number' }) battleGrid: number[] = []; // Array representing the battle grid state (0=empty, 1=virusA, 2=virusB)
-  @type('boolean') battleActive: boolean = false; // Whether the battle is currently active
+  @type({ array: 'number' }) vGrid: number[] = []; // Virus battle grid (32x20 landscape/horizontal)
+  @type('boolean') vGridActive: boolean = false; // Whether the virus battle grid is active
 }

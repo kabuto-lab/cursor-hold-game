@@ -14,16 +14,16 @@ export class NetworkManager {
   public onRoomStateChange?: (count: number, max: number) => void;
 
   // Callbacks для вирусной битвы
-  public onVirusBattleStarted?: (data: { 
-    battleGrid: number[]; 
-    width: number; 
+  public onVirusBattleStarted?: (data: {
+    vGrid: number[];
+    width: number;
     height: number;
     message: string;
     timestamp: number;
   }) => void;
 
   public onVirusTick?: (tick: number, data: {
-    battleGrid: number[];
+    vGrid: number[];
     width: number;
     height: number;
   }) => void;
@@ -38,7 +38,7 @@ export class NetworkManager {
 
   // Обратный отсчёт
   public onStartCountdown?: (data: {
-    battleGrid: number[];
+    vGrid: number[];
     width: number;
     height: number;
   }) => void;

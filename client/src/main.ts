@@ -90,7 +90,6 @@ class MainApp {
         window.addEventListener('resize', () => {
           if (this.gameEngine.app) {
             this.gameEngine.app.renderer.resize(window.innerWidth, window.innerHeight);
-            this.gameEngine.resizeGrid();
           }
         });
       }).catch((error) => {
@@ -240,7 +239,7 @@ class MainApp {
       // Инициализируем сетку
       if (this.battleRenderer) {
         this.battleRenderer.initGrid(data.width, data.height);
-        
+
         // Подписываем BattleRenderer на ticker для анимации
         this.gameEngine.addTickerUpdate((delta) => {
           this.battleRenderer!.update(delta);
@@ -249,11 +248,11 @@ class MainApp {
       }
 
       // Запускаем обратный отсчёт
-      this.battleManager.startCountdownAndBattle(data.battleGrid, data.width, data.height);
+      this.battleManager.startCountdownAndBattle(data.vGrid, data.width, data.height);
     };
 
     this.networkManager.onVirusTick = (tick, data) => {
-      this.battleManager.onBattleTick({ battleGrid: data.battleGrid, tick });
+      this.battleManager.onBattleTick({ vGrid: data.vGrid, tick });
     };
 
     this.networkManager.onVirusBattleEnded = (data) => {
@@ -267,7 +266,7 @@ class MainApp {
 
     this.networkManager.onStartCountdown = (data) => {
       console.log('[MainApp] Start countdown:', data);
-      
+
       // Создаём BattleRenderer если ещё не создан
       if (!this.battleRenderer && this.gameEngine.app) {
         this.battleRenderer = new BattleRenderer(this.gameEngine.app.stage);
@@ -276,16 +275,16 @@ class MainApp {
       // Инициализируем сетку
       if (this.battleRenderer) {
         this.battleRenderer.initGrid(data.width, data.height);
-        
+
         // Подписываем BattleRenderer на ticker для анимации
         this.gameEngine.addTickerUpdate((delta) => {
           this.battleRenderer!.update(delta);
         });
         console.log('[MainApp] BattleRenderer subscribed to ticker in onStartCountdown');
       }
-      
+
       // Запускаем обратный отсчёт
-      this.battleManager.startCountdownAndBattle(data.battleGrid, data.width, data.height);
+      this.battleManager.startCountdownAndBattle(data.vGrid, data.width, data.height);
     };
 
     // Инициализация метода обновления прогресса

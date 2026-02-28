@@ -113,11 +113,11 @@ export class BattleManager {
   /**
    * Запустить обратный отсчёт и начать битву
    */
-  startCountdownAndBattle(grid: number[], width: number, height: number): void {
+  startCountdownAndBattle(vGrid: number[], width: number, height: number): void {
     console.log('[BattleManager] Starting countdown...');
 
     let count = 3;
-    
+
     // Показываем первую цифру
     if (this.countdownCallback) {
       this.countdownCallback(count);
@@ -125,7 +125,7 @@ export class BattleManager {
 
     const countdownInterval = setInterval(() => {
       count--;
-      
+
       if (count > 0) {
         // Показываем следующую цифру
         if (this.countdownCallback) {
@@ -139,7 +139,7 @@ export class BattleManager {
       } else {
         // Начинаем битву
         clearInterval(countdownInterval);
-        this.startBattle(grid, width, height);
+        this.startBattle(vGrid, width, height);
       }
     }, 1000); // Каждую секунду
   }
@@ -162,11 +162,11 @@ export class BattleManager {
   /**
    * Запустить битву (после обратного отсчёта)
    */
-  startBattle(grid: number[], width: number, height: number): void {
+  startBattle(vGrid: number[], width: number, height: number): void {
     console.log('[BattleManager] Battle starting now!');
 
     this.gridData = {
-      grid: [...grid],
+      grid: [...vGrid],
       width,
       height
     };
@@ -421,21 +421,21 @@ export class BattleManager {
   /**
    * Обработать начало битвы (от сервера)
    */
-  onBattleStarted(data: { battleGrid: number[]; width: number; height: number }): void {
+  onBattleStarted(data: { vGrid: number[]; width: number; height: number }): void {
     console.log('[BattleManager] Battle started (network event)');
-    this.startBattle(data.battleGrid, data.width, data.height);
+    this.startBattle(data.vGrid, data.width, data.height);
   }
 
   /**
    * Обработать тик битвы (от сервера)
    */
-  onBattleTick(data: { battleGrid: number[]; tick: number }): void {
+  onBattleTick(data: { vGrid: number[]; tick: number }): void {
     if (this.state.type !== 'running') return;
 
     this.gridData = {
-      grid: data.battleGrid,
-      width: this.gridData?.width || 64,
-      height: this.gridData?.height || 36
+      grid: data.vGrid,
+      width: this.gridData?.width || 32,
+      height: this.gridData?.height || 20
     };
 
     this.state = {
