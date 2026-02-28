@@ -21,7 +21,8 @@ export class BattleRenderer {
   private cellContainers: Map<number, PIXI.Container> = new Map();
   private linesContainer: PIXI.Graphics;
   private config: BattleRendererConfig;
-  
+  private currentGrid: number[] | null = null;  // Текущее состояние сетки для анимации
+
   private gridWidth: number = 64;
   private gridHeight: number = 36;
   private totalCells: number = this.gridWidth * this.gridHeight;
@@ -185,6 +186,9 @@ export class BattleRenderer {
       return;
     }
 
+    // Сохраняем сетку для анимации
+    this.currentGrid = [...grid];
+
     let virusACount = 0;
     let virusBCount = 0;
     let emptyCount = 0;
@@ -272,8 +276,68 @@ export class BattleRenderer {
     console.log('[BattleRenderer] Hide');
   }
 
+  /**
+   * Проверить, является ли клетка "спорной" (соседствуют вирусы A и B)
+   */
+  private isContested(index: number): boolean {
+    if (!this.currentGrid) return false;
+
+    const x = index % this.gridWidth;
+    const y = Math.floor(index / this.gridWidth);
+    const cellValue = this.currentGrid[index];
+
+    if (cellValue === 0) return false;
+
+    // Проверяем соседей (4 направления)
+    const neighbors = [
+      { dx: -1, dy: 0 },
+      { dx: 1, dy: 0 },
+      { dx: 0, dy: -1 },
+      { dx: 0, dy: 1 }
+    ];
+
+    for (const neighbor of neighbors) {
+      const nx = x + neighbor.dx;
+      const ny = y + neighbor.dy;
+
+      if (nx >= 0 && nx < this.gridWidth && ny >= 0 && ny < this.gridHeight) {
+        const nIdx = ny * this.gridWidth + nx;
+        const neighborValue = this.currentGrid[nIdx];
+
+        // Если сосед другого типа - клетка спорная
+        if (neighborValue !== 0 && neighborValue !== cellValue) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   update(delta: number): void {
-    // Animation updates can go here
+    // Анимация пульсации для всех активных клеток
+    if (!this.currentGrid) return;
+
+    const now = Date.now();
+    const pulse = 1 + 0.1 * Math.sin((now / this.config.pulseSpeed) * Math.PI * 2);
+
+    for (let i = 0; i < this.totalCells; i++) {
+      const cellValue = this.currentGrid[i];
+      const container = this.cellContainers.get(i);
+
+      if (container && cellValue !== 0) {
+        // Пульсация масштаба
+        container.scale.set(pulse);
+
+        // Мерцание для спорных клеток (где соседствуют вирусы A и B)
+        if (this.isContested(i)) {
+          const flicker = 0.5 + 0.5 * Math.sin((now / this.config.contestedFlickerSpeed) * Math.PI * 2);
+          container.alpha = flicker;
+        } else {
+          container.alpha = 1;
+        }
+      }
+    }
   }
 
   destroy(): void {

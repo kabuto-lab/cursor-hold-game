@@ -212,17 +212,23 @@ class MainApp {
     // Network listeners для битвы
     this.networkManager.onVirusBattleStarted = (data) => {
       console.log('[MainApp] Virus battle started:', data);
-      
+
       // Создаём BattleRenderer с правильными размерами
       if (!this.battleRenderer && this.gameEngine.app) {
         this.battleRenderer = new BattleRenderer(this.gameEngine.app.stage);
       }
-      
+
       // Инициализируем сетку
       if (this.battleRenderer) {
         this.battleRenderer.initGrid(data.width, data.height);
+        
+        // Подписываем BattleRenderer на ticker для анимации
+        this.gameEngine.addTickerUpdate((delta) => {
+          this.battleRenderer!.update(delta);
+        });
+        console.log('[MainApp] BattleRenderer subscribed to ticker');
       }
-      
+
       // Запускаем обратный отсчёт
       this.battleManager.startCountdownAndBattle(data.battleGrid, data.width, data.height);
     };
