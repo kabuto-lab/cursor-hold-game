@@ -57,6 +57,8 @@ export class BattleRenderer {
 
   // Visual collision tracking
   private contestedCells: Set<number> = new Set();
+  private convertingCells: Map<number, { from: number; to: number; progress: number }> = new Map();
+  private surroundPressure: Map<number, number> = new Map();  // cell index -> pressure (0-1)
 
   private gridWidth: number = 32;
   private gridHeight: number = 20;
@@ -725,8 +727,9 @@ export class BattleRenderer {
       return;
     }
 
-    // Update contested cells
+    // Update contested cells and surround pressure
     this.updateContestedCells();
+    this.updateSurroundPressure();
 
     const now = Date.now();
     let activeCount = 0;
@@ -750,11 +753,43 @@ export class BattleRenderer {
         // Calculate visual properties
         const diameter = this.config.cellDiameter;
         const baseRadius = diameter / 2;
-        const virusColor = cellValue === 1 ? this.COLORS.virusA : this.COLORS.virusB;
-        const virusLightColor = cellValue === 1 ? this.COLORS.virusALight : this.COLORS.virusBLight;
         
         // Check if contested (adjacent to enemy)
         const isContested = this.contestedCells.has(i);
+        
+        // Check if cell is being converted
+        const conversionData = this.convertingCells.get(i);
+        const isConverting = conversionData !== undefined;
+        
+        // Get surround pressure
+        const pressure = this.surroundPressure.get(i) || 0;
+        const isSurrounded = pressure > 0.5;
+
+        // Base virus colors
+        let virusColor = cellValue === 1 ? this.COLORS.virusA : this.COLORS.virusB;
+        let virusLightColor = cellValue === 1 ? this.COLORS.virusALight : this.COLORS.virusBLight;
+        
+        // === CONVERSION VISUAL EFFECT ===
+        // Cell color interpolates between old and new virus during conversion
+        if (isConverting && conversionData) {
+          const fromColor = conversionData.from === 1 ? this.COLORS.virusA : this.COLORS.virusB;
+          const toColor = conversionData.to === 1 ? this.COLORS.virusA : this.COLORS.virusB;
+          
+          // Interpolate based on conversion progress
+          virusColor = this.interpolateColor(fromColor, toColor, conversionData.progress);
+          virusLightColor = this.interpolateColor(
+            conversionData.from === 1 ? this.COLORS.virusALight : this.COLORS.virusBLight,
+            conversionData.to === 1 ? this.COLORS.virusALight : this.COLORS.virusBLight,
+            conversionData.progress
+          );
+        }
+        
+        // === SURROUNDED VISUAL EFFECT ===
+        // High pressure cells get red tint and pulse faster
+        if (isSurrounded && !isConverting) {
+          const pressureTint = this.interpolateColor(virusColor, 0xff0000, pressure * 0.5);
+          virusColor = pressureTint;
+        }
         
         // Interpolate color based on lifecycle stage
         let currentColor = this.interpolateColor(
@@ -764,7 +799,7 @@ export class BattleRenderer {
         );
 
         // Contested cells get white-hot flash effect
-        if (isContested) {
+        if (isContested && !isConverting) {
           const flashSpeed = 100; // ms per flash cycle
           const flashIntensity = 0.5 + 0.5 * Math.sin((now / flashSpeed) * Math.PI * 2);
           currentColor = this.interpolateColor(currentColor, 0xffffff, flashIntensity * 0.6);
@@ -777,8 +812,12 @@ export class BattleRenderer {
         cell.clear();
         glow.clear();
 
-        // Cell border - thicker for contested cells
-        const borderWidth = isContested ? 3 : 2;
+        // Cell border - thicker for contested/surrounded cells
+        let borderWidth = 2;
+        if (isContested) borderWidth = 3;
+        if (isSurrounded) borderWidth = 4;
+        if (isConverting) borderWidth = 3;
+        
         cell.lineStyle(borderWidth, currentColor, lifecycle.opacity);
         
         // Cell fill
@@ -794,6 +833,12 @@ export class BattleRenderer {
           cell.endFill();
         }
 
+        // === CONVERSION RING EFFECT ===
+        if (isConverting && conversionData) {
+          // Draw rotating ring around converting cell
+          this.drawConversionRing(cell, currentRadius, conversionData.progress, now);
+        }
+
         // Glow - stronger for contested cells
         const glowAlpha = isContested ? lifecycle.opacity * 0.6 : lifecycle.opacity * 0.3;
         const glowRadius = isContested ? currentRadius + 8 : currentRadius + 5;
@@ -802,10 +847,133 @@ export class BattleRenderer {
         glow.endFill();
 
         // Add combat sparks for contested cells
-        if (isContested) {
+        if (isContested && !isConverting) {
           this.drawCombatSparks(cell, currentRadius, now);
         }
+
+        // Add pressure indicators for surrounded cells
+        if (isSurrounded && !isConverting) {
+          this.drawPressureIndicators(cell, currentRadius, pressure, now);
+        }
       }
+    }
+
+    // Update conversion progress
+    this.updateConversions();
+  }
+
+  /**
+   * Update surround pressure for all cells
+   */
+  private updateSurroundPressure(): void {
+    this.surroundPressure.clear();
+    
+    if (!this.currentGrid) return;
+
+    for (let i = 0; i < this.totalCells; i++) {
+      const cellValue = this.currentGrid[i];
+      if (cellValue === 0) continue;
+
+      const x = i % this.gridWidth;
+      const y = Math.floor(i / this.gridWidth);
+      
+      let enemyCount = 0;
+      const neighbors = [
+        { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+        { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+        { dx: -1, dy: -1 }, { dx: 1, dy: -1 },
+        { dx: -1, dy: 1 }, { dx: 1, dy: 1 }
+      ];
+
+      for (const neighbor of neighbors) {
+        const nx = x + neighbor.dx;
+        const ny = y + neighbor.dy;
+        if (nx >= 0 && nx < this.gridWidth && ny >= 0 && ny < this.gridHeight) {
+          const nIdx = ny * this.gridWidth + nx;
+          const neighborValue = this.currentGrid[nIdx];
+          if (neighborValue !== 0 && neighborValue !== cellValue) {
+            enemyCount++;
+          }
+        }
+      }
+
+      this.surroundPressure.set(i, enemyCount / 8);
+    }
+  }
+
+  /**
+   * Update conversion progress for all converting cells
+   */
+  private updateConversions(): void {
+    const now = Date.now();
+    const conversionSpeed = 2000; // 2 seconds for full conversion
+
+    for (const [idx, data] of this.convertingCells.entries()) {
+      data.progress += 0.016; // ~60fps, progress over ~1 second
+      
+      // Check if cell value changed (conversion interrupted or completed)
+      const currentValue = this.currentGrid ? this.currentGrid[idx] : 0;
+      if (currentValue !== data.from && currentValue !== data.to) {
+        // Conversion interrupted
+        this.convertingCells.delete(idx);
+      } else if (data.progress >= 1.0) {
+        // Conversion complete
+        this.currentGrid![idx] = data.to;
+        this.convertingCells.delete(idx);
+      }
+    }
+  }
+
+  /**
+   * Start conversion animation for a cell
+   */
+  startConversion(cellIndex: number, from: number, to: number): void {
+    this.convertingCells.set(cellIndex, {
+      from,
+      to,
+      progress: 0
+    });
+  }
+
+  /**
+   * Draw conversion ring around cell
+   */
+  private drawConversionRing(graphics: PIXI.Graphics, radius: number, progress: number, now: number): void {
+    const ringRadius = radius + 6;
+    const startAngle = 0;
+    const endAngle = (Math.PI * 2) * progress;
+    
+    // Rotating effect
+    const rotation = (now / 500) % (Math.PI * 2);
+    
+    graphics.lineStyle(3, 0x00ff00, 0.8);
+    graphics.arc(0, 0, ringRadius, startAngle + rotation, endAngle + rotation);
+  }
+
+  /**
+   * Draw pressure indicators for surrounded cells
+   */
+  private drawPressureIndicators(graphics: PIXI.Graphics, radius: number, pressure: number, now: number): void {
+    // Draw arrows pointing inward from enemy directions
+    const arrowCount = Math.floor(pressure * 8);
+    const arrowSpeed = 300;
+    
+    for (let i = 0; i < arrowCount; i++) {
+      const angle = ((i / arrowCount) * Math.PI * 2) + (now / arrowSpeed);
+      const distance = radius + 8 + Math.sin((now / 100) + i) * 2;
+      const arrowX = Math.cos(angle) * distance;
+      const arrowY = Math.sin(angle) * distance;
+      
+      // Small arrow pointing toward center
+      graphics.beginFill(0xff0000, 0.6);
+      graphics.drawPolygon([
+        arrowX, arrowY,
+        arrowX - Math.cos(angle - 0.3) * 4,
+        arrowY - Math.sin(angle - 0.3) * 4,
+        arrowX - Math.cos(angle + 0.3) * 4,
+        arrowY - Math.sin(angle + 0.3) * 4
+      ]);
+      graphics.endFill();
     }
   }
 

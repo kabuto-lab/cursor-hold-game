@@ -25,16 +25,16 @@ export interface BattleGridData {
 
 export interface VirusParams {
   aggression: number;      // ⚔️ Сила атаки
-  mutation: number;        // 🧬 Шанс мутации
+  mutation: number;        // 🧬 Шанс конвертации врагов
   speed: number;           // ⚡ Скорость распространения
   defense: number;         // 🛡️ Защита от захвата
   reproduction: number;    // 🦠 Размножение
-  stealth: number;         // 👻 Скрытность
+  stealth: number;         // 👻 Скрытность (снижает точность конвертации врага)
   virulence: number;       // ☣️ Разрушение
   resilience: number;      // 💪 Выживание
   mobility: number;        // 🚶 Передвижение
-  intellect: number;       // 🧠 Стратегия
-  contagiousness: number;  // 🫁 Заражение
+  intellect: number;       // 🧠 Стратегия (сопротивление конвертации)
+  contagiousness: number;  // 🫁 Заражение (кол-во клеток для конвертации)
   lethality: number;       // 💀 Смертельность
 }
 
@@ -233,6 +233,244 @@ export class BattleManager {
   }
 
   /**
+   * Calculate surround pressure for a cell
+   * Returns: { enemyCount, allyCount, pressureLevel (0-1) }
+   */
+  private calculateSurroundPressure(
+    grid: number[],
+    x: number,
+    y: number,
+    virusType: number,
+    width: number,
+    height: number
+  ): { enemyCount: number; allyCount: number; pressureLevel: number; enemyTypes: number[] } {
+    let enemyCount = 0;
+    let allyCount = 0;
+    const enemyTypes: number[] = [];
+
+    const neighbors = [
+      { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+      { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+      { dx: -1, dy: -1 }, { dx: 1, dy: -1 },
+      { dx: -1, dy: 1 }, { dx: 1, dy: 1 }
+    ];
+
+    for (const neighbor of neighbors) {
+      const nx = x + neighbor.dx;
+      const ny = y + neighbor.dy;
+
+      if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+        const nIdx = ny * width + nx;
+        const neighborValue = grid[nIdx];
+
+        if (neighborValue === virusType) {
+          allyCount++;
+        } else if (neighborValue !== 0) {
+          enemyCount++;
+          if (!enemyTypes.includes(neighborValue)) {
+            enemyTypes.push(neighborValue);
+          }
+        }
+      }
+    }
+
+    // Pressure level: 0.0 (no enemies) to 1.0 (completely surrounded by 8 enemies)
+    const pressureLevel = enemyCount / 8;
+
+    return { enemyCount, allyCount, pressureLevel, enemyTypes };
+  }
+
+  /**
+   * Attempt to convert enemy cell (Mutation + Intellect vs Intellect + Stealth)
+   */
+  private attemptConversion(
+    grid: number[],
+    idx: number,
+    attackerType: number,
+    defenderType: number,
+    attackerParams: VirusParams,
+    defenderParams: VirusParams,
+    surroundPressure: number
+  ): boolean {
+    // === ШАНС КОНВЕРТАЦИИ ===
+    // Mutation: основной параметр конвертации (+5% за пункт = макс 60%)
+    const mutationChance = attackerParams.mutation * 0.05;
+
+    // === БОНУС ОТ ДАВЛЕНИЯ ОКРУЖЕНИЯ ===
+    // Чем больше вражеских клеток вокруг, тем выше шанс конвертации
+    // Давление 0.5 (4 врага) = +20%, давление 1.0 (8 врагов) = +40%
+    const pressureBonus = surroundPressure * 0.4;
+
+    // === ИНТЕЛЛЕКТ АТАКУЮЩЕГО ===
+    // Интеллект увеличивает точность конвертации (+2% за пункт)
+    const intellectBonus = attackerParams.intellect * 0.02;
+
+    // === СОПРОТИВЛЕНИЕ ЗАЩИТНИКА ===
+    // Интеллект защитника снижает шанс конвертации (-3% за пункт)
+    const defenderIntellectResist = defenderParams.intellect * 0.03;
+
+    // === СКРЫТНОСТЬ ЗАЩИТНИКА ===
+    // Stealth снижает точность конвертации (-2.5% за пункт)
+    const stealthResist = defenderParams.stealth * 0.025;
+
+    // === БАЗОВЫЙ ШАНС ===
+    const baseChance = 0.15; // 15% база
+
+    // === ИТОГОВЫЙ ШАНС ===
+    const finalChance = baseChance + mutationChance + pressureBonus + intellectBonus 
+                        - defenderIntellectResist - stealthResist;
+
+    // Проверяем шанс конвертации
+    if (Math.random() < finalChance) {
+      // Конвертация успешна!
+      grid[idx] = attackerType;
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Cell behavior when surrounded (depends on virus parameters)
+   */
+  private handleSurroundedCell(
+    grid: number[],
+    idx: number,
+    x: number,
+    y: number,
+    virusType: number,
+    params: VirusParams,
+    width: number,
+    height: number
+  ): void {
+    const surround = this.calculateSurroundPressure(grid, x, y, virusType, width, height);
+
+    // Если клетка окружена врагами (давление > 0.5 = 5+ врагов)
+    if (surround.pressureLevel > 0.5) {
+      // === ВЫСОКОЕ ДАВЛЕНИЕ - КЛЕТКА РЕАГИРУЕТ ===
+
+      // 1. Высокий Intellect = клетка "зовёт на помощь" (распространяется в союзников)
+      if (params.intellect >= 8) {
+        // Попытка распространиться в соседние пустые клетки
+        this.emergencySpread(grid, x, y, virusType, params, width, height);
+      }
+
+      // 2. Высокая Mutation = клетка пытается конвертировать врагов перед смертью
+      if (params.mutation >= 8 && surround.enemyCount > 0) {
+        this.desperateConversion(grid, idx, virusType, params, surround, width, height);
+      }
+
+      // 3. Высокая Defense + Resilience = клетка сопротивляется дольше
+      if (params.defense + params.resilience >= 12) {
+        // Клетка получает временный бонус к защите
+        // (реализуется через визуальный эффект в BattleRenderer)
+      }
+
+      // 4. Высокая Stealth = клетка "прячется" (меньше шанса быть атакованной)
+      if (params.stealth >= 8) {
+        // Снижаем шанс конвертации этой клетки
+        // (реализуется в attemptConversion)
+      }
+    }
+  }
+
+  /**
+   * Emergency spread - cell tries to spread to empty neighbors when surrounded
+   */
+  private emergencySpread(
+    grid: number[],
+    x: number,
+    y: number,
+    virusType: number,
+    params: VirusParams,
+    width: number,
+    height: number
+  ): void {
+    const neighbors = [
+      { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+      { dx: 0, dy: -1 }, { dx: 0, dy: 1 }
+    ];
+
+    // Интеллект определяет количество попыток (до 4 при intellect 12)
+    const attempts = 1 + Math.floor(params.intellect / 4);
+
+    for (let i = 0; i < attempts; i++) {
+      const neighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
+      const nx = x + neighbor.dx;
+      const ny = y + neighbor.dy;
+
+      if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+        const nIdx = ny * width + nx;
+        if (grid[nIdx] === 0) {
+          // Пустая клетка - пытаемся распространиться
+          const spreadChance = (params.intellect + params.mobility) / 24;
+          if (Math.random() < spreadChance) {
+            grid[nIdx] = virusType;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Desperate conversion - surrounded cell tries to convert enemies before dying
+   */
+  private desperateConversion(
+    grid: number[],
+    idx: number,
+    virusType: number,
+    params: VirusParams,
+    surround: { enemyCount: number; allyCount: number; pressureLevel: number; enemyTypes: number[] },
+    width: number,
+    height: number
+  ): void {
+    const x = idx % width;
+    const y = Math.floor(idx / width);
+
+    // Попытка конвертировать случайного соседа-врага
+    const neighbors = [
+      { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+      { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+      { dx: -1, dy: -1 }, { dx: 1, dy: -1 },
+      { dx: -1, dy: 1 }, { dx: 1, dy: 1 }
+    ];
+
+    // Находим всех врагов по соседству
+    const enemyNeighbors: { x: number; y: number; type: number }[] = [];
+    for (const neighbor of neighbors) {
+      const nx = x + neighbor.dx;
+      const ny = y + neighbor.dy;
+      if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+        const nIdx = ny * width + nx;
+        const neighborValue = grid[nIdx];
+        if (neighborValue !== 0 && neighborValue !== virusType) {
+          enemyNeighbors.push({ x: nx, y: ny, type: neighborValue });
+        }
+      }
+    }
+
+    if (enemyNeighbors.length > 0) {
+      // Выбираем случайного врага
+      const target = enemyNeighbors[Math.floor(Math.random() * enemyNeighbors.length)];
+      const targetIdx = target.y * width + target.x;
+
+      // Параметры врага (берём средние для упрощения)
+      const dummyEnemyParams: VirusParams = {
+        mutation: 6, intellect: 6, stealth: 6,
+        aggression: 6, speed: 6, defense: 6,
+        reproduction: 6, virulence: 6, resilience: 6,
+        mobility: 6, contagiousness: 6, lethality: 6
+      };
+
+      // Шанс отчаянной конвертации (высокий, так как клетка "обречена")
+      const desperateChance = (params.mutation / 12) * 0.6; // до 60% при mutation 12
+
+      if (Math.random() < desperateChance) {
+        grid[targetIdx] = virusType;
+      }
+    }
+  }
+  /**
    * Распространить вирус из клетки
    */
   private spreadVirus(
@@ -299,21 +537,43 @@ export class BattleManager {
           grid[nIdx] = virusType;
         }
       }
-      // === КЛЕТКА ВРАГА - АТАКА С AGGRESSION БОНУСОМ ===
+      // === КЛЕТКА ВРАГА - АТАКА С ВОЗМОЖНОСТЬЮ КОНВЕРТАЦИИ ===
       else if (neighborCell !== virusType) {
         // Aggression даёт бонус к шансу захвата вражеской клетки
         const attackChance = baseSpreadChance + aggressionBonus;
         if (Math.random() < attackChance) {
-          // Дополнительно проверяем шанс полной атаки (уничтожение врага)
-          this.attackCell(grid, nIdx, virusType, neighborCell, params);
+          // Проверяем, является ли это атакой или конвертацией
+          const idx = y * width + x;
+          const surroundPressure = this.calculateSurroundPressure(grid, nx, ny, neighborCell, width, height).pressureLevel;
+
+          // Параметры врага
+          const enemyParams = neighborCell === 1 ? this.paramsA : this.paramsB;
+
+          // Пытаемся конвертировать вместо уничтожения
+          if (params.mutation >= 4 && enemyParams && Math.random() < 0.4) {
+            // Попытка конвертации
+            const converted = this.attemptConversion(grid, nIdx, virusType, neighborCell, params, enemyParams, surroundPressure);
+            if (!converted) {
+              // Если конвертация не удалась - обычная атака
+              this.attackCell(grid, nIdx, virusType, neighborCell, params);
+            }
+          } else {
+            // Обычная атака
+            this.attackCell(grid, nIdx, virusType, neighborCell, params);
+          }
         }
       }
     }
+
+    // === ОБРАБОТКА ОКРУЖЁННЫХ КЛЕТОК ===
+    // Проверяем, не окружена ли эта клетка врагами
+    this.handleSurroundedCell(grid, y * width + x, x, y, virusType, params, width, height);
   }
 
   /**
    * Атака клетки врага
    * Aggression + Virulence + Lethality vs Defense + Resilience
+   * С возможностью конвертации через Mutation
    */
   private attackCell(
     grid: number[],
