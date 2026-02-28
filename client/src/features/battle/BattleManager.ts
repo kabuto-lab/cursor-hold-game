@@ -259,13 +259,28 @@ export class BattleManager {
       { dx: 1, dy: 1 },   // низ-право
     ];
 
-    // Шанс распространения (зависит от speed + reproduction)
-    const spreadChance = (params.speed + params.reproduction) / 20; // 0.0 - 1.0
+    // === БАЗОВЫЙ ШАНС РАСПРОСТРАНЕНИЯ ===
+    // Speed + Reproduction определяют базовую скорость
+    const baseSpreadChance = (params.speed + params.reproduction) / 20; // 0.0 - 1.0
 
-    // Количество попыток распространения (зависит от contagiousness)
-    const spreadAttempts = 1 + Math.floor(params.contagiousness / 5);
+    // === ВЛИЯНИЕ AGGRESSION ===
+    // Aggression увеличивает шанс распространения на вражеские территории
+    // Каждый пункт агрессии даёт +2.5% к шансу (макс +30% при 12 aggression)
+    const aggressionBonus = params.aggression * 0.025;
 
-    for (let attempt = 0; attempt < spreadAttempts; attempt++) {
+    // === ВЛИЯНИЕ VIRULENCE ===
+    // Virulence увеличивает количество попыток распространения
+    // Высокая вирулентность = вирус более "заразный" и проникающий
+    const virulenceBonus = Math.floor(params.virulence / 4); // 0-3 дополнительные попытки
+
+    // === ВЛИЯНИЕ CONTAGIOUSNESS ===
+    // Contagiousness определяет количество направлений распространения
+    const spreadAttempts = 1 + Math.floor(params.contagiousness / 5); // 1-3 попытки
+
+    // Общее количество попыток распространения
+    const totalAttempts = spreadAttempts + virulenceBonus;
+
+    for (let attempt = 0; attempt < totalAttempts; attempt++) {
       // Выбираем случайного соседа
       const neighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
       const nx = x + neighbor.dx;
@@ -277,21 +292,28 @@ export class BattleManager {
       const nIdx = ny * width + nx;
       const neighborCell = grid[nIdx];
 
-      // Пустая клетка - захватываем
+      // === ПУСТАЯ КЛЕТКА - БАЗОВОЕ РАСПРОСТРАНЕНИЕ ===
       if (neighborCell === 0) {
-        if (Math.random() < spreadChance) {
+        // Aggression не влияет на пустые клетки, только base chance
+        if (Math.random() < baseSpreadChance) {
           grid[nIdx] = virusType;
         }
       }
-      // Клетка врага - атакуем
+      // === КЛЕТКА ВРАГА - АТАКА С AGGRESSION БОНУСОМ ===
       else if (neighborCell !== virusType) {
-        this.attackCell(grid, nIdx, virusType, neighborCell, params);
+        // Aggression даёт бонус к шансу захвата вражеской клетки
+        const attackChance = baseSpreadChance + aggressionBonus;
+        if (Math.random() < attackChance) {
+          // Дополнительно проверяем шанс полной атаки (уничтожение врага)
+          this.attackCell(grid, nIdx, virusType, neighborCell, params);
+        }
       }
     }
   }
 
   /**
    * Атака клетки врага
+   * Aggression + Virulence + Lethality vs Defense + Resilience
    */
   private attackCell(
     grid: number[],
@@ -304,16 +326,46 @@ export class BattleManager {
     const defenderParams = defenderType === 1 ? this.paramsA : this.paramsB;
     if (!defenderParams) return;
 
-    // Сила атаки (aggression + virulence + lethality)
-    const attackPower = attackerParams.aggression + attackerParams.virulence + attackerParams.lethality;
+    // === СИЛА АТАКИ ===
+    // Aggression: прямая атака (+1 к силе за пункт)
+    // Virulence: разрушение тканей (+0.5 к силе за пункт, игнорирует часть защиты)
+    // Lethality: смертельность (+0.75 к силе за пункт, бонус против высокозащищённых)
+    const aggressionPower = attackerParams.aggression * 1.0;
+    const virulencePower = attackerParams.virulence * 0.5;
+    const lethalityPower = attackerParams.lethality * 0.75;
+    
+    const baseAttackPower = aggressionPower + virulencePower + lethalityPower;
 
-    // Сила защиты (defense + resilience)
-    const defensePower = defenderParams.defense + defenderParams.resilience;
+    // === СИЛА ЗАЩИТЫ ===
+    // Defense: прямая защита (+1 к защите за пункт)
+    // Resilience: выживание (+0.5 к защите за пункт)
+    const defensePower = defenderParams.defense * 1.0 + defenderParams.resilience * 0.5;
 
-    // Шанс захвата
-    const captureChance = 0.3 + (attackPower - defensePower) / 30; // Базовый 30% + модификаторы
+    // === РАСЧЁТ ШАНСА ЗАХВАТА ===
+    // Базовый шанс 40%
+    // Модификатор от разницы атаки и защиты: ±2% за каждый пункт разницы
+    const attackDiff = baseAttackPower - defensePower;
+    const captureChance = 0.4 + (attackDiff * 0.02); // 40% база + 2% за разницу
 
-    if (Math.random() < captureChance) {
+    // === БОНУС ОТ VIRULENCE ПРОТИВ ЗАЩИТЫ ===
+    // Virulence игнорирует часть защиты (до 30% при 12 virulence)
+    const armorPenetration = attackerParams.virulence / 40; // 0-30%
+    const effectiveDefensePower = defensePower * (1 - armorPenetration);
+    const adjustedCaptureChance = 0.4 + ((baseAttackPower - effectiveDefensePower) * 0.02);
+
+    // === БОНУС ОТ LETHALITY ПРОТИВ ВЫСОКОЙ ЗАЩИТЫ ===
+    // Lethality даёт бонус против целей с defense > 6
+    if (defenderParams.defense > 6) {
+      const highDefenseBonus = (defenderParams.defense - 6) * attackerParams.lethality * 0.01;
+      if (Math.random() < adjustedCaptureChance + highDefenseBonus) {
+        // Захват клетки
+        grid[idx] = attackerType;
+        return;
+      }
+    }
+
+    // Стандартная проверка захвата
+    if (Math.random() < adjustedCaptureChance) {
       // Захват клетки
       grid[idx] = attackerType;
     }

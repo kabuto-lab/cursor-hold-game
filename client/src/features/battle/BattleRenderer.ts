@@ -707,25 +707,66 @@ export class BattleRenderer {
       return;
     }
 
-    // Update all cells with current lifecycle state (size, color, fill changes over time)
     let activeCount = 0;
+
     for (let i = 0; i < this.totalCells; i++) {
       const cellValue = this.currentGrid[i];
       const container = this.cellContainers.get(i);
 
       if (container && cellValue !== 0) {
         activeCount++;
-        // Re-render cell to update lifecycle visualization
-        this.updateCell(container, cellValue, i);
+        
+        // Get lifecycle data - this updates based on current time
+        const lifecycle = this.getCellAgeData(i, cellValue);
+        
+        // Get graphics
+        const cell = (container as any).cellGraphics as PIXI.Graphics;
+        const glow = (container as any).glowGraphics as PIXI.Graphics;
+        
+        if (!cell || !glow) continue;
+
+        // Calculate visual properties
+        const diameter = this.config.cellDiameter;
+        const baseRadius = diameter / 2;
+        const virusColor = cellValue === 1 ? this.COLORS.virusA : this.COLORS.virusB;
+        const virusLightColor = cellValue === 1 ? this.COLORS.virusALight : this.COLORS.virusBLight;
+        
+        // Interpolate color based on lifecycle stage
+        const currentColor = this.interpolateColor(
+          virusLightColor,
+          virusColor,
+          lifecycle.opacity - 0.5
+        );
+
+        // Current size based on lifecycle
+        const currentRadius = baseRadius * lifecycle.sizeMultiplier;
+
+        // Redraw cell with current lifecycle properties
+        cell.clear();
+        glow.clear();
+
+        // Cell border
+        cell.lineStyle(2, currentColor, lifecycle.opacity);
+        
+        // Cell fill
+        cell.beginFill(currentColor, lifecycle.opacity * 0.8);
+        cell.drawCircle(0, 0, currentRadius);
+        cell.endFill();
+
+        // Inner fill indicator (shows fill ratio)
+        if (lifecycle.fillRatio > 0.05) {
+          const fillRadius = currentRadius * lifecycle.fillRatio;
+          cell.beginFill(currentColor, lifecycle.opacity);
+          cell.drawCircle(0, 0, fillRadius);
+          cell.endFill();
+        }
+
+        // Glow
+        glow.beginFill(currentColor, lifecycle.opacity * 0.3);
+        glow.drawCircle(0, 0, currentRadius + 5);
+        glow.endFill();
       }
     }
-  }
-
-  /**
-   * Get pulse value (DEPRECATED - kept for backwards compatibility)
-   */
-  private getPulseValue(): number {
-    return 1.0;  // No pulse
   }
 
   destroy(): void {
