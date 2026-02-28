@@ -56,7 +56,18 @@ export class BattleRenderer {
     this.container.visible = false;
 
     stage.addChild(this.container);
-    console.log('[BattleRenderer] Created');
+    
+    // Сортируем children stage по zIndex
+    if (stage.sortChildren) {
+      stage.sortChildren();
+    }
+    
+    console.log('[BattleRenderer] Created', {
+      stageChildren: stage.children.length,
+      containerZIndex: this.container.zIndex,
+      containerVisible: this.container.visible,
+      containerAlpha: this.container.alpha
+    });
   }
 
   initGrid(width: number, height: number): void {
@@ -206,6 +217,9 @@ export class BattleRenderer {
     }
 
     console.log(`[BattleRenderer] Grid updated: RED=${virusACount}, BLUE=${virusBCount}, EMPTY=${emptyCount}, TOTAL=${this.totalCells}`);
+    
+    // Лог для проверки первых нескольких клеток
+    console.log('[BattleRenderer] First 10 cells:', grid.slice(0, 10));
   }
 
   private updateCell(container: PIXI.Container, value: number): void {
@@ -261,12 +275,21 @@ export class BattleRenderer {
   }
 
   show(): void {
+    console.log('[BattleRenderer] show() CALLED');
+    console.log('[BattleRenderer] Container state before show:', {
+      alpha: this.container.alpha,
+      visible: this.container.visible,
+      zIndex: this.container.zIndex,
+      children: this.container.children.length,
+      position: this.container.position
+    });
+    
     this.container.alpha = 1;
     this.container.visible = true;
     
-    console.log('[BattleRenderer] Show:', {
-      position: this.container.position,
-      children: this.container.children.length
+    console.log('[BattleRenderer] Container state after show:', {
+      alpha: this.container.alpha,
+      visible: this.container.visible
     });
   }
 
@@ -316,16 +339,20 @@ export class BattleRenderer {
 
   update(delta: number): void {
     // Анимация пульсации для всех активных клеток
-    if (!this.currentGrid) return;
+    if (!this.currentGrid) {
+      return;
+    }
 
     const now = Date.now();
     const pulse = 1 + 0.1 * Math.sin((now / this.config.pulseSpeed) * Math.PI * 2);
 
+    let activeCount = 0;
     for (let i = 0; i < this.totalCells; i++) {
       const cellValue = this.currentGrid[i];
       const container = this.cellContainers.get(i);
 
       if (container && cellValue !== 0) {
+        activeCount++;
         // Пульсация масштаба
         container.scale.set(pulse);
 
@@ -337,6 +364,11 @@ export class BattleRenderer {
           container.alpha = 1;
         }
       }
+    }
+    
+    // Лог каждые 60 кадров (примерно 1 секунда)
+    if (Date.now() % 1000 < 100) {
+      console.log(`[BattleRenderer.update] Active cells: ${activeCount}/${this.totalCells}, pulse: ${pulse.toFixed(3)}`);
     }
   }
 

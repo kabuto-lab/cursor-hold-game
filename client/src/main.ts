@@ -144,9 +144,12 @@ class MainApp {
       console.log('[MainApp] Battle state changed:', state);
 
       if (state.type === 'running') {
-        console.log('[MainApp] Showing battle renderer');
+        console.log('[MainApp] Showing battle renderer, battleRenderer exists:', !!this.battleRenderer);
         if (this.battleRenderer) {
+          console.log('[MainApp] Calling battleRenderer.show()');
           this.battleRenderer.show();
+        } else {
+          console.error('[MainApp] battleRenderer is NULL when state=running!');
         }
       } else if (state.type === 'ended') {
         // Определяем победителя по цвету вируса
