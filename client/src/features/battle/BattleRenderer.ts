@@ -16,6 +16,23 @@ export interface BattleRendererConfig {
   contestedFlickerSpeed: number;
   defenseRingCount?: number;  // Number of defense rings (0-4)
   defenseShimmerSpeed?: number;  // Speed of shield shimmer animation
+  lifecycleEnabled?: boolean;  // Enable cell age visualization
+}
+
+/**
+ * Cell lifecycle stage based on age
+ */
+export type CellLifecycleStage = 'newborn' | 'maturing' | 'mature';
+
+/**
+ * Cell age data
+ */
+export interface CellAgeData {
+  birthTime: number;
+  stage: CellLifecycleStage;
+  sizeMultiplier: number;
+  opacity: number;
+  fillRatio: number;
 }
 
 export class BattleRenderer {
@@ -28,6 +45,15 @@ export class BattleRenderer {
   // Virus params for defense visualization
   private paramsA: { defense: number } | null = null;
   private paramsB: { defense: number } | null = null;
+
+  // Cell lifecycle tracking (age visualization)
+  private cellAges: Map<number, CellAgeData> = new Map();
+  private lifecycleEnabled: boolean = true;
+
+  // Lifecycle timing (in milliseconds)
+  private readonly NEWBORN_DURATION = 2000;  // 0-2s: newborn
+  private readonly MATURING_DURATION = 3000; // 2-5s: maturing
+  private readonly MATURE_TIME = 5000;       // 5s+: mature
 
   private gridWidth: number = 32;
   private gridHeight: number = 20;
@@ -47,6 +73,9 @@ export class BattleRenderer {
     lineActive: 0x666666,
     defenseShield: 0x00ffff,  // Cyan shield border
     defenseGlow: 0x00aaaa,  // Darker cyan for glow
+    // Lifecycle colors (pastel versions for newborn/maturing)
+    virusALight: 0xff9999,  // Light red/pink
+    virusBLight: 0x9999ff,  // Light blue
   };
 
   // Defense visualization
@@ -67,8 +96,11 @@ export class BattleRenderer {
       contestedFlickerSpeed: 200,
       defenseRingCount: 0,
       defenseShimmerSpeed: 1500,
+      lifecycleEnabled: true,
       ...config
     };
+
+    this.lifecycleEnabled = this.config.lifecycleEnabled !== false;
 
     this.baseCellDiameter = this.config.cellDiameter;
 
@@ -97,6 +129,9 @@ export class BattleRenderer {
     this.totalCells = width * height;
 
     console.log(`[BattleRenderer] Init grid: ${width}×${height} = ${this.totalCells} cells`);
+
+    // Clear cell age tracking
+    this.clearCellAges();
 
     // Очистка старых контейнеров
     this.cellContainers.forEach(container => {
@@ -135,6 +170,73 @@ export class BattleRenderer {
     this.centerGrid();
 
     console.log(`[BattleRenderer] Grid positioned at:`, this.container.position);
+  }
+
+  /**
+   * Calculate cell age and lifecycle stage
+   */
+  private getCellAgeData(cellIndex: number, virusType: number): CellAgeData {
+    const now = Date.now();
+    let ageData = this.cellAges.get(cellIndex);
+
+    // New cell - create age data
+    if (!ageData || (virusType === 0)) {
+      if (virusType === 0) {
+        // Cell died/empty - remove age tracking
+        this.cellAges.delete(cellIndex);
+        return {
+          birthTime: 0,
+          stage: 'mature',
+          sizeMultiplier: 1,
+          opacity: 1,
+          fillRatio: 0
+        };
+      }
+      
+      // New virus cell
+      ageData = {
+        birthTime: now,
+        stage: 'newborn',
+        sizeMultiplier: 0.5,
+        opacity: 0.5,
+        fillRatio: 0
+      };
+      this.cellAges.set(cellIndex, ageData);
+    }
+
+    // Calculate age progression
+    const age = now - ageData.birthTime;
+
+    if (age < this.NEWBORN_DURATION) {
+      // Newborn: 0-2 seconds
+      const progress = age / this.NEWBORN_DURATION;
+      ageData.stage = 'newborn';
+      ageData.sizeMultiplier = 0.5 + (0.25 * progress);  // 0.5 → 0.75
+      ageData.opacity = 0.5 + (0.25 * progress);          // 0.5 → 0.75
+      ageData.fillRatio = progress * 0.5;                 // 0 → 0.5
+    } else if (age < this.NEWBORN_DURATION + this.MATURING_DURATION) {
+      // Maturing: 2-5 seconds
+      const progress = (age - this.NEWBORN_DURATION) / this.MATURING_DURATION;
+      ageData.stage = 'maturing';
+      ageData.sizeMultiplier = 0.75 + (0.25 * progress);  // 0.75 → 1.0
+      ageData.opacity = 0.75 + (0.25 * progress);         // 0.75 → 1.0
+      ageData.fillRatio = 0.5 + (0.5 * progress);         // 0.5 → 1.0
+    } else {
+      // Mature: 5+ seconds
+      ageData.stage = 'mature';
+      ageData.sizeMultiplier = 1.0;
+      ageData.opacity = 1.0;
+      ageData.fillRatio = 1.0;
+    }
+
+    return ageData;
+  }
+
+  /**
+   * Clear cell age data for all cells
+   */
+  private clearCellAges(): void {
+    this.cellAges.clear();
   }
 
   /**
@@ -373,7 +475,6 @@ export class BattleRenderer {
 
     if (!cell || !glow) return;
 
-    const radius = diameter / 2;
     const gap = this.currentCellGap;
 
     // Clear and redraw
@@ -386,33 +487,8 @@ export class BattleRenderer {
     const idx = y * this.gridWidth + x;
     const value = this.currentGrid ? this.currentGrid[idx] : 0;
 
-    if (value === 0) {
-      cell.beginFill(this.COLORS.empty, 1);
-      cell.drawCircle(0, 0, radius);
-      cell.endFill();
-
-      glow.beginFill(this.COLORS.empty, 0.3);
-      glow.drawCircle(0, 0, radius + 2);
-      glow.endFill();
-    } else if (value === 1) {
-      const pulse = this.getPulseValue();
-      cell.beginFill(this.COLORS.virusA, 1);
-      cell.drawCircle(0, 0, radius * pulse);
-      cell.endFill();
-
-      glow.beginFill(this.COLORS.virusA, 0.8);
-      glow.drawCircle(0, 0, radius * pulse + 5);
-      glow.endFill();
-    } else if (value === 2) {
-      const pulse = this.getPulseValue();
-      cell.beginFill(this.COLORS.virusB, 1);
-      cell.drawCircle(0, 0, radius * pulse);
-      cell.endFill();
-
-      glow.beginFill(this.COLORS.virusB, 0.8);
-      glow.drawCircle(0, 0, radius * pulse + 5);
-      glow.endFill();
-    }
+    // Re-render cell with lifecycle visualization
+    this.updateCell(container, value, idx);
   }
 
   updateGrid(grid: number[]): void {
@@ -433,7 +509,7 @@ export class BattleRenderer {
       const container = this.cellContainers.get(i);
 
       if (container) {
-        this.updateCell(container, cellValue);
+        this.updateCell(container, cellValue, i);
         if (cellValue === 1) virusACount++;
         else if (cellValue === 2) virusBCount++;
         else emptyCount++;
@@ -446,7 +522,7 @@ export class BattleRenderer {
     console.log('[BattleRenderer] First 10 cells:', grid.slice(0, 10));
   }
 
-  private updateCell(container: PIXI.Container, value: number): void {
+  private updateCell(container: PIXI.Container, value: number, cellIndex?: number): void {
     const cell = (container as any).cellGraphics as PIXI.Graphics;
     const glow = (container as any).glowGraphics as PIXI.Graphics;
 
@@ -456,49 +532,94 @@ export class BattleRenderer {
     glow.clear();
 
     const diameter = this.config.cellDiameter;
-    const radius = diameter / 2;
+    const baseRadius = diameter / 2;
 
     if (value === 0) {
       // Пустая клетка - тёмная
       cell.beginFill(this.COLORS.empty, 1);
-      cell.drawCircle(0, 0, radius);
+      cell.drawCircle(0, 0, baseRadius);
       cell.endFill();
 
       glow.beginFill(this.COLORS.empty, 0.3);
-      glow.drawCircle(0, 0, radius + 2);
+      glow.drawCircle(0, 0, baseRadius + 2);
       glow.endFill();
 
       // Hide defense rings for empty cells
       this.updateDefenseRings(container, 0, 0);
-    } else if (value === 1) {
-      // Virus A - ЯРКИЙ КРАСНЫЙ с сильным свечением
-      const pulse = this.getPulseValue();
-      cell.beginFill(this.COLORS.virusA, 1);
-      cell.drawCircle(0, 0, radius * pulse);
+    } else if (value === 1 || value === 2) {
+      // Get lifecycle data for this cell
+      const idx = cellIndex !== undefined ? cellIndex : this.getCellIndex(container);
+      const lifecycle = this.getCellAgeData(idx, value);
+
+      // Calculate visual properties based on lifecycle stage
+      const virusColor = value === 1 ? this.COLORS.virusA : this.COLORS.virusB;
+      const virusLightColor = value === 1 ? this.COLORS.virusALight : this.COLORS.virusBLight;
+      
+      // Interpolate color based on opacity (lifecycle stage)
+      const currentColor = this.interpolateColor(
+        virusLightColor,
+        virusColor,
+        lifecycle.opacity - 0.5  // 0.5-1.0 range
+      );
+
+      // Size based on lifecycle
+      const currentRadius = baseRadius * lifecycle.sizeMultiplier;
+
+      // Draw cell with current size
+      cell.lineStyle(2, currentColor, lifecycle.opacity);
+      cell.beginFill(currentColor, lifecycle.opacity * 0.8);
+      cell.drawCircle(0, 0, currentRadius);
       cell.endFill();
 
-      // Сильное свечение
-      glow.beginFill(this.COLORS.virusA, 0.8);
-      glow.drawCircle(0, 0, radius * pulse + 5);
+      // Draw fill indicator (shows fill ratio as inner circle)
+      if (lifecycle.fillRatio > 0) {
+        const fillRadius = currentRadius * lifecycle.fillRatio;
+        cell.beginFill(currentColor, lifecycle.opacity);
+        cell.drawCircle(0, 0, fillRadius);
+        cell.endFill();
+      }
+
+      // Glow based on lifecycle
+      glow.beginFill(currentColor, lifecycle.opacity * 0.3);
+      glow.drawCircle(0, 0, currentRadius + 5);
       glow.endFill();
 
       // Update defense shield rings
-      this.updateDefenseRings(container, this.paramsA?.defense || 0, 1);
-    } else if (value === 2) {
-      // Virus B - ЯРКИЙ СИНИЙ с сильным свечением
-      const pulse = this.getPulseValue();
-      cell.beginFill(this.COLORS.virusB, 1);
-      cell.drawCircle(0, 0, radius * pulse);
-      cell.endFill();
-
-      // Сильное свечение
-      glow.beginFill(this.COLORS.virusB, 0.8);
-      glow.drawCircle(0, 0, radius * pulse + 5);
-      glow.endFill();
-
-      // Update defense shield rings
-      this.updateDefenseRings(container, this.paramsB?.defense || 0, 2);
+      const defenseParams = value === 1 ? this.paramsA : this.paramsB;
+      this.updateDefenseRings(container, defenseParams?.defense || 0, value);
     }
+  }
+
+  /**
+   * Get cell index from container
+   */
+  private getCellIndex(container: PIXI.Container): number {
+    for (const [idx, cont] of this.cellContainers.entries()) {
+      if (cont === container) return idx;
+    }
+    return 0;
+  }
+
+  /**
+   * Interpolate between two colors
+   */
+  private interpolateColor(color1: number, color2: number, factor: number): number {
+    // Clamp factor between 0-1
+    factor = Math.max(0, Math.min(1, factor));
+
+    const r1 = (color1 >> 16) & 0xff;
+    const g1 = (color1 >> 8) & 0xff;
+    const b1 = color1 & 0xff;
+
+    const r2 = (color2 >> 16) & 0xff;
+    const g2 = (color2 >> 8) & 0xff;
+    const b2 = color2 & 0xff;
+
+    const r = Math.round(r1 + (r2 - r1) * factor);
+    const g = Math.round(g1 + (g2 - g1) * factor);
+    const b = Math.round(b1 + (b2 - b1) * factor);
+
+    return (r << 16) | (g << 8) | b;
   }
 
   /**
@@ -516,12 +637,6 @@ export class BattleRenderer {
     if (this.currentGrid) {
       this.updateGrid(this.currentGrid);
     }
-  }
-
-  private getPulseValue(): number {
-    const time = Date.now() % this.config.pulseSpeed;
-    const normalized = time / this.config.pulseSpeed;
-    return 1 + 0.1 * Math.sin(normalized * Math.PI * 2);
   }
 
   show(): void {
@@ -588,14 +703,11 @@ export class BattleRenderer {
   }
 
   update(delta: number): void {
-    // Анимация пульсации для всех активных клеток
-    if (!this.currentGrid) {
+    if (!this.currentGrid || !this.lifecycleEnabled) {
       return;
     }
 
-    const now = Date.now();
-    const pulse = 1 + 0.1 * Math.sin((now / this.config.pulseSpeed) * Math.PI * 2);
-
+    // Update all cells with current lifecycle state (size, color, fill changes over time)
     let activeCount = 0;
     for (let i = 0; i < this.totalCells; i++) {
       const cellValue = this.currentGrid[i];
@@ -603,23 +715,17 @@ export class BattleRenderer {
 
       if (container && cellValue !== 0) {
         activeCount++;
-        // Пульсация масштаба
-        container.scale.set(pulse);
-
-        // Мерцание для спорных клеток (где соседствуют вирусы A и B)
-        if (this.isContested(i)) {
-          const flicker = 0.5 + 0.5 * Math.sin((now / this.config.contestedFlickerSpeed) * Math.PI * 2);
-          container.alpha = flicker;
-        } else {
-          container.alpha = 1;
-        }
+        // Re-render cell to update lifecycle visualization
+        this.updateCell(container, cellValue, i);
       }
     }
-    
-    // Лог каждые 60 кадров (примерно 1 секунда)
-    if (Date.now() % 1000 < 100) {
-      console.log(`[BattleRenderer.update] Active cells: ${activeCount}/${this.totalCells}, pulse: ${pulse.toFixed(3)}`);
-    }
+  }
+
+  /**
+   * Get pulse value (DEPRECATED - kept for backwards compatibility)
+   */
+  private getPulseValue(): number {
+    return 1.0;  // No pulse
   }
 
   destroy(): void {
