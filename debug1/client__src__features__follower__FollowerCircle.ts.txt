@@ -1,0 +1,147 @@
+﻿import * as PIXI from 'pixi.js';
+import { NetworkManager } from '../../core/NetworkManager';
+
+interface FollowerData {
+  playerId: string;
+  color: number;
+  targetX: number;
+  targetY: number;
+  currentX: number;
+  currentY: number;
+  graphics: PIXI.Graphics | null;
+}
+
+export class FollowerCircle {
+  private followers: Map<string, FollowerData> = new Map();
+  private localPlayerId: string | null = null;
+  private isCreator: boolean = false;
+
+  // Callbacks Ð´Ð»Ñ UI
+  public onFollowerUpdate?: (playerId: string, x: number, y: number) => void;
+
+  constructor(
+    private stage: PIXI.Container,
+    private networkManager: NetworkManager
+  ) {
+    // ÐŸÐ¾Ð´Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÐ¼ÑÑ Ð½Ð° ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ Ð¾Ñ‚ ÑÐµÑ€Ð²ÐµÑ€Ð°
+    this.networkManager.onMessage('followerUpdate', (data: { playerId: string; x: number; y: number }) => {
+      this.updateRemoteFollower(data.playerId, data.x, data.y);
+    });
+
+    // Ð—Ð°Ð¿ÑƒÑÐºÐ°ÐµÐ¼ Ñ‚Ð¸ÐºÐµÑ€ Ð´Ð»Ñ Ð¸Ð½Ñ‚ÐµÑ€Ð¿Ð¾Ð»ÑÑ†Ð¸Ð¸
+    PIXI.Ticker.shared.add((ticker) => this.update(ticker.deltaTime));
+  }
+
+  // Ð£ÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼, ÐºÑ‚Ð¾ Ð¼Ñ‹ (creator Ð¸Ð»Ð¸ joiner)
+  setLocalPlayer(playerId: string, isCreator: boolean) {
+    this.localPlayerId = playerId;
+    this.isCreator = isCreator;
+    console.log(`[FollowerCircle] Local player set: ${playerId}, isCreator: ${isCreator}`);
+  }
+
+  // Ð›Ð¾ÐºÐ°Ð»ÑŒÐ½Ð¾Ðµ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ Ð¼Ñ‹ÑˆÐ¸ (Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¸Ð· InputManager Ð¸Ð»Ð¸ main)
+  updateLocalPosition(x: number, y: number) {
+    if (!this.localPlayerId) return;
+
+    // ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼ ÑÐ²Ð¾ÑŽ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸ÑŽ ÑÐµÑ€Ð²ÐµÑ€Ñƒ (ÐºÐ°Ð¶Ð´Ñ‹Ðµ ~50 Ð¼Ñ â€” Ð¼Ð¾Ð¶Ð½Ð¾ Ñ€ÐµÐ³ÑƒÐ»Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ)
+    if (Math.random() < 0.1) { // ~50 Ð¼Ñ Ð¿Ñ€Ð¸ 60 fps
+      this.networkManager.sendToRoom('followerUpdate', { x, y });
+    }
+
+    // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ UI Ð´Ð»Ñ Ð»Ð¾ÐºÐ°Ð»ÑŒÐ½Ð¾Ð³Ð¾ Ð¸Ð³Ñ€Ð¾ÐºÐ°
+    if (this.onFollowerUpdate) {
+      if (this.isCreator) {
+        this.onFollowerUpdate('creator', x, y);
+      } else {
+        this.onFollowerUpdate('joiner', x, y);
+      }
+    }
+
+    // Ð•ÑÐ»Ð¸ Ð¼Ñ‹ joiner â€” Ð¾Ð±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ ÑÐ²Ð¾Ð¹ ÐºÑ€ÑƒÐ³ Ñƒ ÑÐ¾Ð·Ð´Ð°Ñ‚ÐµÐ»Ñ (Ð½Ð¾ ÑÐ²Ð¾Ð¹ Ð½Ðµ Ñ€Ð¸ÑÑƒÐµÐ¼)
+    if (!this.isCreator) {
+      const creatorFollower = this.followers.get('creator');
+      if (creatorFollower) {
+        creatorFollower.targetX = x;
+        creatorFollower.targetY = y;
+      }
+    }
+  }
+
+  private updateRemoteFollower(playerId: string, x: number, y: number) {
+    let follower = this.followers.get(playerId);
+
+    if (!follower) {
+      follower = {
+        playerId,
+        color: playerId === 'creator' ? 0xff0000 : 0x0000ff, // ÐºÑ€Ð°ÑÐ½Ñ‹Ð¹ Ð´Ð»Ñ ÑÐ¾Ð·Ð´Ð°Ñ‚ÐµÐ»Ñ, ÑÐ¸Ð½Ð¸Ð¹ Ð´Ð»Ñ joiner
+        targetX: x,
+        targetY: y,
+        currentX: x,
+        currentY: y,
+        graphics: null,
+      };
+      this.followers.set(playerId, follower);
+    }
+
+    follower.targetX = x;
+    follower.targetY = y;
+
+    // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ UI Ð´Ð»Ñ ÑƒÐ´Ð°Ð»Ñ‘Ð½Ð½Ð¾Ð³Ð¾ Ð¸Ð³Ñ€Ð¾ÐºÐ°
+    if (this.onFollowerUpdate) {
+      if (playerId === 'creator' || this.isCreator) {
+        // Ð•ÑÐ»Ð¸ ÑÑ‚Ð¾ ÑÐ¾Ð·Ð´Ð°Ñ‚ÐµÐ»ÑŒ Ð¸Ð»Ð¸ Ð¼Ñ‹ ÑÐ¾Ð·Ð´Ð°Ñ‚ÐµÐ»ÑŒ â€” Ð¾Ð±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ creator
+        this.onFollowerUpdate('creator', x, y);
+      } else {
+        this.onFollowerUpdate('joiner', x, y);
+      }
+    }
+
+    // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ Ð³Ñ€Ð°Ñ„Ð¸ÐºÑƒ, ÐµÑÐ»Ð¸ ÐµÑ‰Ñ‘ Ð½ÐµÑ‚
+    if (!follower.graphics) {
+      const g = new PIXI.Graphics();
+      g.beginFill(follower.color, 0.7);
+      g.drawCircle(0, 0, 15);
+      g.endFill();
+      g.stroke({ width: 3, color: 0xffffff });
+      g.alpha = 0.8;
+      g.visible = true;
+      g.zIndex = 1000;
+
+      this.stage.addChild(g);
+      follower.graphics = g;
+      console.log(`[FollowerCircle] Created follower graphics for ${playerId}`);
+    }
+  }
+
+  private update(delta: number) {
+    this.followers.forEach((follower) => {
+      if (!follower.graphics) return;
+
+      // Ð˜Ð½Ñ‚ÐµÑ€Ð¿Ð¾Ð»ÑÑ†Ð¸Ñ Ñ Ð·Ð°Ð¿Ð°Ð·Ð´Ñ‹Ð²Ð°Ð½Ð¸ÐµÐ¼
+      const lerp = 0.15; // Ñ€ÐµÐ³ÑƒÐ»Ð¸Ñ€ÑƒÐ¹ Ð´Ð»Ñ Ð±Ð¾Ð»ÑŒÑˆÐµÐ³Ð¾/Ð¼ÐµÐ½ÑŒÑˆÐµÐ³Ð¾ Ð·Ð°Ð¿Ð°Ð·Ð´Ñ‹Ð²Ð°Ð½Ð¸Ñ
+      follower.currentX += (follower.targetX - follower.currentX) * lerp * delta;
+      follower.currentY += (follower.targetY - follower.currentY) * lerp * delta;
+
+      follower.graphics.position.set(follower.currentX, follower.currentY);
+
+      // Ð¡ÐºÑ€Ñ‹Ð²Ð°ÐµÐ¼ ÑÐ²Ð¾Ð¹ ÐºÑ€ÑƒÐ³
+      if (follower.playerId === this.localPlayerId) {
+        follower.graphics.visible = false;
+      }
+    });
+  }
+
+  // Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð¿Ñ€Ð¸ Ð¿Ñ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½ÐµÐ½Ð¸Ð¸/ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ð¸ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
+  onRoomJoined(isCreator: boolean, localPlayerId: string) {
+    this.setLocalPlayer(localPlayerId, isCreator);
+  }
+
+  // ÐžÑ‡Ð¸ÑÑ‚ÐºÐ° Ð¿Ñ€Ð¸ Ð²Ñ‹Ñ…Ð¾Ð´Ðµ Ð¸Ð· ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
+  destroy() {
+    this.followers.forEach((f) => {
+      if (f.graphics) this.stage.removeChild(f.graphics);
+    });
+    this.followers.clear();
+  }
+}
+

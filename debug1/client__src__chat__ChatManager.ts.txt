@@ -1,12 +1,8 @@
-// ========================================
-// ORIGINAL PATH: client/src/chat/ChatManager.ts
-// ========================================
-
-import { Room } from 'colyseus.js';
+﻿import { Room } from 'colyseus.js';
 
 /**
- * Менеджер чата
- * Управляет отправкой и получением сообщений в комнате
+ * ÐœÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ñ‡Ð°Ñ‚Ð°
+ * Ð£Ð¿Ñ€Ð°Ð²Ð»ÑÐµÑ‚ Ð¾Ñ‚Ð¿Ñ€Ð°Ð²ÐºÐ¾Ð¹ Ð¸ Ð¿Ð¾Ð»ÑƒÑ‡ÐµÐ½Ð¸ÐµÐ¼ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ð¹ Ð² ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ðµ
  */
 export class ChatManager {
   private room: Room | null = null;
@@ -23,7 +19,7 @@ export class ChatManager {
   }
 
   /**
-   * Установить обработчики событий
+   * Ð£ÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ ÑÐ¾Ð±Ñ‹Ñ‚Ð¸Ð¹
    */
   private setupEventListeners(): void {
     this.sendMessageBtn?.addEventListener('click', () => {
@@ -38,19 +34,19 @@ export class ChatManager {
   }
 
   /**
-   * Подключить к комнате
+   * ÐŸÐ¾Ð´ÐºÐ»ÑŽÑ‡Ð¸Ñ‚ÑŒ Ðº ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ðµ
    */
   attachToRoom(room: Room): void {
     this.room = room;
 
-    // Подписываемся на события комнаты для получения сообщений
+    // ÐŸÐ¾Ð´Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÐ¼ÑÑ Ð½Ð° ÑÐ¾Ð±Ñ‹Ñ‚Ð¸Ñ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹ Ð´Ð»Ñ Ð¿Ð¾Ð»ÑƒÑ‡ÐµÐ½Ð¸Ñ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ð¹
     this.room.onMessage('chatMessage', (data) => {
       this.receiveMessage(data.playerName, data.message, data.timestamp);
     });
   }
 
   /**
-   * Отправить сообщение
+   * ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð¸Ñ‚ÑŒ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ
    */
   sendMessage(): void {
     const message = this.messageInput?.value.trim();
@@ -58,34 +54,34 @@ export class ChatManager {
       return;
     }
 
-    // Отправляем сообщение в комнату
+    // ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ Ð² ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñƒ
     this.room.send('chatMessage', {
       message: message,
       timestamp: Date.now()
     });
 
-    // Очищаем поле ввода
+    // ÐžÑ‡Ð¸Ñ‰Ð°ÐµÐ¼ Ð¿Ð¾Ð»Ðµ Ð²Ð²Ð¾Ð´Ð°
     this.messageInput.value = '';
   }
 
   /**
-   * Получить сообщение
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ
    */
   private receiveMessage(sender: string, message: string, timestamp: number): void {
     const messageElement = document.createElement('div');
     messageElement.className = 'chat-message';
-
+    
     const timeString = new Date(timestamp).toLocaleTimeString();
     messageElement.innerHTML = `<strong>${sender}:</strong> ${message} <span class="timestamp">(${timeString})</span>`;
-
+    
     this.chatContainer.appendChild(messageElement);
-
-    // Прокручиваем вниз
+    
+    // ÐŸÑ€Ð¾ÐºÑ€ÑƒÑ‡Ð¸Ð²Ð°ÐµÐ¼ Ð²Ð½Ð¸Ð·
     this.chatContainer.scrollTop = this.chatContainer.scrollHeight;
   }
 
   /**
-   * Очистить чат
+   * ÐžÑ‡Ð¸ÑÑ‚Ð¸Ñ‚ÑŒ Ñ‡Ð°Ñ‚
    */
   clear(): void {
     if (this.chatContainer) {

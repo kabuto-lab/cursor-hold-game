@@ -1,8 +1,4 @@
-// ========================================
-// ORIGINAL PATH: server/src/rooms/schema.ts
-// ========================================
-
-import { Schema, type, MapSchema } from '@colyseus/schema';
+﻿import { Schema, type, MapSchema } from '@colyseus/schema';
 
 export class PlayerSchema extends Schema {
   @type('string') id!: string;

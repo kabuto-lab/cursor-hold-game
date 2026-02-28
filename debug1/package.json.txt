@@ -1,8 +1,4 @@
-// ========================================
-// ORIGINAL PATH: package.json
-// ========================================
-
-{
+﻿{
   "name": "holding-hands-game",
   "version": "1.0.0",
   "description": "A 2-player collaborative game where players can 'hold hands' virtually",

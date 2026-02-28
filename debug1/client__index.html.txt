@@ -1,21 +1,17 @@
-// ========================================
-// ORIGINAL PATH: client/index.html
-// ========================================
-
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VYRU5 - Multiplayer Game</title>
-
+  
   <!-- Preload PIXY font for faster loading -->
   <link rel="preload" href="/fnt/PIXY.otf" as="font" type="font/otf" crossorigin="anonymous">
   <link rel="preload" href="/fnt/PIXY.ttf" as="font" type="font/ttf" crossorigin="anonymous">
 
   <style>
-    /* Подключение ретро-шрифтов */
+    /* ÐŸÐ¾Ð´ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ðµ Ñ€ÐµÑ‚Ñ€Ð¾-ÑˆÑ€Ð¸Ñ„Ñ‚Ð¾Ð² */
     @font-face {
       font-family: 'PIXY';
       src: local('PIXY'),
@@ -26,7 +22,7 @@
       font-display: swap;
     }
 
-    /* Fallback font stack для максимальной совместимости */
+    /* Fallback font stack Ð´Ð»Ñ Ð¼Ð°ÐºÑÐ¸Ð¼Ð°Ð»ÑŒÐ½Ð¾Ð¹ ÑÐ¾Ð²Ð¼ÐµÑÑ‚Ð¸Ð¼Ð¾ÑÑ‚Ð¸ */
     @font-face {
       font-family: 'PIXY Fallback';
       src: local('Courier New');
@@ -35,11 +31,11 @@
       line-gap-override: 0%;
     }
 
-    /* Глобальные стили для улучшения рендеринга шрифтов */
+    /* Ð“Ð»Ð¾Ð±Ð°Ð»ÑŒÐ½Ñ‹Ðµ ÑÑ‚Ð¸Ð»Ð¸ Ð´Ð»Ñ ÑƒÐ»ÑƒÑ‡ÑˆÐµÐ½Ð¸Ñ Ñ€ÐµÐ½Ð´ÐµÑ€Ð¸Ð½Ð³Ð° ÑˆÑ€Ð¸Ñ„Ñ‚Ð¾Ð² */
     * {
       -webkit-font-smoothing: antialiased; /* Safari, Chrome */
       -moz-osx-font-smoothing: grayscale; /* Firefox */
-      text-rendering: optimizeLegibility; /* Все браузеры */
+      text-rendering: optimizeLegibility; /* Ð’ÑÐµ Ð±Ñ€Ð°ÑƒÐ·ÐµÑ€Ñ‹ */
     }
 
     body {
@@ -112,7 +108,7 @@
       transform: translate(4px, 4px);
       box-shadow: 0px 0px 0 #00ffff;
     }
-
+    
     .no-border {
       background-color: #ff00ff;
       color: #0f0f23;
@@ -166,7 +162,7 @@
       border-radius: 0;
       font-size: 0.9rem;
     }
-
+    
 
     .connection-status {
       display: inline-block;
@@ -198,7 +194,7 @@
       image-rendering: -moz-crisp-edges;
       image-rendering: crisp-edges;
     }
-
+    
     .sidebar {
       position: fixed;
       top: 0;
@@ -213,7 +209,7 @@
       transition: right 0.3s ease;
       display: flex;
       flex-direction: column;
-      box-shadow:
+      box-shadow: 
         0 0 20px rgba(0, 255, 255, 0.3),
         inset 0 0 20px rgba(0, 255, 255, 0.1);
       /* Liquid glass effect */
@@ -221,77 +217,77 @@
       border: 1px solid rgba(0, 255, 255, 0.3);
       border-radius: 0;
     }
-
+    
     /* Adjust right sidebar position to account for battle grid */
     .right-sidebar {
       right: -33%; /* Hidden by default */
       left: auto;
     }
-
+    
     .right-sidebar.active {
       right: 0;
       left: auto;
     }
-
+    
     .sidebar.active {
       right: 0;
     }
-
+    
     .left-sidebar {
       right: auto;
       left: -33%; /* Hidden by default */
       width: 33%; /* 33.3% width for desktop */
       transition: left 0.3s ease;
     }
-
+    
     .left-sidebar.active {
       left: 0;
       right: auto;
     }
-
+    
     /* Mobile responsiveness */
     @media (max-width: 768px) {
       .sidebar {
         width: 100%;
       }
-
+      
       .right-sidebar {
         right: -100%;
       }
-
+      
       .left-sidebar {
         left: -100%;
       }
-
+      
       .right-sidebar.active {
         right: 0;
       }
-
+      
       .left-sidebar.active {
         left: 0;
       }
-
+      
       #canvasContainer {
         left: 0;
         width: 100%;
       }
-
+      
     }
-
+    
     .sidebar-header {
       display: flex;
       flex-direction: column;
       padding: 10px;
       border-bottom: 1px solid #00ffff;
     }
-
+    
     .sidebar-title-controls {
       display: flex;
       justify-content: space-between;
       align-items: center;
       width: 100%;
     }
-
+    
     .sidebar-header h3 {
       margin: 0;
       color: #00ff00;
@@ -316,24 +312,24 @@
       font-size: 0.95rem;
       padding-left: 30px;
     }
-
+    
     .sidebar-content {
       padding: 10px;
       overflow-y: hidden; /* Changed from auto to hide scrollbar */
       flex-grow: 1;
     }
-
+    
     .setting-item {
       margin-bottom: 15px;
     }
-
+    
     .setting-item label {
       display: block;
       color: #00ff00;
       margin-bottom: 5px;
       font-family: 'Courier New', monospace;
     }
-
+    
     .setting-item input[type="range"],
     .setting-item select {
       width: 100%;
@@ -343,7 +339,7 @@
       border: 1px solid #00ffff;
       font-family: 'Courier New', monospace;
     }
-
+    
     .close-btn {
       background-color: #ff00ff;
       color: #0f0f23;
@@ -354,7 +350,7 @@
       font-size: 0.9rem;
       width: auto;
     }
-
+    
     #chat-container {
       width: 100%;
       background-color: rgba(15, 15, 35, 0.8);
@@ -363,7 +359,7 @@
       padding: 10px;
       margin-top: 20px;
     }
-
+    
     #chat-messages {
       height: 100px;
       overflow-y: auto;
@@ -399,14 +395,14 @@
       font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
       font-size: 0.85rem;
     }
-
+    
     /* Virus Parameter Styles */
     .param-row {
       display: flex;
       justify-content: space-between;
       margin-bottom: 5px; /* Reduced margin to save space */
     }
-
+    
     .param-cell {
       width: 30%;
       text-align: center;
@@ -420,17 +416,17 @@
       overflow: hidden;
       user-select: none;
     }
-
+    
     .param-cell:hover {
       background-color: rgba(0, 255, 255, 0.2);
     }
-
+    
     .param-emoji {
       font-size: 1.5rem;
       margin-bottom: 3px;
       display: block;
     }
-
+    
     .param-name {
       font-size: 0.65rem;
       color: #00ff00;
@@ -446,7 +442,7 @@
       font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace;
       font-weight: bold;
     }
-
+    
     /* Test tube liquid effect */
     .param-liquid {
       position: absolute;
@@ -457,21 +453,21 @@
       transition: height 0.5s ease;
       z-index: 1;
     }
-
+    
     /* Emoji-specific colors for liquids */
-    .param-cell[data-param="aggression"] .param-liquid { background-color: rgba(255, 0, 0, 0.6); } /* Red for ⚔️ */
-    .param-cell[data-param="mutation"] .param-liquid { background-color: rgba(128, 0, 128, 0.6); } /* Purple for 🧬 */
-    .param-cell[data-param="speed"] .param-liquid { background-color: rgba(255, 165, 0, 0.6); } /* Orange for ⚡ */
-    .param-cell[data-param="defense"] .param-liquid { background-color: rgba(0, 0, 255, 0.6); } /* Blue for 🛡️ */
-    .param-cell[data-param="reproduction"] .param-liquid { background-color: rgba(0, 128, 0, 0.6); } /* Green for 🦠 */
-    .param-cell[data-param="stealth"] .param-liquid { background-color: rgba(128, 128, 128, 0.6); } /* Gray for 👻 */
-    .param-cell[data-param="virulence"] .param-liquid { background-color: rgba(128, 0, 0, 0.6); } /* Maroon for ☣️ */
-    .param-cell[data-param="resilience"] .param-liquid { background-color: rgba(255, 192, 203, 0.6); } /* Pink for 💪 */
-    .param-cell[data-param="mobility"] .param-liquid { background-color: rgba(139, 69, 19, 0.6); } /* Brown for 🚶 */
-    .param-cell[data-param="intellect"] .param-liquid { background-color: rgba(255, 255, 0, 0.6); } /* Yellow for 🧠 */
-    .param-cell[data-param="contagiousness"] .param-liquid { background-color: rgba(0, 255, 255, 0.6); } /* Cyan for 🫁 */
-    .param-cell[data-param="lethality"] .param-liquid { background-color: rgba(0, 0, 0, 0.6); } /* Black for 💀 */
-
+    .param-cell[data-param="aggression"] .param-liquid { background-color: rgba(255, 0, 0, 0.6); } /* Red for âš”ï¸ */
+    .param-cell[data-param="mutation"] .param-liquid { background-color: rgba(128, 0, 128, 0.6); } /* Purple for ðŸ§¬ */
+    .param-cell[data-param="speed"] .param-liquid { background-color: rgba(255, 165, 0, 0.6); } /* Orange for âš¡ */
+    .param-cell[data-param="defense"] .param-liquid { background-color: rgba(0, 0, 255, 0.6); } /* Blue for ðŸ›¡ï¸ */
+    .param-cell[data-param="reproduction"] .param-liquid { background-color: rgba(0, 128, 0, 0.6); } /* Green for ðŸ¦  */
+    .param-cell[data-param="stealth"] .param-liquid { background-color: rgba(128, 128, 128, 0.6); } /* Gray for ðŸ‘» */
+    .param-cell[data-param="virulence"] .param-liquid { background-color: rgba(128, 0, 0, 0.6); } /* Maroon for â˜£ï¸ */
+    .param-cell[data-param="resilience"] .param-liquid { background-color: rgba(255, 192, 203, 0.6); } /* Pink for ðŸ’ª */
+    .param-cell[data-param="mobility"] .param-liquid { background-color: rgba(139, 69, 19, 0.6); } /* Brown for ðŸš¶ */
+    .param-cell[data-param="intellect"] .param-liquid { background-color: rgba(255, 255, 0, 0.6); } /* Yellow for ðŸ§  */
+    .param-cell[data-param="contagiousness"] .param-liquid { background-color: rgba(0, 255, 255, 0.6); } /* Cyan for ðŸ« */
+    .param-cell[data-param="lethality"] .param-liquid { background-color: rgba(0, 0, 0, 0.6); } /* Black for ðŸ’€ */
+    
     /* Drop animation */
     .drop-animation {
       position: absolute;
@@ -482,29 +478,29 @@
       pointer-events: none;
       z-index: 2;
     }
-
+    
     .points-summary {
       margin: 10px 0;
       color: #00ff00;
       font-size: 0.9rem;
     }
-
+    
     #readyBtn {
       width: 100%;
       margin-top: 10px;
     }
-
+    
     .param-cell.disabled {
       opacity: 0.4;
       cursor: not-allowed;
     }
 
-    /* Пробирки - интерактивность */
+    /* ÐŸÑ€Ð¾Ð±Ð¸Ñ€ÐºÐ¸ - Ð¸Ð½Ñ‚ÐµÑ€Ð°ÐºÑ‚Ð¸Ð²Ð½Ð¾ÑÑ‚ÑŒ */
     .param-cell:active {
       transform: scale(0.95);
     }
 
-    /* Капля */
+    /* ÐšÐ°Ð¿Ð»Ñ */
     .tube-drop {
       position: absolute;
       top: 5px;
@@ -528,7 +524,7 @@
       100% { top: 70%; opacity: 0.8; }
     }
 
-    /* Всплеск */
+    /* Ð’ÑÐ¿Ð»ÐµÑÐº */
     .tube-splash {
       position: absolute;
       bottom: 10%;
@@ -551,7 +547,7 @@
       100% { transform: translateX(-50%) scale(2); opacity: 0; }
     }
 
-    /* Пузырьки */
+    /* ÐŸÑƒÐ·Ñ‹Ñ€ÑŒÐºÐ¸ */
     .tube-bubble {
       position: absolute;
       background: rgba(255, 255, 255, 0.4);
@@ -565,12 +561,12 @@
       100% { transform: translateY(-40px) scale(0.3); opacity: 0; }
     }
 
-    /* Жидкость */
+    /* Ð–Ð¸Ð´ÐºÐ¾ÑÑ‚ÑŒ */
     .param-liquid {
       transition: height 0.3s ease;
     }
 
-    /* Кликабельные элементы для уменьшения */
+    /* ÐšÐ»Ð¸ÐºÐ°Ð±ÐµÐ»ÑŒÐ½Ñ‹Ðµ ÑÐ»ÐµÐ¼ÐµÐ½Ñ‚Ñ‹ Ð´Ð»Ñ ÑƒÐ¼ÐµÐ½ÑŒÑˆÐµÐ½Ð¸Ñ */
     .param-emoji,
     .param-name,
     .param-value {
@@ -586,18 +582,18 @@
       transform: scale(1.1);
       text-shadow: 0 0 10px currentColor;
     }
-
+    
     .copyable-id {
       cursor: pointer;
       text-decoration: underline;
       transition: color 0.2s;
     }
-
+    
     .copyable-id:hover {
       color: #00ffff;
     }
 
-    /* Верхняя панель с именами игроков */
+    /* Ð’ÐµÑ€Ñ…Ð½ÑÑ Ð¿Ð°Ð½ÐµÐ»ÑŒ Ñ Ð¸Ð¼ÐµÐ½Ð°Ð¼Ð¸ Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð² */
     #topPanelWrapper {
       position: fixed;
       top: 20px;
@@ -609,10 +605,10 @@
       width: 600px;
       max-width: calc(100% - 40px);
       height: 44px;
-      background: linear-gradient(90deg,
-        rgba(255,0,0,0.15) 0%,
-        rgba(0,0,0,0.7) 20%,
-        rgba(0,0,0,0.7) 80%,
+      background: linear-gradient(90deg, 
+        rgba(255,0,0,0.15) 0%, 
+        rgba(0,0,0,0.7) 20%, 
+        rgba(0,0,0,0.7) 80%, 
         rgba(0,0,255,0.15) 100%);
       border: 2px solid #00ffff;
       border-radius: 25px;
@@ -683,18 +679,18 @@
       text-align: center;
       pointer-events: none;
     }
-
+    
     /* Hide scrollbar for sidebar */
     .sidebar-content::-webkit-scrollbar {
       display: none; /* For Chrome, Safari, and Opera */
     }
-
+    
     .sidebar-content {
       -ms-overflow-style: none;  /* IE and Edge */
       scrollbar-width: none;  /* Firefox */
     }
 
-    /* 4 желтых круга по углам экрана для проверки позиционирования */
+    /* 4 Ð¶ÐµÐ»Ñ‚Ñ‹Ñ… ÐºÑ€ÑƒÐ³Ð° Ð¿Ð¾ ÑƒÐ³Ð»Ð°Ð¼ ÑÐºÑ€Ð°Ð½Ð° Ð´Ð»Ñ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ¸ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¾Ð½Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ñ */
     .corner-circle {
       position: absolute;
       width: 50px;
@@ -724,7 +720,7 @@
       bottom: 10px;
       right: 10px;
     }
-    /* Принудительный ландшафт */
+    /* ÐŸÑ€Ð¸Ð½ÑƒÐ´Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ð¹ Ð»Ð°Ð½Ð´ÑˆÐ°Ñ„Ñ‚ */
     #rotateScreen {
       display: none;
       position: fixed;
@@ -765,18 +761,18 @@
   </style>
 </head>
 <body>
-  <!-- Экран поворота устройства -->
+  <!-- Ð­ÐºÑ€Ð°Ð½ Ð¿Ð¾Ð²Ð¾Ñ€Ð¾Ñ‚Ð° ÑƒÑÑ‚Ñ€Ð¾Ð¹ÑÑ‚Ð²Ð° -->
   <div id="rotateScreen">
-    <div style="font-size: 3rem; margin-bottom: 20px;">📱</div>
-    <div style="font-size: 1.5rem;">Поверните устройство</div>
+    <div style="font-size: 3rem; margin-bottom: 20px;">ðŸ“±</div>
+    <div style="font-size: 1.5rem;">ÐŸÐ¾Ð²ÐµÑ€Ð½Ð¸Ñ‚Ðµ ÑƒÑÑ‚Ñ€Ð¾Ð¹ÑÑ‚Ð²Ð¾</div>
     <div style="font-size: 1rem; color: #00ffff; margin-top: 10px;">
-      Требуется альбомная ориентация
+      Ð¢Ñ€ÐµÐ±ÑƒÐµÑ‚ÑÑ Ð°Ð»ÑŒÐ±Ð¾Ð¼Ð½Ð°Ñ Ð¾Ñ€Ð¸ÐµÐ½Ñ‚Ð°Ñ†Ð¸Ñ
     </div>
   </div>
 
   <div id="app">
     <div id="versionBadge" style="position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.5); color: #00ff00; padding: 4px 12px; font-family: 'Courier New', monospace; font-size: 0.75rem; border: 1px solid #00ffff;">Loading...</div>
-
+    
     <!-- Landing Screen -->
     <div id="landingScreen" class="screen">
       <div style="font-size: 3rem; color: #ff00ff; font-family: 'Courier New', monospace; font-weight: bold; margin-bottom: 0.5rem;">1</div>
@@ -794,40 +790,40 @@
     <div id="gameScreen" class="screen hidden">
       <div id="canvasContainer"></div>
 
-      <!-- 4 желтых круга по углам экрана для проверки позиционирования -->
+      <!-- 4 Ð¶ÐµÐ»Ñ‚Ñ‹Ñ… ÐºÑ€ÑƒÐ³Ð° Ð¿Ð¾ ÑƒÐ³Ð»Ð°Ð¼ ÑÐºÑ€Ð°Ð½Ð° Ð´Ð»Ñ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ¸ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¾Ð½Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ñ -->
       <div class="corner-circle top-left"></div>
       <div class="corner-circle top-right"></div>
       <div class="corner-circle bottom-left"></div>
       <div class="corner-circle bottom-right"></div>
 
       <!-- Left menu button -->
-      <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+      <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">â˜°</button>
 
       <!-- Menu button in top right corner -->
-      <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+      <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">â˜°</button>
 
       <!-- Top panel wrapper with player names and room ID -->
       <div id="topPanelWrapper">
         <div id="player1Name">Player 1</div>
         <div id="topRoomIdPanel">
-          <span style="color: #ffff00;">Всего игроков: </span>
+          <span style="color: #ffff00;">Ð’ÑÐµÐ³Ð¾ Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð²: </span>
           <span id="playerCountTop" style="color: #00ff00;">0</span>
           <span style="color: #ffff00;">/2</span>
           <span style="color: #00ffff; margin-left: 8px;">|</span>
           <span id="topRoomId" class="copyable-id" style="color: #00ff00; margin-left: 8px;"></span>
         </div>
         <div id="player2Name">Player 2</div>
-
-        <!-- Прогресс битвы (фон панели) -->
-        <div id="battleProgress" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 25px; overflow: hidden; z-index: -1; background: linear-gradient(90deg,
-          rgba(255, 0, 0, 0.3) 0%,
-          rgba(255, 0, 0, 0.3) 0%,
-          rgba(0, 0, 0, 0.5) 50%,
-          rgba(0, 0, 255, 0.3) 50%,
+        
+        <!-- ÐŸÑ€Ð¾Ð³Ñ€ÐµÑÑ Ð±Ð¸Ñ‚Ð²Ñ‹ (Ñ„Ð¾Ð½ Ð¿Ð°Ð½ÐµÐ»Ð¸) -->
+        <div id="battleProgress" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 25px; overflow: hidden; z-index: -1; background: linear-gradient(90deg, 
+          rgba(255, 0, 0, 0.3) 0%, 
+          rgba(255, 0, 0, 0.3) 0%, 
+          rgba(0, 0, 0, 0.5) 50%, 
+          rgba(0, 0, 255, 0.3) 50%, 
           rgba(0, 0, 255, 0.3) 100%);"></div>
       </div>
 
-      <!-- Обратный отсчёт перед битвой -->
+      <!-- ÐžÐ±Ñ€Ð°Ñ‚Ð½Ñ‹Ð¹ Ð¾Ñ‚ÑÑ‡Ñ‘Ñ‚ Ð¿ÐµÑ€ÐµÐ´ Ð±Ð¸Ñ‚Ð²Ð¾Ð¹ -->
       <div id="countdownOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 99999; display: none; align-items: center; justify-content: center; flex-direction: column;">
         <div id="countdownText" style="font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace; font-size: 15rem; color: #00ffff; text-shadow: 0 0 30px #00ffff, 0 0 60px #00ffff; animation: pulse 0.5s ease-in-out infinite;">3</div>
       </div>
@@ -848,7 +844,7 @@
         <div class="sidebar-header">
           <div class="sidebar-title-controls">
             <h3>Controls</h3>
-            <button id="closeLeftSidebarBtn" class="btn close-btn">✕</button>
+            <button id="closeLeftSidebarBtn" class="btn close-btn">âœ•</button>
           </div>
         </div>
         <div class="sidebar-content" style="display: flex; flex-direction: column; justify-content: space-between; padding: 0;">
@@ -858,7 +854,7 @@
               <button id="leaveRoomBtn" class="btn no-border">LEAVE ROOM</button>
             </div>
           </div>
-          <!-- Чат в левом нижнем углу сайдбара - полная ширина -->
+          <!-- Ð§Ð°Ñ‚ Ð² Ð»ÐµÐ²Ð¾Ð¼ Ð½Ð¸Ð¶Ð½ÐµÐ¼ ÑƒÐ³Ð»Ñƒ ÑÐ°Ð¹Ð´Ð±Ð°Ñ€Ð° - Ð¿Ð¾Ð»Ð½Ð°Ñ ÑˆÐ¸Ñ€Ð¸Ð½Ð° -->
           <div id="chat-container" style="width: 100%; background: rgba(15, 15, 35, 0.9); border-top: 2px solid #00ffff; padding: 10px; box-sizing: border-box;">
             <div id="chat-messages" style="height: 120px; overflow-y: auto; margin-bottom: 10px; color: #00ff00; font-family: 'PIXY', 'PIXY Fallback', 'Courier New', monospace; font-size: 0.85rem;"></div>
             <div id="chat-input-container" style="display: flex; gap: 5px;">
@@ -868,13 +864,13 @@
           </div>
         </div>
       </div>
-
+      
       <!-- Right Sidebar -->
       <div id="sidebar" class="sidebar right-sidebar">
         <div class="sidebar-header">
           <div class="sidebar-title-controls">
             <h3>Virus Parameters</h3>
-            <button id="closeSidebarBtn" class="btn close-btn">✕</button>
+            <button id="closeSidebarBtn" class="btn close-btn">âœ•</button>
           </div>
         </div>
         <div class="sidebar-content">
@@ -885,127 +881,104 @@
               <!-- Row 1 -->
               <div class="param-row">
                 <div class="param-cell" data-param="aggression">
-                  <div class="param-emoji">⚔️</div>
+                  <div class="param-emoji">âš”ï¸</div>
                   <div class="param-name">Aggression</div>
-                  <div class="param-value">0</div>
+                  <div class="param-value" id="param-aggression">0</div>
                   <div class="param-liquid"></div>
                 </div>
                 <div class="param-cell" data-param="mutation">
-                  <div class="param-emoji">🧬</div>
+                  <div class="param-emoji">ðŸ§¬</div>
                   <div class="param-name">Mutation</div>
-                  <div class="param-value">0</div>
+                  <div class="param-value" id="param-mutation">0</div>
                   <div class="param-liquid"></div>
                 </div>
                 <div class="param-cell" data-param="speed">
-                  <div class="param-emoji">⚡</div>
+                  <div class="param-emoji">âš¡</div>
                   <div class="param-name">Speed</div>
-                  <div class="param-value">0</div>
+                  <div class="param-value" id="param-speed">0</div>
                   <div class="param-liquid"></div>
                 </div>
               </div>
+
               <!-- Row 2 -->
               <div class="param-row">
                 <div class="param-cell" data-param="defense">
-                  <div class="param-emoji">🛡️</div>
+                  <div class="param-emoji">ðŸ›¡ï¸</div>
                   <div class="param-name">Defense</div>
-                  <div class="param-value">0</div>
+                  <div class="param-value" id="param-defense">0</div>
                   <div class="param-liquid"></div>
                 </div>
                 <div class="param-cell" data-param="reproduction">
-                  <div class="param-emoji">🦠</div>
+                  <div class="param-emoji">ðŸ¦ </div>
                   <div class="param-name">Reproduction</div>
-                  <div class="param-value">0</div>
+                  <div class="param-value" id="param-reproduction">0</div>
                   <div class="param-liquid"></div>
                 </div>
                 <div class="param-cell" data-param="stealth">
-                  <div class="param-emoji">👻</div>
+                  <div class="param-emoji">ðŸ‘»</div>
                   <div class="param-name">Stealth</div>
-                  <div class="param-value">0</div>
+                  <div class="param-value" id="param-stealth">0</div>
                   <div class="param-liquid"></div>
                 </div>
               </div>
+
               <!-- Row 3 -->
               <div class="param-row">
                 <div class="param-cell" data-param="virulence">
-                  <div class="param-emoji">☣️</div>
+                  <div class="param-emoji">â˜£ï¸</div>
                   <div class="param-name">Virulence</div>
-                  <div class="param-value">0</div>
+                  <div class="param-value" id="param-virulence">0</div>
                   <div class="param-liquid"></div>
                 </div>
                 <div class="param-cell" data-param="resilience">
-                  <div class="param-emoji">💪</div>
+                  <div class="param-emoji">ðŸ’ª</div>
                   <div class="param-name">Resilience</div>
-                  <div class="param-value">0</div>
+                  <div class="param-value" id="param-resilience">0</div>
                   <div class="param-liquid"></div>
                 </div>
                 <div class="param-cell" data-param="mobility">
-                  <div class="param-emoji">🚶</div>
+                  <div class="param-emoji">ðŸš¶</div>
                   <div class="param-name">Mobility</div>
-                  <div class="param-value">0</div>
+                  <div class="param-value" id="param-mobility">0</div>
                   <div class="param-liquid"></div>
                 </div>
               </div>
+
               <!-- Row 4 -->
               <div class="param-row">
                 <div class="param-cell" data-param="intellect">
-                  <div class="param-emoji">🧠</div>
+                  <div class="param-emoji">ðŸ§ </div>
                   <div class="param-name">Intellect</div>
-                  <div class="param-value">0</div>
+                  <div class="param-value" id="param-intellect">0</div>
                   <div class="param-liquid"></div>
                 </div>
                 <div class="param-cell" data-param="contagiousness">
-                  <div class="param-emoji">🫁</div>
-                  <div class="param-name">Contagious</div>
-                  <div class="param-value">0</div>
+                  <div class="param-emoji">ðŸ«</div>
+                  <div class="param-name">Contagiousness</div>
+                  <div class="param-value" id="param-contagiousness">0</div>
                   <div class="param-liquid"></div>
                 </div>
                 <div class="param-cell" data-param="lethality">
-                  <div class="param-emoji">💀</div>
+                  <div class="param-emoji">ðŸ’€</div>
                   <div class="param-name">Lethality</div>
-                  <div class="param-value">0</div>
+                  <div class="param-value" id="param-lethality">0</div>
                   <div class="param-liquid"></div>
                 </div>
               </div>
             </div>
+            
             <div class="points-summary">
               Points remaining: <span id="points-remaining">12</span>
             </div>
-            <button id="randomizeBtn" class="btn" style="width: 100%; margin-top: 10px;">RANDOMIZE</button>
-            <button id="readyBtn" class="btn" style="width: 100%; margin-top: 10px;" disabled>READY</button>
+
+            <button id="randomizeBtn" class="btn no-border">RANDOMIZE</button>
+            <button id="readyBtn" class="btn no-border">READY</button>
           </div>
         </div>
       </div>
     </div>
   </div>
-
+  
   <script type="module" src="/src/main.ts"></script>
-
-  <script>
-    // Проверка ориентации устройства
-    function checkOrientation() {
-      const rotateScreen = document.getElementById('rotateScreen');
-      if (!rotateScreen) return;
-
-      const isPortrait = window.innerHeight > window.innerWidth;
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-      if (isMobile && isPortrait) {
-        rotateScreen.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-      } else {
-        rotateScreen.style.display = 'none';
-        document.body.style.overflow = '';
-      }
-    }
-
-    // Проверяем при загрузке
-    window.addEventListener('load', checkOrientation);
-
-    // Проверяем при изменении размера
-    window.addEventListener('resize', checkOrientation);
-
-    // Проверяем при изменении ориентации
-    window.addEventListener('orientationchange', checkOrientation);
-  </script>
 </body>
 </html>

@@ -1,13 +1,9 @@
-// ========================================
-// ORIGINAL PATH: client/vite.config.ts
-// ========================================
-
-import { defineConfig } from 'vite';
+﻿import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { execSync } from 'child_process';
 import { writeFileSync, copyFileSync, mkdirSync, existsSync } from 'fs';
 
-// Получаем текущий хэш коммита из Git
+// ÐŸÐ¾Ð»ÑƒÑ‡Ð°ÐµÐ¼ Ñ‚ÐµÐºÑƒÑ‰Ð¸Ð¹ Ñ…ÑÑˆ ÐºÐ¾Ð¼Ð¼Ð¸Ñ‚Ð° Ð¸Ð· Git
 function getGitCommitHash(): string {
   try {
     const hash = execSync('git rev-parse --short HEAD').toString().trim();
@@ -19,7 +15,7 @@ function getGitCommitHash(): string {
 }
 
 export default defineConfig({
-  base: '/',                    // важно для Render
+  base: '/',                    // Ð²Ð°Ð¶Ð½Ð¾ Ð´Ð»Ñ Render
   server: {
     port: 3000,
     host: true
@@ -30,29 +26,29 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
       }
     },
-    outDir: 'dist',               // явно
+    outDir: 'dist',               // ÑÐ²Ð½Ð¾
     emptyOutDir: true,
     assetsInlineLimit: 0,
   },
-  // Плагин для генерации version.txt и копирования шрифтов
+  // ÐŸÐ»Ð°Ð³Ð¸Ð½ Ð´Ð»Ñ Ð³ÐµÐ½ÐµÑ€Ð°Ñ†Ð¸Ð¸ version.txt Ð¸ ÐºÐ¾Ð¿Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ñ ÑˆÑ€Ð¸Ñ„Ñ‚Ð¾Ð²
   plugins: [{
     name: 'version-generator',
     closeBundle() {
       const hash = getGitCommitHash();
       const version = `v${hash}`;
       console.log(`[Version Generator] Building version: ${version}`);
-
-      // Создаём файл version.txt в папке dist
+      
+      // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ Ñ„Ð°Ð¹Ð» version.txt Ð² Ð¿Ð°Ð¿ÐºÐµ dist
       const versionPath = resolve(__dirname, 'dist', 'version.txt');
       writeFileSync(versionPath, version);
       console.log(`[Version Generator] Created ${versionPath}`);
-
-      // Копируем шрифты в dist/fnt
+      
+      // ÐšÐ¾Ð¿Ð¸Ñ€ÑƒÐµÐ¼ ÑˆÑ€Ð¸Ñ„Ñ‚Ñ‹ Ð² dist/fnt
       const fntDir = resolve(__dirname, 'dist', 'fnt');
       if (!existsSync(fntDir)) {
         mkdirSync(fntDir, { recursive: true });
       }
-
+      
       const fonts = ['PIXY.otf', 'PIXY.ttf'];
       fonts.forEach(font => {
         const src = resolve(__dirname, 'fnt', font);

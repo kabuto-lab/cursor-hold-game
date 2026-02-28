@@ -1,8 +1,4 @@
-// ========================================
-// ORIGINAL PATH: server/src/index.ts
-// ========================================
-
-import express from 'express';
+﻿import express from 'express';
 import { Server } from 'colyseus';
 import { createServer } from 'http';
 import cors from 'cors';

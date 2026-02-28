@@ -1,8 +1,4 @@
-// ========================================
-// ORIGINAL PATH: client/src/types/schema.ts
-// ========================================
-
-// Client-side type definitions that mirror the server schema
+﻿// Client-side type definitions that mirror the server schema
 export interface PlayerSchema {
   id: string;
   name: string;

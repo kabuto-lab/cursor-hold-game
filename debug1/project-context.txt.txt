@@ -1,0 +1,1056 @@
+﻿Markdown
+Copy
+Code Preview
+
+Ð¡Ð¾Ð·Ð´Ð°Ð¹ Ñ„Ð°Ð¹Ð» `project-context.txt` ÑÐ¾ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰ÐµÐ¹ ÑÑ‚Ñ€ÑƒÐºÑ‚ÑƒÑ€Ð¾Ð¹ Ð¸ ÑÐ¾Ð´ÐµÑ€Ð¶Ð¸Ð¼Ñ‹Ð¼:
+
+================================================================================
+PROJECT CONTEXT FILE - MOUSE FOLLOWER SYSTEM
+================================================================================
+Ð”Ð°Ñ‚Ð° ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ñ: 2026-02-17
+ÐÐ°Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ: ÐŸÐ¾Ð»Ð½Ð°Ñ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð°Ñ†Ð¸Ñ Ð´Ð»Ñ Ð¾Ñ‚Ð»Ð°Ð´ÐºÐ¸ ÑÐ¸Ð½Ñ…Ñ€Ð¾Ð½Ð¸Ð·Ð°Ñ†Ð¸Ð¸ hover-ÑÑ„Ñ„ÐµÐºÑ‚Ð° Ð¾Ð±ÑŠÐµÐºÑ‚Ð°
+
+================================================================================
+SECTION 1: PROJECT OVERVIEW
+================================================================================
+
+ÐÐÐ—Ð’ÐÐÐ˜Ð• ÐŸÐ ÐžÐ•ÐšÐ¢Ð: Cursor Hold Game (Multiplayer)
+
+ÐÐ Ð¥Ð˜Ð¢Ð•ÐšÐ¢Ð£Ð Ð:
+- ÐšÐ»Ð¸ÐµÐ½Ñ‚: TypeScript + PixiJS + Colyseus.js
+- Ð¡ÐµÑ€Ð²ÐµÑ€: Node.js + Colyseus + WebSocket
+- Ð¡Ð²ÑÐ·ÑŒ: WebSocket Ñ‡ÐµÑ€ÐµÐ· Colyseus
+
+Ð¦Ð•Ð›Ð¬ Ð¤Ð˜Ð§Ð˜:
+Ð”Ð²Ð° Ð¸Ð³Ñ€Ð¾ÐºÐ° Ð²Ð¸Ð´ÑÑ‚ ÐºÑƒÑ€ÑÐ¾Ñ€Ñ‹ Ð´Ñ€ÑƒÐ³ Ð´Ñ€ÑƒÐ³Ð° Ð² Ñ€ÐµÐ°Ð»ÑŒÐ½Ð¾Ð¼ Ð²Ñ€ÐµÐ¼ÐµÐ½Ð¸ Ñ‡ÐµÑ€ÐµÐ· Mouse Followers (mfl1 - ÐºÑ€Ð°ÑÐ½Ñ‹Ð¹ Ð´Ð»Ñ ÑÐ¾Ð·Ð´Ð°Ñ‚ÐµÐ»Ñ, mfl2 - ÑÐ¸Ð½Ð¸Ð¹ Ð´Ð»Ñ Ð¿Ñ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½Ð¸Ð²ÑˆÐµÐ³Ð¾ÑÑ). 
+Ð¢Ð°ÐºÐ¶Ðµ ÐµÑÑ‚ÑŒ Ñ†ÐµÐ½Ñ‚Ñ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¾Ð±ÑŠÐµÐºÑ‚ (ÐºÑ€ÑƒÐ³ Ñ€Ð¾Ð·Ð¾Ð²Ñ‹Ð¹), ÐºÐ¾Ñ‚Ð¾Ñ€Ñ‹Ð¹ Ð¼Ð¾Ð¶Ð½Ð¾ Ñ‚Ð°ÑÐºÐ°Ñ‚ÑŒ. 
+ÐŸÐ ÐžÐ‘Ð›Ð•ÐœÐ: ÐšÐ¾Ð³Ð´Ð° Ð¸Ð³Ñ€Ð¾Ðº Ð½Ð°Ð²Ð¾Ð´Ð¸Ñ‚ Ð¼Ñ‹ÑˆÑŒ Ð½Ð° Ñ†ÐµÐ½Ñ‚Ñ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¾Ð±ÑŠÐµÐºÑ‚ - Ñ€Ð°Ð¼ÐºÐ° Ð¿Ð¾ÑÐ²Ð»ÑÐµÑ‚ÑÑ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ñƒ Ð½ÐµÐ³Ð¾ Ð»Ð¾ÐºÐ°Ð»ÑŒÐ½Ð¾, Ð²Ñ‚Ð¾Ñ€Ð¾Ð¹ Ð¸Ð³Ñ€Ð¾Ðº ÑÑ‚Ð¾Ð³Ð¾ Ð½Ðµ Ð²Ð¸Ð´Ð¸Ñ‚.
+
+================================================================================
+SECTION 2: CLIENT FILE - MouseFollowerManager.ts
+================================================================================
+
+ÐŸÐ£Ð¢Ð¬: client/src/features/mouse-follower/MouseFollowerManager.ts
+
+Ð¡ÐžÐ”Ð•Ð Ð–Ð˜ÐœÐžÐ•:
+```typescript
+import * as PIXI from 'pixi.js';
+import { NetworkManager } from '../../core/NetworkManager';
+
+/**
+ * Mouse Follower System (MFL)
+ *
+ * Each player sees TWO followers in real-time:
+ * - mfl1 (RED): Follows Player 1's (creator) mouse
+ * - mfl2 (BLUE): Follows Player 2's (joiner) mouse
+ *
+ * Both players see BOTH followers on their screen.
+ */
+
+interface MouseFollowerData {
+  playerId: string;           // Server session ID
+  label: 'mfl1' | 'mfl2';     // Clear label
+  color: number;              // Red for mfl1, Blue for mfl2
+  targetX: number;            // Target position (from network)
+  targetY: number;
+  currentX: number;           // Interpolated position
+  currentY: number;
+  graphics: PIXI.Container | null;
+  labelSprite: PIXI.Text | null;
+  trail: TrailParticle[];     // Trail particles behind follower
+}
+
+interface TrailParticle {
+  x: number;
+  y: number;
+  alpha: number;
+  radius: number;
+  graphics: PIXI.Graphics;
+}
+
+export class MouseFollowerManager {
+  private followers: Map<string, MouseFollowerData> = new Map();
+  private localPlayerId: string | null = null;
+  private isCreator: boolean = false;
+  private lastSendTime: number = 0;
+  private readonly SEND_INTERVAL_MS: number = 33; // ~30 updates per second
+  private readonly TRAIL_LENGTH: number = 8;      // Number of trail particles
+  private readonly TRAIL_SPAWN_RATE: number = 3;  // Spawn trail every N frames
+  private frameCount: number = 0;
+
+  constructor(
+    private stage: PIXI.Container,
+    private networkManager: NetworkManager
+  ) {
+    // Subscribe to server messages
+    this.networkManager.onMessage('mflUpdate', (data: {
+      playerId: string;
+      isCreator: boolean;
+      x: number;
+      y: number;
+    }) => {
+      this.updateRemoteFollower(data.playerId, data.isCreator, data.x, data.y);
+    });
+
+    // Start interpolation ticker
+    PIXI.Ticker.shared.add((ticker) => this.update(ticker.deltaTime));
+
+    console.log('[MouseFollowerManager] Initialized');
+  }
+
+  /**
+   * Call when room is joined/created
+   */
+  onRoomJoined(isCreator: boolean, localPlayerId: string) {
+    this.localPlayerId = localPlayerId;
+    this.isCreator = isCreator;
+
+    console.log(`[MouseFollowerManager] Room joined - isCreator: ${isCreator}, playerId: ${localPlayerId}`);
+
+    // Create local follower entry (we'll update it every frame)
+    const label = isCreator ? 'mfl1' : 'mfl2';
+    const color = isCreator ? 0xff0000 : 0x0000ff; // Red for mfl1, Blue for mfl2
+
+    this.followers.set(localPlayerId, {
+      playerId: localPlayerId,
+      label,
+      color,
+      targetX: 0,
+      targetY: 0,
+      currentX: 0,
+      currentY: 0,
+      graphics: null,
+      labelSprite: null,
+      trail: [],
+    });
+
+    console.log(`[MouseFollowerManager] Created local follower: ${label}`);
+  }
+
+  /**
+   * Update local mouse position - called every frame from InputManager
+   */
+  updateLocalPosition(x: number, y: number) {
+    if (!this.localPlayerId) return;
+
+    const follower = this.followers.get(this.localPlayerId);
+    if (follower) {
+      follower.targetX = x;
+      follower.targetY = y;
+
+      // Send to server (rate-limited)
+      const now = Date.now();
+      if (now - this.lastSendTime > this.SEND_INTERVAL_MS) {
+        this.networkManager.sendToRoom('mflUpdate', {
+          isCreator: this.isCreator,
+          x,
+          y
+        });
+        this.lastSendTime = now;
+      }
+    }
+  }
+
+  /**
+   * Update remote follower position from server
+   */
+  private updateRemoteFollower(playerId: string, isCreator: boolean, x: number, y: number) {
+    let follower = this.followers.get(playerId);
+
+    if (!follower) {
+      // New remote player joined - create follower
+      const label = isCreator ? 'mfl1' : 'mfl2';
+      const color = isCreator ? 0xff0000 : 0x0000ff;
+
+      follower = {
+        playerId,
+        label,
+        color,
+        targetX: x,
+        targetY: y,
+        currentX: x,
+        currentY: y,
+        graphics: null,
+        labelSprite: null,
+        trail: [],
+      };
+
+      this.followers.set(playerId, follower);
+      console.log(`[MouseFollowerManager] Created remote follower: ${label} (${playerId})`);
+    }
+
+    // Update target position
+    follower.targetX = x;
+    follower.targetY = y;
+  }
+
+  /**
+   * Create visual representation for a follower
+   */
+  private createFollowerGraphics(follower: MouseFollowerData) {
+    if (follower.graphics) return; // Already created
+
+    const container = new PIXI.Container();
+
+    // Create the follower circle (glowing effect)
+    const circle = new PIXI.Graphics();
+    circle.beginFill(follower.color, 0.5); // Semi-transparent fill
+    circle.drawCircle(0, 0, 20);
+    circle.endFill();
+    circle.lineStyle(3, follower.color, 1); // Solid color border
+    circle.drawCircle(0, 0, 20);
+
+    // Inner glow
+    const glow = new PIXI.Graphics();
+    glow.beginFill(follower.color, 0.3);
+    glow.drawCircle(0, 0, 25);
+    glow.endFill();
+
+    // Center dot
+    const center = new PIXI.Graphics();
+    center.beginFill(0xffffff, 1);
+    center.drawCircle(0, 0, 5);
+    center.endFill();
+
+    // Create label text
+    const labelSprite = new PIXI.Text(follower.label, {
+      fontFamily: 'Courier New',
+      fontSize: 14,
+      fill: follower.color,
+      fontWeight: 'bold',
+      stroke: {
+        color: 0x000000,
+        width: 4,
+      } as any,
+    });
+    labelSprite.anchor.set(0.5);
+    labelSprite.x = 0;
+    labelSprite.y = -35; // Above the circle
+
+    // Assemble container
+    container.addChild(glow);
+    container.addChild(circle);
+    container.addChild(center);
+    container.addChild(labelSprite);
+
+    container.zIndex = 1000;
+
+    this.stage.addChild(container);
+
+    follower.graphics = container;
+    follower.labelSprite = labelSprite;
+
+    console.log(`[MouseFollowerManager] Created graphics for ${follower.label}`);
+  }
+
+  /**
+   * Update all followers (interpolation + rendering + trail)
+   */
+  private update(delta: number) {
+    const lerp = 0.2; // Smoother interpolation
+    this.frameCount++;
+
+    this.followers.forEach((follower) => {
+      if (!follower.graphics) {
+        // Create graphics on first update
+        this.createFollowerGraphics(follower);
+        return;
+      }
+
+      // Interpolate position
+      follower.currentX += (follower.targetX - follower.currentX) * lerp * delta;
+      follower.currentY += (follower.targetY - follower.currentY) * lerp * delta;
+
+      // Update position
+      follower.graphics.position.set(follower.currentX, follower.currentY);
+
+      // Pulse effect for active followers
+      const pulse = 1 + Math.sin(Date.now() / 200) * 0.1;
+      follower.graphics.scale.set(pulse);
+
+      // Spawn trail particles
+      if (this.frameCount % this.TRAIL_SPAWN_RATE === 0) {
+        this.spawnTrailParticle(follower);
+      }
+
+      // Update trail particles
+      this.updateTrail(follower);
+    });
+  }
+
+  /**
+   * Spawn a new trail particle at follower's current position
+   */
+  private spawnTrailParticle(follower: MouseFollowerData) {
+    // Create trail particle graphics
+    const particle = new PIXI.Graphics();
+    const radius = 12;
+    particle.beginFill(follower.color, 0.6);
+    particle.drawCircle(0, 0, radius);
+    particle.endFill();
+    particle.position.set(follower.currentX, follower.currentY);
+    particle.zIndex = 999; // Just below the main follower
+
+    this.stage.addChild(particle);
+
+    // Add to trail array
+    follower.trail.push({
+      x: follower.currentX,
+      y: follower.currentY,
+      alpha: 0.6,
+      radius,
+      graphics: particle,
+    });
+
+    // Limit trail length
+    if (follower.trail.length > this.TRAIL_LENGTH) {
+      const oldParticle = follower.trail.shift();
+      if (oldParticle && oldParticle.graphics) {
+        this.stage.removeChild(oldParticle.graphics);
+        oldParticle.graphics.destroy();
+      }
+    }
+  }
+
+  /**
+   * Update trail particles (fade out and shrink)
+   */
+  private updateTrail(follower: MouseFollowerData) {
+    follower.trail.forEach((particle, index) => {
+      // Fade out based on position in trail (older = more faded)
+      const fadeFactor = 1 - (index / this.TRAIL_LENGTH);
+      particle.alpha = 0.6 * fadeFactor;
+
+      // Shrink radius
+      const newRadius = particle.radius * fadeFactor;
+
+      // Update graphics
+      particle.graphics.clear();
+      particle.graphics.beginFill(follower.color, particle.alpha);
+      particle.graphics.drawCircle(0, 0, newRadius);
+      particle.graphics.endFill();
+    });
+  }
+
+  /**
+   * Get current follower count
+   */
+  getFollowerCount(): number {
+    return this.followers.size;
+  }
+
+  /**
+   * Clear all followers (on room leave)
+   */
+  destroy() {
+    this.followers.forEach((follower) => {
+      if (follower.graphics) {
+        this.stage.removeChild(follower.graphics);
+      }
+      // Clean up trail particles
+      follower.trail.forEach((particle) => {
+        if (particle.graphics) {
+          this.stage.removeChild(particle.graphics);
+          particle.graphics.destroy();
+        }
+      });
+      follower.trail = [];
+    });
+    this.followers.clear();
+    console.log('[MouseFollowerManager] Destroyed');
+  }
+}
+
+================================================================================ SECTION 3: CLIENT FILE - main.ts
+ÐŸÐ£Ð¢Ð¬: client/src/main.ts
+Ð¡ÐžÐ”Ð•Ð Ð–Ð˜ÐœÐžÐ•:
+TypeScript
+Copy
+
+import { GameEngine } from './core/GameEngine';
+import { NetworkManager } from './core/NetworkManager';
+import { InputManager } from './core/InputManager';
+import { UIController } from './ui/UIController';
+import { ChatManager } from './chat/ChatManager';
+import { MouseFollowerManager } from './features/mouse-follower/MouseFollowerManager';
+import { DraggableObject } from './features/draggable/DraggableObject';
+import { DraggableChatManager } from './chat/DraggableChatManager';
+
+console.log('[MainApp] main.ts loaded');
+
+class MainApp {
+  private gameEngine!: GameEngine;
+  private networkManager!: NetworkManager;
+  private inputManager!: InputManager;
+  private uiController!: UIController;
+  private chatManager!: ChatManager;
+  private mouseFollower!: MouseFollowerManager;
+  private draggableObject!: DraggableObject;
+  private draggableChat!: DraggableChatManager;
+
+  constructor() {
+    console.log('[MainApp] Constructor started...');
+
+    try {
+      console.log('[MainApp] Creating GameEngine...');
+      this.gameEngine = new GameEngine();
+      console.log('[MainApp] Creating NetworkManager...');
+      this.networkManager = new NetworkManager();
+      console.log('[MainApp] Creating InputManager...');
+      this.inputManager = new InputManager();
+      console.log('[MainApp] Creating UIController...');
+      this.uiController = new UIController();
+      console.log('[MainApp] Creating ChatManager...');
+      this.chatManager = new ChatManager();
+      console.log('[MainApp] Creating DraggableChatManager...');
+      this.draggableChat = new DraggableChatManager(this.networkManager);
+
+      console.log('[MainApp] Setting up interactions...');
+      this.setupInteractions();
+
+      // Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ PixiJS (Ð°ÑÐ¸Ð½Ñ…Ñ€Ð¾Ð½Ð½Ð¾) â€” Ð¿Ð¾Ñ‚Ð¾Ð¼ ÑÐ¾Ð·Ð´Ð°Ñ‘Ð¼ mouse follower
+      console.log('[MainApp] Initializing GameEngine...');
+      this.gameEngine.init('canvasContainer').then(() => {
+        console.log('[MainApp] GameEngine initialized!');
+
+        // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ MouseFollowerManager ÐŸÐžÐ¡Ð›Ð• Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ð¸ PixiJS
+        console.log('[MainApp] Creating MouseFollowerManager...');
+        this.mouseFollower = new MouseFollowerManager(this.gameEngine.app!.stage, this.networkManager);
+
+        // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ DraggableObject Ð² Ñ†ÐµÐ½Ñ‚Ñ€Ðµ ÑÐºÑ€Ð°Ð½Ð°
+        console.log('[MainApp] Creating DraggableObject...');
+        this.draggableObject = new DraggableObject(this.gameEngine.app!.stage, this.networkManager);
+        this.draggableObject.init(window.innerWidth, window.innerHeight);
+
+        // ÐŸÐ¾Ð´ÐºÐ»ÑŽÑ‡Ð°ÐµÐ¼ InputManager Ðº MouseFollowerManager
+        this.inputManager.onMouseMove = (x, y) => {
+          this.mouseFollower.updateLocalPosition(x, y);
+        };
+
+        console.log('[MainApp] Mouse follower and draggable object initialized!');
+        this.gameEngine.start();
+      }).catch((error) => {
+        console.error('[MainApp] GameEngine init ERROR:', error);
+      });
+
+      console.log('[MainApp] Constructor finished!');
+    } catch (error) {
+      console.error('[MainApp] Constructor ERROR:', error);
+    }
+  }
+
+  private setupInteractions(): void {
+    console.log('[MainApp] Setting up interactions...');
+
+    this.uiController.onCreateRoom = async () => {
+      console.log('[MainApp] onCreateRoom called!');
+      try {
+        console.log('[MainApp] Calling networkManager.createRoom()...');
+        const roomId = await this.networkManager.createRoom();
+        console.log('[MainApp] Room created with ID:', roomId);
+
+        // Ð–Ð´Ñ‘Ð¼ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰ÐµÐ³Ð¾ Ñ‚Ð¸ÐºÐ°, Ñ‡Ñ‚Ð¾Ð±Ñ‹ DOM Ð±Ñ‹Ð» Ð³Ð¾Ñ‚Ð¾Ð²
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        console.log('[MainApp] Calling setView(room)...');
+        this.uiController.setView('room');
+        console.log('[MainApp] setView(room) completed');
+
+        // ÐŸÐ¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ ID ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹ ÑÑ€Ð°Ð·Ñƒ
+        this.uiController.showCreatedRoomId(roomId);
+
+        const room = this.networkManager.getCurrentRoom();
+        if (room) {
+          this.chatManager.attachToRoom(room);
+          // Ð£ÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼ mouse follower Ð´Ð»Ñ ÑÐ¾Ð·Ð´Ð°Ñ‚ÐµÐ»Ñ
+          this.mouseFollower.onRoomJoined(true, this.networkManager.getSessionId()!);
+          // Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€ÑƒÐµÐ¼ draggable chat
+          this.draggableChat.init();
+        }
+        this.uiController.setPlayerName('Player 1');
+      } catch (error) {
+        console.error('[MainApp] ERROR in onCreateRoom:', error);
+        alert('Create room ERROR: ' + error);
+      }
+    };
+
+    this.uiController.onJoinRoom = async (roomId) => {
+      console.log('[MainApp] onJoinRoom called with roomId:', roomId);
+      try {
+        await this.networkManager.joinRoom(roomId);
+        console.log('[MainApp] Joined room successfully');
+
+        // Ð–Ð´Ñ‘Ð¼ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰ÐµÐ³Ð¾ Ñ‚Ð¸ÐºÐ°, Ñ‡Ñ‚Ð¾Ð±Ñ‹ DOM Ð±Ñ‹Ð» Ð³Ð¾Ñ‚Ð¾Ð²
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        console.log('[MainApp] Calling setView(room)...');
+        this.uiController.setView('room');
+        console.log('[MainApp] setView(room) completed');
+
+        // ÐŸÐ¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ ID ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹ ÑÑ€Ð°Ð·Ñƒ
+        this.uiController.showCreatedRoomId(roomId);
+
+        const room = this.networkManager.getCurrentRoom();
+        if (room) {
+          this.chatManager.attachToRoom(room);
+          // Ð£ÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼ mouse follower Ð´Ð»Ñ Ð¿Ñ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½Ð¸Ð²ÑˆÐµÐ³Ð¾ÑÑ
+          this.mouseFollower.onRoomJoined(false, this.networkManager.getSessionId()!);
+          // Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€ÑƒÐµÐ¼ draggable chat
+          this.draggableChat.init();
+        }
+        this.uiController.setPlayerName('Player 2');
+      } catch (error) {
+        console.error('[MainApp] ERROR in onJoinRoom:', error);
+        alert('Join room ERROR: ' + error);
+      }
+    };
+  }
+}
+
+// Ð—Ð°Ð¿ÑƒÑÐº Ð¿Ñ€Ð¸Ð»Ð¾Ð¶ÐµÐ½Ð¸Ñ Ð¿Ñ€Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†Ñ‹
+console.log('[MainApp] Registering load event listener...');
+
+window.addEventListener('load', () => {
+  console.log('[MainApp] LOAD EVENT FIRED');
+  console.log('Creating new MainApp()...');
+  new MainApp();
+  console.log('MainApp() created!');
+});
+
+console.log('[MainApp] Load event listener registered');
+
+================================================================================ SECTION 4: CLIENT FILE - InputManager.ts
+ÐŸÐ£Ð¢Ð¬: client/src/core/InputManager.ts
+Ð¡ÐžÐ”Ð•Ð Ð–Ð˜ÐœÐžÐ•:
+TypeScript
+Copy
+
+/**
+ * ÐœÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð²Ð²Ð¾Ð´Ð°
+ * ÐžÐ±Ñ€Ð°Ð±Ð°Ñ‚Ñ‹Ð²Ð°ÐµÑ‚ ÐºÐ»Ð°Ð²Ð¸Ð°Ñ‚ÑƒÑ€Ñƒ Ð¸ Ð¼Ñ‹ÑˆÑŒ
+ */
+export class InputManager {
+  private keyboardState: Map<string, boolean>;
+  private mouseState: {
+    x: number;
+    y: number;
+    leftButton: boolean;
+    rightButton: boolean;
+  };
+
+  // Callback Ð´Ð»Ñ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ Ð¼Ñ‹ÑˆÐ¸ (Ð´Ð»Ñ follower circle)
+  public onMouseMove?: (x: number, y: number) => void;
+
+  constructor() {
+    this.keyboardState = new Map();
+    this.mouseState = {
+      x: 0,
+      y: 0,
+      leftButton: false,
+      rightButton: false
+    };
+
+    this.setupEventListeners();
+  }
+
+  /**
+   * Ð£ÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ ÑÐ¾Ð±Ñ‹Ñ‚Ð¸Ð¹
+   */
+  private setupEventListeners(): void {
+    // Keyboard events
+    window.addEventListener('keydown', (e) => {
+      this.keyboardState.set(e.code, true);
+    });
+
+    window.addEventListener('keyup', (e) => {
+      this.keyboardState.set(e.code, false);
+    });
+
+    // Mouse events
+    window.addEventListener('mousemove', (e) => {
+      // Mouse position relative to viewport (canvas is full screen at 0,0)
+      this.mouseState.x = e.clientX;
+      this.mouseState.y = e.clientY;
+
+      // Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÐ¼ callback Ð´Ð»Ñ follower circle
+      if (this.onMouseMove) {
+        this.onMouseMove(this.mouseState.x, this.mouseState.y);
+      }
+    });
+
+    window.addEventListener('mousedown', (e) => {
+      switch (e.button) {
+        case 0: // Left button
+          this.mouseState.leftButton = true;
+          break;
+        case 2: // Right button
+          this.mouseState.rightButton = true;
+          break;
+      }
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      switch (e.button) {
+        case 0: // Left button
+          this.mouseState.leftButton = false;
+          break;
+        case 2: // Right button
+          this.mouseState.rightButton = false;
+          break;
+      }
+    });
+
+    // Prevent context menu on right click
+    window.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
+  }
+
+  /**
+   * ÐŸÑ€Ð¾Ð²ÐµÑ€Ð¸Ñ‚ÑŒ, Ð½Ð°Ð¶Ð°Ñ‚Ð° Ð»Ð¸ ÐºÐ»Ð°Ð²Ð¸ÑˆÐ°
+   */
+  isKeyPressed(keyCode: string): boolean {
+    return this.keyboardState.get(keyCode) === true;
+  }
+
+  /**
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ Ð¼Ñ‹ÑˆÐ¸
+   */
+  getMouseState(): { x: number; y: number; leftButton: boolean; rightButton: boolean } {
+    return { ...this.mouseState };
+  }
+
+  /**
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸ÑŽ Ð¼Ñ‹ÑˆÐ¸
+   */
+  getMousePosition(): { x: number; y: number } {
+    return { x: this.mouseState.x, y: this.mouseState.y };
+  }
+}
+
+================================================================================ SECTION 5: CLIENT FILE - GameEngine.ts
+ÐŸÐ£Ð¢Ð¬: client/src/core/GameEngine.ts
+Ð¡ÐžÐ”Ð•Ð Ð–Ð˜ÐœÐžÐ•:
+TypeScript
+Copy
+
+import * as PIXI from 'pixi.js';
+
+/**
+ * Ð‘Ð°Ð·Ð¾Ð²Ñ‹Ð¹ Ð¸Ð³Ñ€Ð¾Ð²Ð¾Ð¹ Ð´Ð²Ð¸Ð¶Ð¾Ðº
+ * Ð¢Ð¾Ð»ÑŒÐºÐ¾ Ñ€ÐµÐ½Ð´ÐµÑ€ + ticker, Ð±ÐµÐ· Ð»Ð¾Ð³Ð¸ÐºÐ¸
+ */
+export class GameEngine {
+  app: PIXI.Application | null = null;
+  private ticker: PIXI.Ticker | null = null;
+
+  constructor() {
+    console.log('[GameEngine] Constructor called');
+  }
+
+  /**
+   * Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ PixiJS (Ð°ÑÐ¸Ð½Ñ…Ñ€Ð¾Ð½Ð½Ð¾)
+   */
+  async init(containerId: string): Promise<void> {
+    console.log('[GameEngine] Initializing PixiJS...');
+
+    const container = document.getElementById(containerId);
+    if (!container) {
+      throw new Error(`Container element with id "${containerId}" not found`);
+    }
+
+    // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ Ð¸ Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€ÑƒÐµÐ¼ Ð¿Ñ€Ð¸Ð»Ð¾Ð¶ÐµÐ½Ð¸Ðµ
+    this.app = new PIXI.Application();
+
+    await this.app.init({
+      backgroundColor: 0x1a1a1a,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      antialias: true,
+      autoDensity: true,
+      resolution: Math.min(window.devicePixelRatio, 2),
+    });
+
+    console.log('[GameEngine] PixiJS initialized, getting ticker...');
+
+    // ÐŸÐ¾Ð»ÑƒÑ‡Ð°ÐµÐ¼ ticker Ð¿Ð¾ÑÐ»Ðµ Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ð¸
+    this.ticker = this.app.ticker;
+
+    // ÐšÐ Ð˜Ð¢Ð˜Ð§Ð•Ð¡ÐšÐÐ¯ Ð¡Ð¢Ð ÐžÐšÐ â€” Ð¾Ñ‚ÐºÐ»ÑŽÑ‡Ð°ÐµÐ¼ pointer events Ð½Ð° canvas
+    this.app.canvas.style.pointerEvents = 'none';
+
+    console.log('[GameEngine] Appending canvas...');
+    // Ð”Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ canvas Ð² ÐºÐ¾Ð½Ñ‚ÐµÐ¹Ð½ÐµÑ€
+    container.appendChild(this.app.canvas);
+
+    console.log('[GameEngine] Canvas appended');
+  }
+
+  /**
+   * Ð”Ð¾Ð±Ð°Ð²Ð¸Ñ‚ÑŒ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ Ð½Ð° Ñ‚Ð¸ÐºÐµÑ€
+   */
+  addTickerUpdate(updateFn: (dt: number) => void): void {
+    if (this.ticker) {
+      this.ticker.add((ticker) => {
+        const dt = ticker.deltaTime;
+        updateFn(dt);
+      });
+    } else {
+      console.error('[GameEngine] Ticker is null!');
+    }
+  }
+
+  /**
+   * Ð—Ð°Ð¿ÑƒÑÑ‚Ð¸Ñ‚ÑŒ Ñ‚Ð¸ÐºÐµÑ€
+   */
+  start(): void {
+    if (this.ticker) {
+      this.ticker.start();
+      console.log('[GameEngine] Ticker started');
+    } else {
+      console.error('[GameEngine] Cannot start: ticker is null');
+    }
+  }
+
+  /**
+   * ÐžÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ñ‚Ð¸ÐºÐµÑ€
+   */
+  stop(): void {
+    if (this.ticker) {
+      this.ticker.stop();
+    }
+  }
+}
+
+================================================================================ SECTION 6: CLIENT FILE - NetworkManager.ts
+ÐŸÐ£Ð¢Ð¬: client/src/core/NetworkManager.ts
+Ð¡ÐžÐ”Ð•Ð Ð–Ð˜ÐœÐžÐ•:
+TypeScript
+Copy
+
+import { Client } from 'colyseus.js';
+import { Room } from 'colyseus.js';
+
+/**
+ * ÐœÐµÐ½ÐµÐ´Ð¶ÐµÑ€ ÑÐµÑ‚ÐµÐ²Ð¾Ð³Ð¾ Ð¿Ð¾Ð´ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ñ
+ * Ð£Ð¿Ñ€Ð°Ð²Ð»ÑÐµÑ‚ Ð¿Ð¾Ð´ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸ÐµÐ¼ Ðº Colyseus ÑÐµÑ€Ð²ÐµÑ€Ñƒ
+ */
+export class NetworkManager {
+  private client: Client;
+  private currentRoom: Room | null = null;
+  private readonly serverUrl: string;
+
+  constructor(serverUrl?: string) {
+    // Ð›Ð¾ÐºÐ°Ð»ÑŒÐ½Ñ‹Ð¹ ÑÐµÑ€Ð²ÐµÑ€ Ð´Ð»Ñ Ñ€Ð°Ð·Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ¸, Ð¿Ñ€Ð¾Ð´-ÑÐµÑ€Ð²ÐµÑ€ Ð´Ð»Ñ production
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    this.serverUrl = serverUrl || (isLocalhost ? 'ws://localhost:2567' : 'wss://cursor-hold-game-server.onrender.com');
+    this.client = new Client(this.serverUrl);
+
+    console.log('[NetworkManager] Server URL:', this.serverUrl);
+  }
+
+  /**
+   * ÐŸÐ¾Ð´ÐºÐ»ÑŽÑ‡Ð¸Ñ‚ÑŒÑÑ Ðº ÑÐµÑ€Ð²ÐµÑ€Ñƒ
+   */
+  async connect(): Promise<void> {
+    try {
+      // ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ ÑÐ¾ÐµÐ´Ð¸Ð½ÐµÐ½Ð¸Ðµ
+      await this.client.joinOrCreate('holding_room'); // Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÐ¼ Ð¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ð¾Ðµ Ð¸Ð¼Ñ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
+      console.log('Connected to server:', this.serverUrl);
+    } catch (error) {
+      console.error('Failed to connect to server:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Ð¡Ð¾Ð·Ð´Ð°Ñ‚ÑŒ Ð½Ð¾Ð²ÑƒÑŽ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñƒ
+   * Ð’Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ Ñ€ÐµÐ°Ð»ÑŒÐ½Ñ‹Ð¹ ID ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹ Ð¾Ñ‚ Colyseus
+   */
+  async createRoom(): Promise<string> {
+    console.log('[NetworkManager] createRoom() called');
+    try {
+      console.log('[NetworkManager] Calling client.joinOrCreate("holding_room")...');
+      // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ Ð½Ð¾Ð²ÑƒÑŽ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñƒ Ñ‡ÐµÑ€ÐµÐ· joinOrCreate
+      this.currentRoom = await this.client.joinOrCreate('holding_room');
+      console.log('[NetworkManager] Room object received:', this.currentRoom);
+
+      // ÐŸÐ¾Ð»ÑƒÑ‡Ð°ÐµÐ¼ roomId Ð¸Ð· state ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
+      const roomId = this.currentRoom.state?.roomId || this.currentRoom.id;
+      console.log('[NetworkManager] Room created:', roomId);
+
+      // ÐŸÐ¾Ð´Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÐ¼ÑÑ Ð½Ð° ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹ Ð¿Ð¾ÑÐ»Ðµ ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ñ
+      this.setupRoomMessageHandlers();
+
+      return roomId;
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('[NetworkManager] ERROR in createRoom:', errorMsg);
+      alert('Failed to create room: ' + errorMsg + '\\n\\nMake sure the server is running on port 2567.');
+      throw error;
+    }
+  }
+
+  /**
+   * ÐŸÑ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½Ð¸Ñ‚ÑŒÑÑ Ðº ÑÑƒÑ‰ÐµÑÑ‚Ð²ÑƒÑŽÑ‰ÐµÐ¹ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ðµ Ð¿Ð¾ ID
+   */
+  async joinRoom(roomId: string): Promise<Room> {
+    console.log('[NetworkManager] joinRoom() called with roomId:', roomId);
+    try {
+      // ÐŸÑ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½ÑÐµÐ¼ÑÑ Ðº ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ðµ Ð¿Ð¾ ID Ñ‡ÐµÑ€ÐµÐ· joinById
+      this.currentRoom = await this.client.joinById(roomId);
+      console.log('[NetworkManager] Joined room:', this.currentRoom.id);
+
+      // ÐŸÐ¾Ð´Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÐ¼ÑÑ Ð½Ð° ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹ Ð¿Ð¾ÑÐ»Ðµ Ð¿Ñ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½ÐµÐ½Ð¸Ñ
+      this.setupRoomMessageHandlers();
+
+      return this.currentRoom;
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('[NetworkManager] ERROR in joinRoom:', errorMsg);
+      alert('Failed to join room: ' + errorMsg + '\\n\\nCheck the room ID and make sure the server is running.');
+      throw error;
+    }
+  }
+
+  /**
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ ÑÐ¿Ð¸ÑÐ¾Ðº Ð´Ð¾ÑÑ‚ÑƒÐ¿Ð½Ñ‹Ñ… ÐºÐ¾Ð¼Ð½Ð°Ñ‚ (Ð´Ð»Ñ Ð±ÑƒÐ´ÑƒÑ‰ÐµÐ³Ð¾ UI)
+   */
+  async getAvailableRooms(): Promise<any[]> {
+    try {
+      const rooms = await this.client.getAvailableRooms('holding_room');
+      return rooms;
+    } catch (error) {
+      console.error('Failed to get available rooms:', error);
+      return [];
+    }
+  }
+
+  /**
+   * ÐŸÐ¾ÐºÐ¸Ð½ÑƒÑ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰ÑƒÑŽ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñƒ
+   */
+  leaveCurrentRoom(): void {
+    if (this.currentRoom) {
+      this.currentRoom.leave();
+      this.currentRoom = null;
+    }
+  }
+
+  /**
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰ÑƒÑŽ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñƒ
+   */
+  getCurrentRoom(): Room | null {
+    return this.currentRoom;
+  }
+
+  /**
+   * ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð¸Ñ‚ÑŒ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ Ð² ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñƒ
+   */
+  sendToRoom(messageType: string, data: any): void {
+    if (this.currentRoom) {
+      this.currentRoom.send(messageType, data);
+    } else {
+      console.warn('No active room to send message to');
+    }
+  }
+
+  /**
+   * ÐŸÐ¾Ð´Ð¿Ð¸ÑÐ°Ñ‚ÑŒÑÑ Ð½Ð° ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ Ð¸Ð· ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
+   */
+  onMessage(messageType: string, callback: (data: any) => void): void {
+    if (this.currentRoom) {
+      this.currentRoom.onMessage(messageType, (data) => {
+        callback(data);
+      });
+    } else {
+      console.warn('No active room to listen to messages from');
+    }
+  }
+
+  /**
+   * ÐŸÐ¾Ð´Ð¿Ð¸ÑÐ°Ñ‚ÑŒÑÑ Ð½Ð° Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ñ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
+   */
+  onStateChange(callback: (state: any) => void): void {
+    if (this.currentRoom) {
+      this.currentRoom.onStateChange((state) => {
+        callback(state);
+      });
+    } else {
+      console.warn('No active room to listen to state changes from');
+    }
+  }
+
+  /**
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰ÐµÐµ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
+   */
+  getState() {
+    if (this.currentRoom) {
+      return this.currentRoom.state;
+    }
+    return null;
+  }
+
+  /**
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ sessionId Ñ‚ÐµÐºÑƒÑ‰ÐµÐ¹ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
+   */
+  getSessionId(): string | null {
+    return this.currentRoom?.sessionId || null;
+  }
+
+  /**
+   * ÐÐ°ÑÑ‚Ñ€Ð¾Ð¸Ñ‚ÑŒ Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ð¹ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
+   */
+  private setupRoomMessageHandlers(): void {
+    if (!this.currentRoom) return;
+
+    console.log('[NetworkManager] setupRoomMessageHandlers called, sessionId:', this.currentRoom.sessionId);
+  }
+
+  /**
+   * ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð¸Ñ‚ÑŒ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ ÐºÑƒÑ€ÑÐ¾Ñ€Ð°
+   */
+  sendCursorUpdate(x: number, y: number): void {
+    if (this.currentRoom) {
+      this.currentRoom.send('updateCursor', { x, y });
+    }
+  }
+}
+
+================================================================================ SECTION 7: SERVER FILE - HoldingRoom.ts (MFL ÑÐµÐºÑ†Ð¸Ñ)
+ÐŸÐ£Ð¢Ð¬: server/src/rooms/HoldingRoom.ts
+Ð¡ÐžÐ”Ð•Ð Ð–Ð˜ÐœÐžÐ• (Ñ‚Ð¾Ð»ÑŒÐºÐ¾ MFL ÑÐµÐºÑ†Ð¸Ñ):
+TypeScript
+Copy
+
+// Handle mouse follower updates (MFL system - broadcasts to ALL including sender)
+this.onMessage('mflUpdate', (client, data) => {
+  if (typeof data.x === 'number' && typeof data.y === 'number' && typeof data.isCreator === 'boolean') {
+    // Get player to verify isCreator status
+    const player = this.state.players.get(client.sessionId);
+    if (player) {
+      // Broadcast to ALL players (including sender) so everyone sees both followers
+      this.broadcast('mflUpdate', {
+        playerId: client.sessionId,
+        isCreator: data.isCreator,
+        x: data.x,
+        y: data.y
+      });
+    }
+  }
+});
+
+================================================================================ SECTION 8: SERVER FILE - schema.ts
+ÐŸÐ£Ð¢Ð¬: server/src/rooms/schema.ts
+Ð¡ÐžÐ”Ð•Ð Ð–Ð˜ÐœÐžÐ•:
+TypeScript
+Copy
+
+import { Schema, type, MapSchema } from '@colyseus/schema';
+
+export class PlayerSchema extends Schema {
+  @type('string') id!: string;
+  @type('string') name: string = '';
+  @type('number') x: number = 0;
+  @type('number') y: number = 0;
+  @type('number') color: number = 0xffffff; // Default white color
+  @type('boolean') isHoldingHands: boolean = false;
+  @type('string') holdingHandsWith: string = ''; // ID of player this player is holding hands with
+  @type('boolean') isRoomCreator: boolean = false; // Whether this player created the room
+  @type('boolean') isReady: boolean = false; // Whether the player is ready to start the virus battle
+  @type({ map: 'number' }) virusParams: Map<string, number> = new Map<string, number>(); // Virus parameters for the player
+  @type('number') cursorX: number = 0; // Cursor X position for the player
+  @type('number') cursorY: number = 0; // Cursor Y position for the player
+}
+
+export class DraggableObjectSchema extends Schema {
+  @type('string') id!: string;
+  @type('number') x: number = 400; // Center of screen
+  @type('number') y: number = 300;
+  @type('number') radius: number = 30;
+  @type('number') color: number = 0xff69b4; // Hot pink color
+  @type('boolean') isBeingDragged: boolean = false;
+  @type('string') draggedBy: string = ''; // ID of player dragging the object
+  @type('boolean') isFollower: boolean = false; // Whether this object is a follower
+  @type('string') owner: string = ''; // ID of the player who owns this follower
+  @type('number') targetX: number = 0; // Target position for followers
+  @type('number') targetY: number = 0; // Target position for followers
+}
+
+export class RoomState extends Schema {
+  @type({ map: PlayerSchema }) players = new MapSchema<PlayerSchema>();
+  @type({ map: DraggableObjectSchema }) objects = new MapSchema<DraggableObjectSchema>();
+  @type('string') roomId: string = '';
+  @type('number') maxPlayers: number = 2;
+  @type({ array: 'number' }) battleGrid: number[] = []; // Array representing the battle grid state (0=empty, 1=virusA, 2=virusB)
+  @type('boolean') battleActive: boolean = false; // Whether the battle is currently active
+}
+
+================================================================================ SECTION 9: CLIENT HTML/CSS
+ÐŸÐ£Ð¢Ð¬: client/index.html (CSS Ð´Ð»Ñ canvasContainer)
+Ð¡ÐžÐ”Ð•Ð Ð–Ð˜ÐœÐžÐ•:
+css
+Copy
+
+#canvasContainer {
+  position: absolute;
+  top: 0;
+  left: 0; /* Full screen - starts at left edge */
+  width: 100%; /* Full width */
+  height: 100%;
+  z-index: 1; /* Below the grid */
+  pointer-events: none;
+}
+
+================================================================================ SECTION 10: PROBLEM ANALYSIS
+Ð¢Ð•ÐšÐ£Ð©Ð•Ð• ÐŸÐžÐ’Ð•Ð”Ð•ÐÐ˜Ð•:
+
+    Ð˜Ð³Ñ€Ð¾Ðº 1 ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñƒ, Ð²Ð¸Ð´Ð¸Ñ‚ mfl1 (ÐºÑ€Ð°ÑÐ½Ñ‹Ð¹) Ð·Ð° ÑÐ²Ð¾ÐµÐ¹ Ð¼Ñ‹ÑˆÑŒÑŽ
+    Ð˜Ð³Ñ€Ð¾Ðº 2 Ð¿Ñ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½ÑÐµÑ‚ÑÑ, Ð²Ð¸Ð´Ð¸Ñ‚ mfl1 (ÐºÑ€Ð°ÑÐ½Ñ‹Ð¹) Ð¸ mfl2 (ÑÐ¸Ð½Ð¸Ð¹)
+    ÐžÐ±Ð° Ð¸Ð³Ñ€Ð¾ÐºÐ° Ð²Ð¸Ð´ÑÑ‚ Ñ†ÐµÐ½Ñ‚Ñ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ñ€Ð¾Ð·Ð¾Ð²Ñ‹Ð¹ ÐºÑ€ÑƒÐ³ (DraggableObject)
+    ÐšÐ¾Ð³Ð´Ð° Ð˜Ð³Ñ€Ð¾Ðº 1 Ð½Ð°Ð²Ð¾Ð´Ð¸Ñ‚ Ð¼Ñ‹ÑˆÑŒ Ð½Ð° ÐºÑ€ÑƒÐ³ - Ñƒ Ð½ÐµÐ³Ð¾ Ð»Ð¾ÐºÐ°Ð»ÑŒÐ½Ð¾ Ð¿Ð¾ÑÐ²Ð»ÑÐµÑ‚ÑÑ Ð±ÐµÐ»Ð°Ñ Ñ€Ð°Ð¼ÐºÐ°
+    Ð£ Ð˜Ð³Ñ€Ð¾Ðº 2 ÑÑ‚Ð° Ñ€Ð°Ð¼ÐºÐ° ÐÐ• Ð¿Ð¾ÑÐ²Ð»ÑÐµÑ‚ÑÑ - Ð¾Ð½ Ð½Ðµ Ð²Ð¸Ð´Ð¸Ñ‚ Ñ‡Ñ‚Ð¾ Ð˜Ð³Ñ€Ð¾Ðº 1 Ð½Ð°Ð²Ñ‘Ð» Ð¼Ñ‹ÑˆÑŒ
+
+ÐžÐ–Ð˜Ð”ÐÐ•ÐœÐžÐ• ÐŸÐžÐ’Ð•Ð”Ð•ÐÐ˜Ð•:
+
+    ÐšÐ¾Ð³Ð´Ð° Ð»ÑŽÐ±Ð¾Ð¹ Ð¸Ð³Ñ€Ð¾Ðº Ð½Ð°Ð²Ð¾Ð´Ð¸Ñ‚ Ð¼Ñ‹ÑˆÑŒ Ð½Ð° Ñ†ÐµÐ½Ñ‚Ñ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¾Ð±ÑŠÐµÐºÑ‚ - Ð’Ð¡Ð• Ð¸Ð³Ñ€Ð¾ÐºÐ¸ Ð²Ð¸Ð´ÑÑ‚ Ñ€Ð°Ð¼ÐºÑƒ
+    Ð’Ð¾Ð·Ð¼Ð¾Ð¶Ð½Ð¾ Ñ Ñ€Ð°Ð·Ð½Ñ‹Ð¼Ð¸ Ñ†Ð²ÐµÑ‚Ð°Ð¼Ð¸ (ÐºÑ€Ð°ÑÐ½Ð°Ñ Ñ€Ð°Ð¼ÐºÐ° Ð´Ð»Ñ mfl1, ÑÐ¸Ð½ÑÑ Ð´Ð»Ñ mfl2)
+    Ð˜Ð»Ð¸ Ñ…Ð¾Ñ‚Ñ Ð±Ñ‹ Ð±ÐµÐ»Ð°Ñ Ñ€Ð°Ð¼ÐºÐ° Ð¿Ð¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÑ‚ÑÑ Ð²ÑÐµÐ¼
+
+ÐšÐ›Ð®Ð§Ð•Ð’Ð«Ð• ÐœÐžÐœÐ•ÐÐ¢Ð«:
+
+    MouseFollowerManager Ð·Ð½Ð°ÐµÑ‚ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ Ð’Ð¡Ð•Ð¥ ÐºÑƒÑ€ÑÐ¾Ñ€Ð¾Ð² (follower.currentX/currentY)
+    DraggableObject ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ÑÑ Ð² main.ts Ð¸ Ð¿ÐµÑ€ÐµÐ´Ð°Ñ‘Ñ‚ÑÑ stage Ð¸ networkManager
+    Ð’ GameEngine.ts canvas Ð¸Ð¼ÐµÐµÑ‚ pointer-events: none (ÑÑ‚Ð¾ Ð¼Ð¾Ð¶ÐµÑ‚ Ð¼ÐµÑˆÐ°Ñ‚ÑŒ hover)
+    Ð¡ÐµÐ¹Ñ‡Ð°Ñ Ð½ÐµÑ‚ Ð¼ÐµÑ…Ð°Ð½Ð¸Ð·Ð¼Ð° Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ¸ Ñ€Ð°ÑÑÑ‚Ð¾ÑÐ½Ð¸Ñ Ð¼ÐµÐ¶Ð´Ñƒ follower Ð¸ Ð¾Ð±ÑŠÐµÐºÑ‚Ð¾Ð¼
+    ÐÐµÑ‚ ÑÐµÑ‚ÐµÐ²Ñ‹Ñ… ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ð¹ Ð´Ð»Ñ hover-ÑÑ„Ñ„ÐµÐºÑ‚Ð° Ð¾Ð±ÑŠÐµÐºÑ‚Ð°
+
+================================================================================ SECTION 11: POTENTIAL SOLUTIONS
+Ð’ÐÐ Ð˜ÐÐÐ¢ 1: ÐÐ²Ñ‚Ð¾Ð¼Ð°Ñ‚Ð¸Ñ‡ÐµÑÐºÐ°Ñ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ° Ð² MouseFollowerManager
+
+    Ð’ update() Ð¿Ñ€Ð¾Ð²ÐµÑ€ÑÑ‚ÑŒ Ñ€Ð°ÑÑÑ‚Ð¾ÑÐ½Ð¸Ðµ Ð¾Ñ‚ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ follower Ð´Ð¾ Ñ†ÐµÐ½Ñ‚Ñ€Ð° Ð¾Ð±ÑŠÐµÐºÑ‚Ð°
+    Ð•ÑÐ»Ð¸ Ñ€Ð°ÑÑÑ‚Ð¾ÑÐ½Ð¸Ðµ < Ð¿Ð¾Ñ€Ð¾Ð³Ð° - Ñ€Ð¸ÑÐ¾Ð²Ð°Ñ‚ÑŒ Ñ€Ð°Ð¼ÐºÑƒ Ð½Ð° Ð¾Ð±ÑŠÐµÐºÑ‚Ðµ
+    ÐÐµ Ñ‚Ñ€ÐµÐ±ÑƒÐµÑ‚ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ð¹ Ð² DraggableObject
+
+Ð’ÐÐ Ð˜ÐÐÐ¢ 2: ÐžÑ‚Ð¿Ñ€Ð°Ð²ÐºÐ° hover-ÑÐ¾Ð±Ñ‹Ñ‚Ð¸Ð¹ Ñ‡ÐµÑ€ÐµÐ· ÑÐµÑ‚ÑŒ
+
+    DraggableObject ÑÐ»ÑƒÑˆÐ°ÐµÑ‚ pointerover/pointerout
+    ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð»ÑÐµÑ‚ 'objectHover' Ð½Ð° ÑÐµÑ€Ð²ÐµÑ€
+    Ð¡ÐµÑ€Ð²ÐµÑ€ broadcast'Ð¸Ñ‚ Ð²ÑÐµÐ¼
+    Ð’ÑÐµ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ñ‹ Ñ€Ð¸ÑÑƒÑŽÑ‚ Ñ€Ð°Ð¼ÐºÑƒ
+
+Ð’ÐÐ Ð˜ÐÐÐ¢ 3: ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ° Ð² DraggableObject Ð¿Ð¾ Ð´Ð°Ð½Ð½Ñ‹Ð¼ MouseFollowerManager
+
+    DraggableObject Ð¿Ð¾Ð»ÑƒÑ‡Ð°ÐµÑ‚ ÑÑÑ‹Ð»ÐºÑƒ Ð½Ð° MouseFollowerManager
+    Ð’ ÑÐ²Ð¾Ñ‘Ð¼ update Ð¿Ñ€Ð¾Ð²ÐµÑ€ÑÐµÑ‚ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ Ð²ÑÐµÑ… followers
+    Ð Ð¸ÑÑƒÐµÑ‚ Ñ€Ð°Ð¼ÐºÐ¸ ÐµÑÐ»Ð¸ ÐºÑ‚Ð¾-Ñ‚Ð¾ Ñ€ÑÐ´Ð¾Ð¼
+
+================================================================================ SECTION 12: CONSTRAINTS
+
+    PixiJS v8 (ÑÐ¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ð¹ ÑÐ¸Ð½Ñ‚Ð°ÐºÑÐ¸Ñ, Graphics API Ð¸Ð·Ð¼ÐµÐ½Ð¸Ð»ÑÑ)
+    Colyseus 0.15+
+    TypeScript ÑÑ‚Ñ€Ð¾Ð³Ð¸Ð¹
+    Canvas Ð½Ð° Ð²ÐµÑÑŒ ÑÐºÑ€Ð°Ð½, pointer-events: none (Ð½Ð¾ Ð¼Ð¾Ð¶Ð½Ð¾ Ð¸Ð·Ð¼ÐµÐ½Ð¸Ñ‚ÑŒ)
+    Ð”Ð¾Ð»Ð¶Ð½Ð¾ Ñ€Ð°Ð±Ð¾Ñ‚Ð°Ñ‚ÑŒ Ð´Ð»Ñ 2 Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð² (Ð¼Ð°ÐºÑÐ¸Ð¼ÑƒÐ¼)
+    ÐŸÑ€Ð¾Ð¸Ð·Ð²Ð¾Ð´Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ð¾ÑÑ‚ÑŒ: Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ° ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€ Ð´Ð¾Ð¿ÑƒÑÑ‚Ð¸Ð¼Ð°
+
+================================================================================ END OF CONTEXT FILE

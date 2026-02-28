@@ -1,14 +1,10 @@
-// ========================================
-// ORIGINAL PATH: client/src/features/battle/BattleRenderer.ts
-// ========================================
-
-/**
- * BattleRenderer — визуализация битвы вирусов в стиле "нейроны"
- *
- * Визуальный стиль:
- * - Каждая клетка — круг (нейрон)
- * - Клетки соединены линиями (синапсы)
- * - Пульсация активных клеток
+﻿/**
+ * BattleRenderer â€” Ð²Ð¸Ð·ÑƒÐ°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ Ð±Ð¸Ñ‚Ð²Ñ‹ Ð²Ð¸Ñ€ÑƒÑÐ¾Ð² Ð² ÑÑ‚Ð¸Ð»Ðµ "Ð½ÐµÐ¹Ñ€Ð¾Ð½Ñ‹"
+ * 
+ * Ð’Ð¸Ð·ÑƒÐ°Ð»ÑŒÐ½Ñ‹Ð¹ ÑÑ‚Ð¸Ð»ÑŒ:
+ * - ÐšÐ°Ð¶Ð´Ð°Ñ ÐºÐ»ÐµÑ‚ÐºÐ° â€” ÐºÑ€ÑƒÐ³ (Ð½ÐµÐ¹Ñ€Ð¾Ð½)
+ * - ÐšÐ»ÐµÑ‚ÐºÐ¸ ÑÐ¾ÐµÐ´Ð¸Ð½ÐµÐ½Ñ‹ Ð»Ð¸Ð½Ð¸ÑÐ¼Ð¸ (ÑÐ¸Ð½Ð°Ð¿ÑÑ‹)
+ * - ÐŸÑƒÐ»ÑŒÑÐ°Ñ†Ð¸Ñ Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ñ… ÐºÐ»ÐµÑ‚Ð¾Ðº
  */
 
 import * as PIXI from 'pixi.js';
@@ -25,15 +21,15 @@ export class BattleRenderer {
   private cellContainers: Map<number, PIXI.Container> = new Map();
   private linesContainer: PIXI.Graphics;
   private config: BattleRendererConfig;
-
+  
   private gridWidth: number = 64;
   private gridHeight: number = 36;
   private totalCells: number = this.gridWidth * this.gridHeight;
-
+  
   private readonly COLORS = {
     empty: 0x1a1a1a,
-    virusA: 0xff3333,  // Яркий красный
-    virusB: 0x3333ff,  // Яркий синий
+    virusA: 0xff3333,  // Ð¯Ñ€ÐºÐ¸Ð¹ ÐºÑ€Ð°ÑÐ½Ñ‹Ð¹
+    virusB: 0x3333ff,  // Ð¯Ñ€ÐºÐ¸Ð¹ ÑÐ¸Ð½Ð¸Ð¹
     lineEmpty: 0x333333,
     lineActive: 0x666666
   };
@@ -45,16 +41,16 @@ export class BattleRenderer {
     this.container = new PIXI.Container();
     this.linesContainer = new PIXI.Graphics();
     this.container.addChild(this.linesContainer);
-
+    
     this.config = {
-      cellDiameter: 25,  // Увеличили размер клеток
+      cellDiameter: 25,  // Ð£Ð²ÐµÐ»Ð¸Ñ‡Ð¸Ð»Ð¸ Ñ€Ð°Ð·Ð¼ÐµÑ€ ÐºÐ»ÐµÑ‚Ð¾Ðº
       cellGap: 1,
       pulseSpeed: 2000,
       contestedFlickerSpeed: 200,
       ...config
     };
 
-    this.container.zIndex = 1000;  // На переднем плане
+    this.container.zIndex = 1000;  // ÐÐ° Ð¿ÐµÑ€ÐµÐ´Ð½ÐµÐ¼ Ð¿Ð»Ð°Ð½Ðµ
     this.container.alpha = 0;
     this.container.visible = false;
 
@@ -67,8 +63,9 @@ export class BattleRenderer {
     this.gridHeight = height;
     this.totalCells = width * height;
 
-    console.log(`[BattleRenderer] Init grid: ${width}×${height} = ${this.totalCells} cells`);
+    console.log(`[BattleRenderer] Init grid: ${width}Ã—${height} = ${this.totalCells} cells`);
 
+    // ÐžÑ‡Ð¸ÑÑ‚ÐºÐ° ÑÑ‚Ð°Ñ€Ñ‹Ñ… ÐºÐ¾Ð½Ñ‚ÐµÐ¹Ð½ÐµÑ€Ð¾Ð²
     this.cellContainers.forEach(container => {
       this.container.removeChild(container);
       container.destroy({ children: true });
@@ -76,30 +73,44 @@ export class BattleRenderer {
     this.cellContainers.clear();
     this.linesContainer.clear();
 
+    // Ð¡Ð¾Ð·Ð´Ð°Ð½Ð¸Ðµ ÐºÐ»ÐµÑ‚Ð¾Ðº Ñ ÐŸÐ ÐÐ’Ð˜Ð›Ð¬ÐÐ«Ðœ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¾Ð½Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸ÐµÐ¼
+    const diameter = this.config.cellDiameter;
+    const step = diameter + this.config.cellGap;
+
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const idx = y * width + x;
         const container = this.createCellContainer(x, y);
+        
+        // Ð£ÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸ÑŽ ÑÑ€Ð°Ð·Ñƒ Ð¿Ñ€Ð¸ ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ð¸
+        container.position.x = x * step + step / 2;
+        container.position.y = y * step + step / 2;
+        
         this.cellContainers.set(idx, container);
         this.container.addChild(container);
       }
     }
 
+    // Ð Ð¸ÑÑƒÐµÐ¼ Ð»Ð¸Ð½Ð¸Ð¸ Ð¿Ð¾ÑÐ»Ðµ Ñ‚Ð¾Ð³Ð¾, ÐºÐ°Ðº Ð²ÑÐµ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ ÑƒÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½Ñ‹
     this.drawSynapses();
+    
+    // Ð¦ÐµÐ½Ñ‚Ñ€Ð¸Ñ€ÑƒÐµÐ¼ Ð²ÐµÑÑŒ ÐºÐ¾Ð½Ñ‚ÐµÐ¹Ð½ÐµÑ€ Ð½Ð° ÑÐºÑ€Ð°Ð½Ðµ
     this.centerGrid();
+
+    console.log(`[BattleRenderer] Grid positioned at:`, this.container.position);
   }
 
   private createCellContainer(x: number, y: number): PIXI.Container {
     const container = new PIXI.Container();
-
+    
     const cell = new PIXI.Graphics();
     const diameter = this.config.cellDiameter;
     const radius = diameter / 2;
-
+    
     cell.beginFill(this.COLORS.empty, 1);
     cell.drawCircle(0, 0, radius);
     cell.endFill();
-
+    
     const glow = new PIXI.Graphics();
     glow.beginFill(this.COLORS.empty, 0.3);
     glow.drawCircle(0, 0, radius + 2);
@@ -145,7 +156,7 @@ export class BattleRenderer {
             if (nContainer) {
               const x2 = nContainer.position.x;
               const y2 = nContainer.position.y;
-
+              
               this.linesContainer.moveTo(x1, y1);
               this.linesContainer.lineTo(x2, y2);
             }
@@ -163,16 +174,9 @@ export class BattleRenderer {
     const gridWidthPx = this.gridWidth * step;
     const gridHeightPx = this.gridHeight * step;
 
-    this.cellContainers.forEach((container, idx) => {
-      const x = idx % this.gridWidth;
-      const y = Math.floor(idx / this.gridWidth);
-
-      container.position.x = x * step + step / 2;
-      container.position.y = y * step + step / 2;
-    });
-
-    this.container.position.x = (window.innerWidth - gridWidthPx) / 2 + step / 2;
-    this.container.position.y = (window.innerHeight - gridHeightPx) / 2 + step / 2;
+    // Ð¦ÐµÐ½Ñ‚Ñ€Ð¸Ñ€ÑƒÐµÐ¼ Ñ‚Ð¾Ð»ÑŒÐºÐ¾ ÐºÐ¾Ð½Ñ‚ÐµÐ¹Ð½ÐµÑ€, Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ ÐºÐ»ÐµÑ‚Ð¾Ðº ÑƒÐ¶Ðµ ÑƒÑÑ‚Ð°Ð½Ð¾Ð²Ð»ÐµÐ½Ñ‹
+    this.container.position.x = (window.innerWidth - gridWidthPx) / 2;
+    this.container.position.y = (window.innerHeight - gridHeightPx) / 2;
   }
 
   updateGrid(grid: number[]): void {
@@ -213,7 +217,7 @@ export class BattleRenderer {
     const radius = diameter / 2;
 
     if (value === 0) {
-      // Пустая клетка - тёмная
+      // ÐŸÑƒÑÑ‚Ð°Ñ ÐºÐ»ÐµÑ‚ÐºÐ° - Ñ‚Ñ‘Ð¼Ð½Ð°Ñ
       cell.beginFill(this.COLORS.empty, 1);
       cell.drawCircle(0, 0, radius);
       cell.endFill();
@@ -222,24 +226,24 @@ export class BattleRenderer {
       glow.drawCircle(0, 0, radius + 2);
       glow.endFill();
     } else if (value === 1) {
-      // Virus A - ЯРКИЙ КРАСНЫЙ с сильным свечением
+      // Virus A - Ð¯Ð ÐšÐ˜Ð™ ÐšÐ ÐÐ¡ÐÐ«Ð™ Ñ ÑÐ¸Ð»ÑŒÐ½Ñ‹Ð¼ ÑÐ²ÐµÑ‡ÐµÐ½Ð¸ÐµÐ¼
       const pulse = this.getPulseValue();
       cell.beginFill(this.COLORS.virusA, 1);
       cell.drawCircle(0, 0, radius * pulse);
       cell.endFill();
 
-      // Сильное свечение
+      // Ð¡Ð¸Ð»ÑŒÐ½Ð¾Ðµ ÑÐ²ÐµÑ‡ÐµÐ½Ð¸Ðµ
       glow.beginFill(this.COLORS.virusA, 0.8);
       glow.drawCircle(0, 0, radius * pulse + 5);
       glow.endFill();
     } else if (value === 2) {
-      // Virus B - ЯРКИЙ СИНИЙ с сильным свечением
+      // Virus B - Ð¯Ð ÐšÐ˜Ð™ Ð¡Ð˜ÐÐ˜Ð™ Ñ ÑÐ¸Ð»ÑŒÐ½Ñ‹Ð¼ ÑÐ²ÐµÑ‡ÐµÐ½Ð¸ÐµÐ¼
       const pulse = this.getPulseValue();
       cell.beginFill(this.COLORS.virusB, 1);
       cell.drawCircle(0, 0, radius * pulse);
       cell.endFill();
 
-      // Сильное свечение
+      // Ð¡Ð¸Ð»ÑŒÐ½Ð¾Ðµ ÑÐ²ÐµÑ‡ÐµÐ½Ð¸Ðµ
       glow.beginFill(this.COLORS.virusB, 0.8);
       glow.drawCircle(0, 0, radius * pulse + 5);
       glow.endFill();
@@ -255,7 +259,11 @@ export class BattleRenderer {
   show(): void {
     this.container.alpha = 1;
     this.container.visible = true;
-    console.log('[BattleRenderer] Show');
+    
+    console.log('[BattleRenderer] Show:', {
+      position: this.container.position,
+      children: this.container.children.length
+    });
   }
 
   hide(): void {
@@ -278,3 +286,4 @@ export class BattleRenderer {
     console.log('[BattleRenderer] Destroyed');
   }
 }
+

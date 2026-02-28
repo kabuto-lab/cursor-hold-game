@@ -1,8 +1,4 @@
-// ========================================
-// ORIGINAL PATH: client/src/features/battle/VirusParamsUI.ts
-// ========================================
-
-// VirusParamsUI.ts - DOM panel for parameters (empty for now)
+﻿// VirusParamsUI.ts - DOM panel for parameters (empty for now)
 export class VirusParamsUI {
   constructor() {
     // Placeholder

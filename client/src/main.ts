@@ -7,6 +7,7 @@ import { MouseFollowerManager } from './features/mouse-follower/MouseFollowerMan
 import { BattleManager } from './features/battle/BattleManager';
 import { BattleRenderer } from './features/battle/BattleRenderer';
 import { VirusTubeManager } from './features/battle/VirusTubeManager';
+import * as PIXI from 'pixi.js';
 
 console.log('[MainApp] main.ts loaded');
 
@@ -20,6 +21,10 @@ class MainApp {
   private virusTubeManager!: VirusTubeManager;
   private battleManager!: BattleManager;
   private battleRenderer: BattleRenderer | null = null;  // Инициализируется позже
+
+  // Sandbox mode
+  private sandboxApp: PIXI.Application | null = null;
+  private isInSandbox: boolean = false;
 
   // Метод для обновления прогресса битвы
   private updateBattleProgress!: (grid: number[]) => void;
@@ -106,6 +111,17 @@ class MainApp {
       console.log('[MainApp] Virus params changed:', params);
       this.networkManager.sendParameterUpdate(params);
     });
+
+    // Настраиваем Sandbox callbacks
+    this.uiController.onEnterSandbox = () => {
+      console.log('[MainApp] Entering sandbox mode...');
+      this.enterSandboxMode();
+    };
+
+    this.uiController.onLeaveSandbox = () => {
+      console.log('[MainApp] Leaving sandbox mode...');
+      this.leaveSandboxMode();
+    };
 
     // Кнопка RANDOMIZE
     const randomizeBtn = document.getElementById('randomizeBtn');
@@ -378,6 +394,76 @@ class MainApp {
         alert('Join room ERROR: ' + error);
       }
     };
+  }
+
+  /**
+   * Enter sandbox mode - empty canvas for testing
+   */
+  private async enterSandboxMode(): Promise<void> {
+    console.log('[MainApp] Entering sandbox mode...');
+    this.isInSandbox = true;
+
+    // Create sandbox PixiJS application
+    const container = document.getElementById('sandboxCanvasContainer');
+    if (!container) {
+      console.error('[MainApp] Sandbox container not found!');
+      return;
+    }
+
+    // Clear container
+    container.innerHTML = '';
+
+    // Create new application
+    this.sandboxApp = new PIXI.Application();
+    await this.sandboxApp.init({
+      backgroundColor: 0x1a1a1a,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      antialias: true,
+      autoDensity: true,
+      resolution: Math.min(window.devicePixelRatio, 2),
+    });
+
+    container.appendChild(this.sandboxApp.canvas);
+    console.log('[MainApp] Sandbox canvas created');
+
+    // Start the sandbox app ticker
+    this.sandboxApp.ticker.start();
+
+    // Optional: Add some debug text
+    const debugText = new PIXI.Text('SANDBOX MODE\nEmpty canvas for testing', {
+      fontFamily: 'Courier New',
+      fontSize: 24,
+      fill: 0x00ff00,
+      align: 'center',
+    });
+    debugText.anchor.set(0.5);
+    debugText.x = window.innerWidth / 2;
+    debugText.y = window.innerHeight / 2;
+    this.sandboxApp.stage.addChild(debugText);
+  }
+
+  /**
+   * Leave sandbox mode - cleanup and return to lobby
+   */
+  private leaveSandboxMode(): void {
+    console.log('[MainApp] Leaving sandbox mode...');
+    this.isInSandbox = false;
+
+    // Destroy sandbox application
+    if (this.sandboxApp) {
+      this.sandboxApp.ticker.stop();
+      this.sandboxApp.destroy(true);
+      this.sandboxApp = null;
+    }
+
+    // Clear sandbox container
+    const container = document.getElementById('sandboxCanvasContainer');
+    if (container) {
+      container.innerHTML = '';
+    }
+
+    console.log('[MainApp] Sandbox cleaned up');
   }
 }
 

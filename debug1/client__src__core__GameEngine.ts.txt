@@ -1,35 +1,31 @@
-// ========================================
-// ORIGINAL PATH: client/src/core/GameEngine.ts
-// ========================================
-
-import * as PIXI from 'pixi.js';
+﻿import * as PIXI from 'pixi.js';
 
 /**
- * Базовый игровой движок
- * Только рендер + ticker, без логики
+ * Ð‘Ð°Ð·Ð¾Ð²Ñ‹Ð¹ Ð¸Ð³Ñ€Ð¾Ð²Ð¾Ð¹ Ð´Ð²Ð¸Ð¶Ð¾Ðº
+ * Ð¢Ð¾Ð»ÑŒÐºÐ¾ Ñ€ÐµÐ½Ð´ÐµÑ€ + ticker, Ð±ÐµÐ· Ð»Ð¾Ð³Ð¸ÐºÐ¸
  */
 export class GameEngine {
   app: PIXI.Application | null = null;
   private ticker: PIXI.Ticker | null = null;
   private gridGraphics: PIXI.Graphics | null = null;
-
-  // Настройки сетки (будут рассчитаны динамически)
-  private cellSize: number = 50;  // Будет пересчитано
+  
+  // ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ¸ ÑÐµÑ‚ÐºÐ¸ (Ð±ÑƒÐ´ÑƒÑ‚ Ñ€Ð°ÑÑÑ‡Ð¸Ñ‚Ð°Ð½Ñ‹ Ð´Ð¸Ð½Ð°Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸)
+  private cellSize: number = 50;  // Ð‘ÑƒÐ´ÐµÑ‚ Ð¿ÐµÑ€ÐµÑÑ‡Ð¸Ñ‚Ð°Ð½Ð¾
   private readonly GRID_COLOR: number = 0x00ffff;
   private readonly GRID_ALPHA: number = 0.3;
   private readonly GRID_LINE_WIDTH: number = 1;
-
-  // Целевое количество ячеек (для расчёта)
-  private readonly TARGET_COLS: number = 24;  // ~24 колонки
-  private readonly TARGET_ROWS: number = 18;  // ~18 рядов
+  
+  // Ð¦ÐµÐ»ÐµÐ²Ð¾Ðµ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ ÑÑ‡ÐµÐµÐº (Ð´Ð»Ñ Ñ€Ð°ÑÑ‡Ñ‘Ñ‚Ð°)
+  private readonly TARGET_COLS: number = 24;  // ~24 ÐºÐ¾Ð»Ð¾Ð½ÐºÐ¸
+  private readonly TARGET_ROWS: number = 18;  // ~18 Ñ€ÑÐ´Ð¾Ð²
 
   constructor() {
     console.log('[GameEngine] Constructor called');
   }
 
   /**
-   * Рассчитать размер ячейки исходя из разрешения экрана
-   * Стремимся к квадратным ячейкам с погрешностью до 5%
+   * Ð Ð°ÑÑÑ‡Ð¸Ñ‚Ð°Ñ‚ÑŒ Ñ€Ð°Ð·Ð¼ÐµÑ€ ÑÑ‡ÐµÐ¹ÐºÐ¸ Ð¸ÑÑ…Ð¾Ð´Ñ Ð¸Ð· Ñ€Ð°Ð·Ñ€ÐµÑˆÐµÐ½Ð¸Ñ ÑÐºÑ€Ð°Ð½Ð°
+   * Ð¡Ñ‚Ñ€ÐµÐ¼Ð¸Ð¼ÑÑ Ðº ÐºÐ²Ð°Ð´Ñ€Ð°Ñ‚Ð½Ñ‹Ð¼ ÑÑ‡ÐµÐ¹ÐºÐ°Ð¼ Ñ Ð¿Ð¾Ð³Ñ€ÐµÑˆÐ½Ð¾ÑÑ‚ÑŒÑŽ Ð´Ð¾ 5%
    */
   private calculateCellSize(): number {
     if (!this.app) return 50;
@@ -37,33 +33,33 @@ export class GameEngine {
     const screenWidth = this.app.screen.width;
     const screenHeight = this.app.screen.height;
 
-    // Рассчитываем размер ячейки для целевого количества колонок и рядов
+    // Ð Ð°ÑÑÑ‡Ð¸Ñ‚Ñ‹Ð²Ð°ÐµÐ¼ Ñ€Ð°Ð·Ð¼ÐµÑ€ ÑÑ‡ÐµÐ¹ÐºÐ¸ Ð´Ð»Ñ Ñ†ÐµÐ»ÐµÐ²Ð¾Ð³Ð¾ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð° ÐºÐ¾Ð»Ð¾Ð½Ð¾Ðº Ð¸ Ñ€ÑÐ´Ð¾Ð²
     const sizeByWidth = screenWidth / this.TARGET_COLS;
     const sizeByHeight = screenHeight / this.TARGET_ROWS;
 
-    // Берём среднее значение для квадратных ячеек
+    // Ð‘ÐµÑ€Ñ‘Ð¼ ÑÑ€ÐµÐ´Ð½ÐµÐµ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ Ð´Ð»Ñ ÐºÐ²Ð°Ð´Ñ€Ð°Ñ‚Ð½Ñ‹Ñ… ÑÑ‡ÐµÐµÐº
     let cellSize = (sizeByWidth + sizeByHeight) / 2;
 
-    // Округляем до ближайшего числа, кратного 5 (для красоты)
+    // ÐžÐºÑ€ÑƒÐ³Ð»ÑÐµÐ¼ Ð´Ð¾ Ð±Ð»Ð¸Ð¶Ð°Ð¹ÑˆÐµÐ³Ð¾ Ñ‡Ð¸ÑÐ»Ð°, ÐºÑ€Ð°Ñ‚Ð½Ð¾Ð³Ð¾ 5 (Ð´Ð»Ñ ÐºÑ€Ð°ÑÐ¾Ñ‚Ñ‹)
     cellSize = Math.round(cellSize / 5) * 5;
 
-    // Проверяем погрешность (не более 5%)
+    // ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ Ð¿Ð¾Ð³Ñ€ÐµÑˆÐ½Ð¾ÑÑ‚ÑŒ (Ð½Ðµ Ð±Ð¾Ð»ÐµÐµ 5%)
     const aspectRatio = screenWidth / screenHeight;
     const idealAspectRatio = this.TARGET_COLS / this.TARGET_ROWS;
     const aspectError = Math.abs(aspectRatio - idealAspectRatio) / idealAspectRatio;
 
     if (aspectError > 0.05) {
-      // Если погрешность больше 5%, корректируем размер
+      // Ð•ÑÐ»Ð¸ Ð¿Ð¾Ð³Ñ€ÐµÑˆÐ½Ð¾ÑÑ‚ÑŒ Ð±Ð¾Ð»ÑŒÑˆÐµ 5%, ÐºÐ¾Ñ€Ñ€ÐµÐºÑ‚Ð¸Ñ€ÑƒÐµÐ¼ Ñ€Ð°Ð·Ð¼ÐµÑ€
       if (aspectRatio > idealAspectRatio) {
-        // Экран шире, чем нужно — уменьшаем размер ячейки
+        // Ð­ÐºÑ€Ð°Ð½ ÑˆÐ¸Ñ€Ðµ, Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶Ð½Ð¾ â€” ÑƒÐ¼ÐµÐ½ÑŒÑˆÐ°ÐµÐ¼ Ñ€Ð°Ð·Ð¼ÐµÑ€ ÑÑ‡ÐµÐ¹ÐºÐ¸
         cellSize = sizeByWidth;
       } else {
-        // Экран уже, чем нужно — увеличиваем размер ячейки
+        // Ð­ÐºÑ€Ð°Ð½ ÑƒÐ¶Ðµ, Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶Ð½Ð¾ â€” ÑƒÐ²ÐµÐ»Ð¸Ñ‡Ð¸Ð²Ð°ÐµÐ¼ Ñ€Ð°Ð·Ð¼ÐµÑ€ ÑÑ‡ÐµÐ¹ÐºÐ¸
         cellSize = sizeByHeight;
       }
     }
 
-    // Минимальный и максимальный размер
+    // ÐœÐ¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ð¸ Ð¼Ð°ÐºÑÐ¸Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ñ€Ð°Ð·Ð¼ÐµÑ€
     cellSize = Math.max(20, Math.min(100, cellSize));
 
     console.log(`[GameEngine] Calculated cell size: ${cellSize}px (screen: ${screenWidth}x${screenHeight})`);
@@ -71,7 +67,7 @@ export class GameEngine {
   }
 
   /**
-   * Инициализировать PixiJS (асинхронно)
+   * Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ PixiJS (Ð°ÑÐ¸Ð½Ñ…Ñ€Ð¾Ð½Ð½Ð¾)
    */
   async init(containerId: string): Promise<void> {
     console.log('[GameEngine] Initializing PixiJS...');
@@ -81,7 +77,7 @@ export class GameEngine {
       throw new Error(`Container element with id "${containerId}" not found`);
     }
 
-    // Создаём и инициализируем приложение
+    // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ Ð¸ Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€ÑƒÐµÐ¼ Ð¿Ñ€Ð¸Ð»Ð¾Ð¶ÐµÐ½Ð¸Ðµ
     this.app = new PIXI.Application();
 
     await this.app.init({
@@ -95,18 +91,18 @@ export class GameEngine {
 
     console.log('[GameEngine] PixiJS initialized, getting ticker...');
 
-    // Получаем ticker после инициализации
+    // ÐŸÐ¾Ð»ÑƒÑ‡Ð°ÐµÐ¼ ticker Ð¿Ð¾ÑÐ»Ðµ Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ð¸
     this.ticker = this.app.ticker;
 
-    // КРИТИЧЕСКАЯ СТРОКА — отключаем pointer events на canvas
-    // ВАЖНО: Оставляем pointer-events: auto для интерактивных объектов (drag-and-drop)
+    // ÐšÐ Ð˜Ð¢Ð˜Ð§Ð•Ð¡ÐšÐÐ¯ Ð¡Ð¢Ð ÐžÐšÐ â€” Ð¾Ñ‚ÐºÐ»ÑŽÑ‡Ð°ÐµÐ¼ pointer events Ð½Ð° canvas
+    // Ð’ÐÐ–ÐÐž: ÐžÑÑ‚Ð°Ð²Ð»ÑÐµÐ¼ pointer-events: auto Ð´Ð»Ñ Ð¸Ð½Ñ‚ÐµÑ€Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ñ… Ð¾Ð±ÑŠÐµÐºÑ‚Ð¾Ð² (drag-and-drop)
     this.app.canvas.style.pointerEvents = 'auto';
 
     console.log('[GameEngine] Appending canvas...');
-    // Добавляем canvas в контейнер
+    // Ð”Ð¾Ð±Ð°Ð²Ð»ÑÐµÐ¼ canvas Ð² ÐºÐ¾Ð½Ñ‚ÐµÐ¹Ð½ÐµÑ€
     container.appendChild(this.app.canvas);
 
-    // Рассчитываем размер ячейки и рисуем сетку
+    // Ð Ð°ÑÑÑ‡Ð¸Ñ‚Ñ‹Ð²Ð°ÐµÐ¼ Ñ€Ð°Ð·Ð¼ÐµÑ€ ÑÑ‡ÐµÐ¹ÐºÐ¸ Ð¸ Ñ€Ð¸ÑÑƒÐµÐ¼ ÑÐµÑ‚ÐºÑƒ
     this.cellSize = this.calculateCellSize();
     this.drawGrid();
 
@@ -114,7 +110,7 @@ export class GameEngine {
   }
 
   /**
-   * Нарисовать сетку с квадратными ячейками
+   * ÐÐ°Ñ€Ð¸ÑÐ¾Ð²Ð°Ñ‚ÑŒ ÑÐµÑ‚ÐºÑƒ Ñ ÐºÐ²Ð°Ð´Ñ€Ð°Ñ‚Ð½Ñ‹Ð¼Ð¸ ÑÑ‡ÐµÐ¹ÐºÐ°Ð¼Ð¸
    */
   private drawGrid(): void {
     if (!this.app) return;
@@ -122,18 +118,18 @@ export class GameEngine {
     console.log('[GameEngine] Drawing grid (cell size: ' + this.cellSize + 'px)...');
 
     this.gridGraphics = new PIXI.Graphics();
-    this.gridGraphics.zIndex = 0; // Сетка на заднем плане
+    this.gridGraphics.zIndex = 0; // Ð¡ÐµÑ‚ÐºÐ° Ð½Ð° Ð·Ð°Ð´Ð½ÐµÐ¼ Ð¿Ð»Ð°Ð½Ðµ
 
     const width = this.app.screen.width;
     const height = this.app.screen.height;
 
-    // Вертикальные линии
+    // Ð’ÐµÑ€Ñ‚Ð¸ÐºÐ°Ð»ÑŒÐ½Ñ‹Ðµ Ð»Ð¸Ð½Ð¸Ð¸
     for (let x = 0; x <= width; x += this.cellSize) {
       this.gridGraphics.moveTo(x, 0);
       this.gridGraphics.lineTo(x, height);
     }
 
-    // Горизонтальные линии
+    // Ð“Ð¾Ñ€Ð¸Ð·Ð¾Ð½Ñ‚Ð°Ð»ÑŒÐ½Ñ‹Ðµ Ð»Ð¸Ð½Ð¸Ð¸
     for (let y = 0; y <= height; y += this.cellSize) {
       this.gridGraphics.moveTo(0, y);
       this.gridGraphics.lineTo(width, y);
@@ -150,27 +146,27 @@ export class GameEngine {
   }
 
   /**
-   * Перерисовать сетку при изменении размера
+   * ÐŸÐµÑ€ÐµÑ€Ð¸ÑÐ¾Ð²Ð°Ñ‚ÑŒ ÑÐµÑ‚ÐºÑƒ Ð¿Ñ€Ð¸ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ð¸ Ñ€Ð°Ð·Ð¼ÐµÑ€Ð°
    */
   resizeGrid(): void {
     if (!this.app || !this.gridGraphics) return;
 
-    // Пересчитываем размер ячейки
+    // ÐŸÐµÑ€ÐµÑÑ‡Ð¸Ñ‚Ñ‹Ð²Ð°ÐµÐ¼ Ñ€Ð°Ð·Ð¼ÐµÑ€ ÑÑ‡ÐµÐ¹ÐºÐ¸
     this.cellSize = this.calculateCellSize();
 
-    // Очищаем старую сетку
+    // ÐžÑ‡Ð¸Ñ‰Ð°ÐµÐ¼ ÑÑ‚Ð°Ñ€ÑƒÑŽ ÑÐµÑ‚ÐºÑƒ
     this.gridGraphics.clear();
 
     const width = this.app.screen.width;
     const height = this.app.screen.height;
 
-    // Вертикальные линии
+    // Ð’ÐµÑ€Ñ‚Ð¸ÐºÐ°Ð»ÑŒÐ½Ñ‹Ðµ Ð»Ð¸Ð½Ð¸Ð¸
     for (let x = 0; x <= width; x += this.cellSize) {
       this.gridGraphics.moveTo(x, 0);
       this.gridGraphics.lineTo(x, height);
     }
 
-    // Горизонтальные линии
+    // Ð“Ð¾Ñ€Ð¸Ð·Ð¾Ð½Ñ‚Ð°Ð»ÑŒÐ½Ñ‹Ðµ Ð»Ð¸Ð½Ð¸Ð¸
     for (let y = 0; y <= height; y += this.cellSize) {
       this.gridGraphics.moveTo(0, y);
       this.gridGraphics.lineTo(width, y);
@@ -184,7 +180,7 @@ export class GameEngine {
   }
 
   /**
-   * Добавить обновление на тикер
+   * Ð”Ð¾Ð±Ð°Ð²Ð¸Ñ‚ÑŒ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ Ð½Ð° Ñ‚Ð¸ÐºÐµÑ€
    */
   addTickerUpdate(updateFn: (dt: number) => void): void {
     if (this.ticker) {
@@ -198,7 +194,7 @@ export class GameEngine {
   }
 
   /**
-   * Запустить тикер
+   * Ð—Ð°Ð¿ÑƒÑÑ‚Ð¸Ñ‚ÑŒ Ñ‚Ð¸ÐºÐµÑ€
    */
   start(): void {
     if (this.ticker) {
@@ -210,7 +206,7 @@ export class GameEngine {
   }
 
   /**
-   * Остановить тикер
+   * ÐžÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ñ‚Ð¸ÐºÐµÑ€
    */
   stop(): void {
     if (this.ticker) {

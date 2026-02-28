@@ -1,8 +1,4 @@
-// ========================================
-// ORIGINAL PATH: client/package.json
-// ========================================
-
-{
+﻿{
   "name": "@holding-hands/client",
   "private": true,
   "version": "1.0.0",
@@ -30,3 +26,4 @@
     "vitest": "^1.0.0"
   }
 }
+

@@ -1,8 +1,4 @@
-// ========================================
-// ORIGINAL PATH: client/tsconfig.json
-// ========================================
-
-{
+﻿{
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,

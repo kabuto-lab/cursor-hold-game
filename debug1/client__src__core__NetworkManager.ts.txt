@@ -1,26 +1,22 @@
-// ========================================
-// ORIGINAL PATH: client/src/core/NetworkManager.ts
-// ========================================
-
-import { Client } from 'colyseus.js';
+﻿import { Client } from 'colyseus.js';
 import { Room } from 'colyseus.js';
 
 /**
- * Менеджер сетевого подключения
- * Управляет подключением к Colyseus серверу
+ * ÐœÐµÐ½ÐµÐ´Ð¶ÐµÑ€ ÑÐµÑ‚ÐµÐ²Ð¾Ð³Ð¾ Ð¿Ð¾Ð´ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ñ
+ * Ð£Ð¿Ñ€Ð°Ð²Ð»ÑÐµÑ‚ Ð¿Ð¾Ð´ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸ÐµÐ¼ Ðº Colyseus ÑÐµÑ€Ð²ÐµÑ€Ñƒ
  */
 export class NetworkManager {
   private client: Client;
   private currentRoom: Room | null = null;
   private readonly serverUrl: string;
 
-  // Callback для изменения количества игроков
+  // Callback Ð´Ð»Ñ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð° Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð²
   public onRoomStateChange?: (count: number, max: number) => void;
 
-  // Callbacks для вирусной битвы
-  public onVirusBattleStarted?: (data: {
-    battleGrid: number[];
-    width: number;
+  // Callbacks Ð´Ð»Ñ Ð²Ð¸Ñ€ÑƒÑÐ½Ð¾Ð¹ Ð±Ð¸Ñ‚Ð²Ñ‹
+  public onVirusBattleStarted?: (data: { 
+    battleGrid: number[]; 
+    width: number; 
     height: number;
     message: string;
     timestamp: number;
@@ -40,7 +36,7 @@ export class NetworkManager {
     timestamp: number;
   }) => void;
 
-  // Обратный отсчёт
+  // ÐžÐ±Ñ€Ð°Ñ‚Ð½Ñ‹Ð¹ Ð¾Ñ‚ÑÑ‡Ñ‘Ñ‚
   public onStartCountdown?: (data: {
     battleGrid: number[];
     width: number;
@@ -48,7 +44,7 @@ export class NetworkManager {
   }) => void;
 
   constructor(serverUrl?: string) {
-    // Локальный сервер для разработки, прод-сервер для production
+    // Ð›Ð¾ÐºÐ°Ð»ÑŒÐ½Ñ‹Ð¹ ÑÐµÑ€Ð²ÐµÑ€ Ð´Ð»Ñ Ñ€Ð°Ð·Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ¸, Ð¿Ñ€Ð¾Ð´-ÑÐµÑ€Ð²ÐµÑ€ Ð´Ð»Ñ production
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     this.serverUrl = serverUrl || (isLocalhost ? 'ws://localhost:2567' : 'wss://cursor-hold-game-server.onrender.com');
     this.client = new Client(this.serverUrl);
@@ -57,12 +53,12 @@ export class NetworkManager {
   }
 
   /**
-   * Подключиться к серверу
+   * ÐŸÐ¾Ð´ÐºÐ»ÑŽÑ‡Ð¸Ñ‚ÑŒÑÑ Ðº ÑÐµÑ€Ð²ÐµÑ€Ñƒ
    */
   async connect(): Promise<void> {
     try {
-      // Проверяем соединение
-      await this.client.joinOrCreate('holding_room'); // Используем правильное имя комнаты
+      // ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÐµÐ¼ ÑÐ¾ÐµÐ´Ð¸Ð½ÐµÐ½Ð¸Ðµ
+      await this.client.joinOrCreate('holding_room'); // Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÐ¼ Ð¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ð¾Ðµ Ð¸Ð¼Ñ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
       console.log('Connected to server:', this.serverUrl);
     } catch (error) {
       console.error('Failed to connect to server:', error);
@@ -71,27 +67,27 @@ export class NetworkManager {
   }
 
   /**
-   * Создать новую комнату
-   * Возвращает реальный ID комнаты от Colyseus
+   * Ð¡Ð¾Ð·Ð´Ð°Ñ‚ÑŒ Ð½Ð¾Ð²ÑƒÑŽ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñƒ
+   * Ð’Ð¾Ð·Ð²Ñ€Ð°Ñ‰Ð°ÐµÑ‚ Ñ€ÐµÐ°Ð»ÑŒÐ½Ñ‹Ð¹ ID ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹ Ð¾Ñ‚ Colyseus
    */
   async createRoom(): Promise<string> {
     console.log('========================================');
-    console.log('[NetworkManager] ⚠️ createRoom() CALL DETECTED!');
+    console.log('[NetworkManager] âš ï¸ createRoom() CALL DETECTED!');
     console.log('Stack trace:');
     console.log(new Error().stack);
     console.log('========================================');
-
+    
     try {
       console.log('[NetworkManager] Calling client.joinOrCreate("holding_room")...');
-      // Создаём новую комнату через joinOrCreate
+      // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ Ð½Ð¾Ð²ÑƒÑŽ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñƒ Ñ‡ÐµÑ€ÐµÐ· joinOrCreate
       this.currentRoom = await this.client.joinOrCreate('holding_room');
       console.log('[NetworkManager] Room object received:', this.currentRoom);
 
-      // Получаем roomId из state комнаты
+      // ÐŸÐ¾Ð»ÑƒÑ‡Ð°ÐµÐ¼ roomId Ð¸Ð· state ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
       const roomId = this.currentRoom.state?.roomId || this.currentRoom.id;
       console.log('[NetworkManager] Room created:', roomId);
 
-      // Подписываемся на сообщения комнаты после создания
+      // ÐŸÐ¾Ð´Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÐ¼ÑÑ Ð½Ð° ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹ Ð¿Ð¾ÑÐ»Ðµ ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ñ
       this.setupRoomMessageHandlers();
 
       return roomId;
@@ -104,16 +100,16 @@ export class NetworkManager {
   }
 
   /**
-   * Присоединиться к существующей комнате по ID
+   * ÐŸÑ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½Ð¸Ñ‚ÑŒÑÑ Ðº ÑÑƒÑ‰ÐµÑÑ‚Ð²ÑƒÑŽÑ‰ÐµÐ¹ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ðµ Ð¿Ð¾ ID
    */
   async joinRoom(roomId: string): Promise<Room> {
     console.log('[NetworkManager] joinRoom() called with roomId:', roomId);
     try {
-      // Присоединяемся к комнате по ID через joinById
+      // ÐŸÑ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½ÑÐµÐ¼ÑÑ Ðº ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ðµ Ð¿Ð¾ ID Ñ‡ÐµÑ€ÐµÐ· joinById
       this.currentRoom = await this.client.joinById(roomId);
       console.log('[NetworkManager] Joined room:', this.currentRoom.id);
 
-      // Подписываемся на сообщения комнаты после присоединения
+      // ÐŸÐ¾Ð´Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÐ¼ÑÑ Ð½Ð° ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹ Ð¿Ð¾ÑÐ»Ðµ Ð¿Ñ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½ÐµÐ½Ð¸Ñ
       this.setupRoomMessageHandlers();
 
       return this.currentRoom;
@@ -126,7 +122,7 @@ export class NetworkManager {
   }
 
   /**
-   * Получить список доступных комнат (для будущего UI)
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ ÑÐ¿Ð¸ÑÐ¾Ðº Ð´Ð¾ÑÑ‚ÑƒÐ¿Ð½Ñ‹Ñ… ÐºÐ¾Ð¼Ð½Ð°Ñ‚ (Ð´Ð»Ñ Ð±ÑƒÐ´ÑƒÑ‰ÐµÐ³Ð¾ UI)
    */
   async getAvailableRooms(): Promise<any[]> {
     try {
@@ -139,7 +135,7 @@ export class NetworkManager {
   }
 
   /**
-   * Покинуть текущую комнату
+   * ÐŸÐ¾ÐºÐ¸Ð½ÑƒÑ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰ÑƒÑŽ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñƒ
    */
   leaveCurrentRoom(): void {
     if (this.currentRoom) {
@@ -149,14 +145,14 @@ export class NetworkManager {
   }
 
   /**
-   * Получить текущую комнату
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰ÑƒÑŽ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñƒ
    */
   getCurrentRoom(): Room | null {
     return this.currentRoom;
   }
 
   /**
-   * Отправить сообщение в комнату
+   * ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð¸Ñ‚ÑŒ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ Ð² ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñƒ
    */
   sendToRoom(messageType: string, data: any): void {
     if (this.currentRoom) {
@@ -167,7 +163,7 @@ export class NetworkManager {
   }
 
   /**
-   * Подписаться на сообщения из комнаты
+   * ÐŸÐ¾Ð´Ð¿Ð¸ÑÐ°Ñ‚ÑŒÑÑ Ð½Ð° ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ Ð¸Ð· ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
    */
   onMessage(messageType: string, callback: (data: any) => void): void {
     if (this.currentRoom) {
@@ -180,7 +176,7 @@ export class NetworkManager {
   }
 
   /**
-   * Подписаться на изменения состояния комнаты
+   * ÐŸÐ¾Ð´Ð¿Ð¸ÑÐ°Ñ‚ÑŒÑÑ Ð½Ð° Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ñ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
    */
   onStateChange(callback: (state: any) => void): void {
     if (this.currentRoom) {
@@ -193,7 +189,7 @@ export class NetworkManager {
   }
 
   /**
-   * Получить текущее состояние комнаты
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰ÐµÐµ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
    */
   getState() {
     if (this.currentRoom) {
@@ -203,21 +199,21 @@ export class NetworkManager {
   }
 
   /**
-   * Получить sessionId текущей комнаты
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ sessionId Ñ‚ÐµÐºÑƒÑ‰ÐµÐ¹ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
    */
   getSessionId(): string | null {
     return this.currentRoom?.sessionId || null;
   }
 
   /**
-   * Настроить обработчики сообщений комнаты
+   * ÐÐ°ÑÑ‚Ñ€Ð¾Ð¸Ñ‚ÑŒ Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ð¹ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
    */
   private setupRoomMessageHandlers(): void {
     if (!this.currentRoom) return;
 
     console.log('[NetworkManager] setupRoomMessageHandlers called, sessionId:', this.currentRoom.sessionId);
 
-    // Подписываемся на изменение количества игроков
+    // ÐŸÐ¾Ð´Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÐ¼ÑÑ Ð½Ð° Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ðµ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð° Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð²
     this.currentRoom.state.players.onAdd = () => {
       this.updatePlayerCount();
     };
@@ -226,10 +222,10 @@ export class NetworkManager {
       this.updatePlayerCount();
     };
 
-    // Первоначальное обновление счётчика
+    // ÐŸÐµÑ€Ð²Ð¾Ð½Ð°Ñ‡Ð°Ð»ÑŒÐ½Ð¾Ðµ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸ÐºÐ°
     this.updatePlayerCount();
 
-    // Подписываемся на сообщения вирусной битвы
+    // ÐŸÐ¾Ð´Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÐ¼ÑÑ Ð½Ð° ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ Ð²Ð¸Ñ€ÑƒÑÐ½Ð¾Ð¹ Ð±Ð¸Ñ‚Ð²Ñ‹
     this.currentRoom.onMessage('virusBattleStarted', (data) => {
       if (this.onVirusBattleStarted) {
         this.onVirusBattleStarted(data);
@@ -248,7 +244,7 @@ export class NetworkManager {
       }
     });
 
-    // Обратный отсчёт
+    // ÐžÐ±Ñ€Ð°Ñ‚Ð½Ñ‹Ð¹ Ð¾Ñ‚ÑÑ‡Ñ‘Ñ‚
     this.currentRoom.onMessage('startCountdown', (data) => {
       if (this.onStartCountdown) {
         this.onStartCountdown(data);
@@ -257,7 +253,7 @@ export class NetworkManager {
   }
 
   /**
-   * Обновить счётчик игроков
+   * ÐžÐ±Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸Ðº Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð²
    */
   private updatePlayerCount(): void {
     if (this.currentRoom && this.onRoomStateChange) {
@@ -268,14 +264,14 @@ export class NetworkManager {
   }
 
   /**
-   * Получить текущее количество игроков
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰ÐµÐµ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð²
    */
   getPlayerCount(): number {
     return this.currentRoom?.state.players.size || 0;
   }
 
   /**
-   * Отправить обновление позиции курсора
+   * ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð¸Ñ‚ÑŒ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ ÐºÑƒÑ€ÑÐ¾Ñ€Ð°
    */
   sendCursorUpdate(x: number, y: number): void {
     if (this.currentRoom) {
@@ -284,7 +280,7 @@ export class NetworkManager {
   }
 
   /**
-   * Отправить обновление параметров вируса
+   * ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð¸Ñ‚ÑŒ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð² Ð²Ð¸Ñ€ÑƒÑÐ°
    */
   sendParameterUpdate(params: { [key: string]: number }): void {
     if (this.currentRoom) {
@@ -294,7 +290,7 @@ export class NetworkManager {
   }
 
   /**
-   * Отправить статус готовности
+   * ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð¸Ñ‚ÑŒ ÑÑ‚Ð°Ñ‚ÑƒÑ Ð³Ð¾Ñ‚Ð¾Ð²Ð½Ð¾ÑÑ‚Ð¸
    */
   sendToggleReady(isReady: boolean): void {
     if (this.currentRoom) {

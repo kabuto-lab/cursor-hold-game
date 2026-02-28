@@ -1,17 +1,13 @@
-// ========================================
-// ORIGINAL PATH: client/src/features/battle/VirusTubeManager.ts
-// ========================================
-
-/**
- * VirusTubeManager - управляет интерактивными пробирками параметров вируса
+﻿/**
+ * VirusTubeManager - ÑƒÐ¿Ñ€Ð°Ð²Ð»ÑÐµÑ‚ Ð¸Ð½Ñ‚ÐµÑ€Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¼Ð¸ Ð¿Ñ€Ð¾Ð±Ð¸Ñ€ÐºÐ°Ð¼Ð¸ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð² Ð²Ð¸Ñ€ÑƒÑÐ°
  *
- * Функционал:
- * - 12 параметров вируса в сетке 3×4
- * - Максимум 12 очков на все параметры
- * - Клик по пробирке → +1 (если есть очки)
- * - Клик по emoji/названию/цифре → -1
- * - Анимация капли, всплеска, пузырьков
- * - Синхронизация с сервером через callback
+ * Ð¤ÑƒÐ½ÐºÑ†Ð¸Ð¾Ð½Ð°Ð»:
+ * - 12 Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð² Ð²Ð¸Ñ€ÑƒÑÐ° Ð² ÑÐµÑ‚ÐºÐµ 3Ã—4
+ * - ÐœÐ°ÐºÑÐ¸Ð¼ÑƒÐ¼ 12 Ð¾Ñ‡ÐºÐ¾Ð² Ð½Ð° Ð²ÑÐµ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ñ‹
+ * - ÐšÐ»Ð¸Ðº Ð¿Ð¾ Ð¿Ñ€Ð¾Ð±Ð¸Ñ€ÐºÐµ â†’ +1 (ÐµÑÐ»Ð¸ ÐµÑÑ‚ÑŒ Ð¾Ñ‡ÐºÐ¸)
+ * - ÐšÐ»Ð¸Ðº Ð¿Ð¾ emoji/Ð½Ð°Ð·Ð²Ð°Ð½Ð¸ÑŽ/Ñ†Ð¸Ñ„Ñ€Ðµ â†’ -1
+ * - ÐÐ½Ð¸Ð¼Ð°Ñ†Ð¸Ñ ÐºÐ°Ð¿Ð»Ð¸, Ð²ÑÐ¿Ð»ÐµÑÐºÐ°, Ð¿ÑƒÐ·Ñ‹Ñ€ÑŒÐºÐ¾Ð²
+ * - Ð¡Ð¸Ð½Ñ…Ñ€Ð¾Ð½Ð¸Ð·Ð°Ñ†Ð¸Ñ Ñ ÑÐµÑ€Ð²ÐµÑ€Ð¾Ð¼ Ñ‡ÐµÑ€ÐµÐ· callback
  */
 
 import { VirusParams } from './BattleManager';
@@ -21,8 +17,8 @@ export class VirusTubeManager {
   private maxTotalPoints: number = 12;
   private maxPerParam: number = 10;
   private onParamsChangeCallback?: (params: { [key: string]: number }) => void;
-
-  // DOM элементы
+  
+  // DOM ÑÐ»ÐµÐ¼ÐµÐ½Ñ‚Ñ‹
   private paramCells: Map<string, HTMLElement>;
   private paramValues: Map<string, HTMLElement>;
   private paramLiquids: Map<string, HTMLElement>;
@@ -30,20 +26,20 @@ export class VirusTubeManager {
   private randomizeBtn: HTMLButtonElement | null;
   private readyBtn: HTMLButtonElement | null;
 
-  // Цвета для каждого параметра (совпадают с CSS)
+  // Ð¦Ð²ÐµÑ‚Ð° Ð´Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð° (ÑÐ¾Ð²Ð¿Ð°Ð´Ð°ÑŽÑ‚ Ñ CSS)
   private readonly paramColors: { [key: string]: string } = {
-    aggression: '#ff0000',      // Red for ⚔️
-    mutation: '#800080',        // Purple for 🧬
-    speed: '#ffa500',           // Orange for ⚡
-    defense: '#0000ff',         // Blue for 🛡️
-    reproduction: '#008000',    // Green for 🦠
-    stealth: '#808080',         // Gray for 👻
-    virulence: '#800000',       // Maroon for ☣️
-    resilience: '#ffc0cb',      // Pink for 💪
-    mobility: '#8b4513',        // Brown for 🚶
-    intellect: '#ffff00',       // Yellow for 🧠
-    contagiousness: '#00ffff',  // Cyan for 🫁
-    lethality: '#000000',       // Black for 💀
+    aggression: '#ff0000',      // Red for âš”ï¸
+    mutation: '#800080',        // Purple for ðŸ§¬
+    speed: '#ffa500',           // Orange for âš¡
+    defense: '#0000ff',         // Blue for ðŸ›¡ï¸
+    reproduction: '#008000',    // Green for ðŸ¦ 
+    stealth: '#808080',         // Gray for ðŸ‘»
+    virulence: '#800000',       // Maroon for â˜£ï¸
+    resilience: '#ffc0cb',      // Pink for ðŸ’ª
+    mobility: '#8b4513',        // Brown for ðŸš¶
+    intellect: '#ffff00',       // Yellow for ðŸ§ 
+    contagiousness: '#00ffff',  // Cyan for ðŸ«
+    lethality: '#000000',       // Black for ðŸ’€
   };
 
   constructor() {
@@ -55,21 +51,21 @@ export class VirusTubeManager {
     this.randomizeBtn = null;
     this.readyBtn = null;
 
-    // Инициализация параметров
+    // Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð²
     this.initializeParams();
-
-    // Поиск DOM элементов
+    
+    // ÐŸÐ¾Ð¸ÑÐº DOM ÑÐ»ÐµÐ¼ÐµÐ½Ñ‚Ð¾Ð²
     this.findElements();
-
-    // Установка обработчиков событий
+    
+    // Ð£ÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ° Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¾Ð² ÑÐ¾Ð±Ñ‹Ñ‚Ð¸Ð¹
     this.setupEventListeners();
-
-    // Первоначальное обновление UI
+    
+    // ÐŸÐµÑ€Ð²Ð¾Ð½Ð°Ñ‡Ð°Ð»ÑŒÐ½Ð¾Ðµ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ UI
     this.updateDisplay();
   }
 
   /**
-   * Инициализация всех 12 параметров нулями
+   * Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ Ð²ÑÐµÑ… 12 Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð² Ð½ÑƒÐ»ÑÐ¼Ð¸
    */
   private initializeParams(): void {
     const paramNames = [
@@ -85,20 +81,20 @@ export class VirusTubeManager {
   }
 
   /**
-   * Поиск всех DOM элементов пробирок
+   * ÐŸÐ¾Ð¸ÑÐº Ð²ÑÐµÑ… DOM ÑÐ»ÐµÐ¼ÐµÐ½Ñ‚Ð¾Ð² Ð¿Ñ€Ð¾Ð±Ð¸Ñ€Ð¾Ðº
    */
   private findElements(): void {
-    // Находим все .param-cell
+    // ÐÐ°Ñ…Ð¾Ð´Ð¸Ð¼ Ð²ÑÐµ .param-cell
     const cells = document.querySelectorAll('.param-cell');
     cells.forEach(cell => {
       const paramName = cell.getAttribute('data-param');
       if (paramName) {
         this.paramCells.set(paramName, cell as HTMLElement);
-
-        // Находим value и liquid внутри ячейки
+        
+        // ÐÐ°Ñ…Ð¾Ð´Ð¸Ð¼ value Ð¸ liquid Ð²Ð½ÑƒÑ‚Ñ€Ð¸ ÑÑ‡ÐµÐ¹ÐºÐ¸
         const valueEl = cell.querySelector('.param-value');
         const liquidEl = cell.querySelector('.param-liquid');
-
+        
         if (valueEl) {
           this.paramValues.set(paramName, valueEl as HTMLElement);
         }
@@ -108,34 +104,34 @@ export class VirusTubeManager {
       }
     });
 
-    // Находим счётчик очков
+    // ÐÐ°Ñ…Ð¾Ð´Ð¸Ð¼ ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸Ðº Ð¾Ñ‡ÐºÐ¾Ð²
     this.pointsRemainingElement = document.getElementById('points-remaining');
-
-    // Находим кнопки
+    
+    // ÐÐ°Ñ…Ð¾Ð´Ð¸Ð¼ ÐºÐ½Ð¾Ð¿ÐºÐ¸
     this.randomizeBtn = document.getElementById('randomizeBtn') as HTMLButtonElement;
     this.readyBtn = document.getElementById('readyBtn') as HTMLButtonElement;
   }
 
   /**
-   * Установка обработчиков событий
+   * Ð£ÑÑ‚Ð°Ð½Ð¾Ð²ÐºÐ° Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¾Ð² ÑÐ¾Ð±Ñ‹Ñ‚Ð¸Ð¹
    */
   private setupEventListeners(): void {
-    // Обработчики для каждой пробирки
+    // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ Ð´Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð¹ Ð¿Ñ€Ð¾Ð±Ð¸Ñ€ÐºÐ¸
     this.paramCells.forEach((cell, paramName) => {
-      // Клик по самой пробирке (но НЕ по emoji/названию/цифре) → +1
+      // ÐšÐ»Ð¸Ðº Ð¿Ð¾ ÑÐ°Ð¼Ð¾Ð¹ Ð¿Ñ€Ð¾Ð±Ð¸Ñ€ÐºÐµ (Ð½Ð¾ ÐÐ• Ð¿Ð¾ emoji/Ð½Ð°Ð·Ð²Ð°Ð½Ð¸ÑŽ/Ñ†Ð¸Ñ„Ñ€Ðµ) â†’ +1
       cell.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
-        // Если кликнули по emoji, названию или цифре — игнорируем (у них свои обработчики)
-        if (target.classList.contains('param-emoji') ||
-            target.classList.contains('param-name') ||
+        // Ð•ÑÐ»Ð¸ ÐºÐ»Ð¸ÐºÐ½ÑƒÐ»Ð¸ Ð¿Ð¾ emoji, Ð½Ð°Ð·Ð²Ð°Ð½Ð¸ÑŽ Ð¸Ð»Ð¸ Ñ†Ð¸Ñ„Ñ€Ðµ â€” Ð¸Ð³Ð½Ð¾Ñ€Ð¸Ñ€ÑƒÐµÐ¼ (Ñƒ Ð½Ð¸Ñ… ÑÐ²Ð¾Ð¸ Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸)
+        if (target.classList.contains('param-emoji') || 
+            target.classList.contains('param-name') || 
             target.classList.contains('param-value')) {
           return;
         }
-
+        
         this.addPoint(paramName);
       });
 
-      // Клик по emoji → -1
+      // ÐšÐ»Ð¸Ðº Ð¿Ð¾ emoji â†’ -1
       const emojiEl = cell.querySelector('.param-emoji');
       if (emojiEl) {
         emojiEl.addEventListener('click', (e) => {
@@ -144,7 +140,7 @@ export class VirusTubeManager {
         });
       }
 
-      // Клик по названию → -1
+      // ÐšÐ»Ð¸Ðº Ð¿Ð¾ Ð½Ð°Ð·Ð²Ð°Ð½Ð¸ÑŽ â†’ -1
       const nameEl = cell.querySelector('.param-name');
       if (nameEl) {
         nameEl.addEventListener('click', (e) => {
@@ -153,7 +149,7 @@ export class VirusTubeManager {
         });
       }
 
-      // Клик по цифре → -1
+      // ÐšÐ»Ð¸Ðº Ð¿Ð¾ Ñ†Ð¸Ñ„Ñ€Ðµ â†’ -1
       const valueEl = cell.querySelector('.param-value');
       if (valueEl) {
         valueEl.addEventListener('click', (e) => {
@@ -165,67 +161,67 @@ export class VirusTubeManager {
   }
 
   /**
-   * Добавить очко к параметру
+   * Ð”Ð¾Ð±Ð°Ð²Ð¸Ñ‚ÑŒ Ð¾Ñ‡ÐºÐ¾ Ðº Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ñƒ
    */
   addPoint(paramName: string): boolean {
     const currentValue = this.params.get(paramName) || 0;
     const usedPoints = this.getUsedPoints();
 
-    // Проверка: не превышен ли лимит на параметр
+    // ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ°: Ð½Ðµ Ð¿Ñ€ÐµÐ²Ñ‹ÑˆÐµÐ½ Ð»Ð¸ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð½Ð° Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€
     if (currentValue >= this.maxPerParam) {
       console.log(`[VirusTube] Parameter ${paramName} already at max (${this.maxPerParam})`);
       return false;
     }
 
-    // Проверка: не использованы ли все очки
+    // ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ°: Ð½Ðµ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ñ‹ Ð»Ð¸ Ð²ÑÐµ Ð¾Ñ‡ÐºÐ¸
     if (usedPoints >= this.maxTotalPoints) {
       console.log(`[VirusTube] All points used (${this.maxTotalPoints}/${this.maxTotalPoints})`);
       return false;
     }
 
-    // Увеличиваем значение
+    // Ð£Ð²ÐµÐ»Ð¸Ñ‡Ð¸Ð²Ð°ÐµÐ¼ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ
     this.params.set(paramName, currentValue + 1);
-
-    // Запускаем анимацию
+    
+    // Ð—Ð°Ð¿ÑƒÑÐºÐ°ÐµÐ¼ Ð°Ð½Ð¸Ð¼Ð°Ñ†Ð¸ÑŽ
     this.playDropAnimation(paramName);
-
-    // Обновляем UI
+    
+    // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ UI
     this.updateDisplay();
-
-    // Вызываем callback
+    
+    // Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÐ¼ callback
     this.notifyParamsChange();
 
-    console.log(`[VirusTube] Added point to ${paramName}: ${currentValue} → ${currentValue + 1}`);
+    console.log(`[VirusTube] Added point to ${paramName}: ${currentValue} â†’ ${currentValue + 1}`);
     return true;
   }
 
   /**
-   * Убрать очко от параметра
+   * Ð£Ð±Ñ€Ð°Ñ‚ÑŒ Ð¾Ñ‡ÐºÐ¾ Ð¾Ñ‚ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð°
    */
   removePoint(paramName: string): boolean {
     const currentValue = this.params.get(paramName) || 0;
 
-    // Проверка: не ноль ли уже
+    // ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ°: Ð½Ðµ Ð½Ð¾Ð»ÑŒ Ð»Ð¸ ÑƒÐ¶Ðµ
     if (currentValue <= 0) {
       console.log(`[VirusTube] Parameter ${paramName} already at 0`);
       return false;
     }
 
-    // Уменьшаем значение
+    // Ð£Ð¼ÐµÐ½ÑŒÑˆÐ°ÐµÐ¼ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ
     this.params.set(paramName, currentValue - 1);
-
-    // Обновляем UI
+    
+    // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ UI
     this.updateDisplay();
-
-    // Вызываем callback
+    
+    // Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÐ¼ callback
     this.notifyParamsChange();
 
-    console.log(`[VirusTube] Removed point from ${paramName}: ${currentValue} → ${currentValue - 1}`);
+    console.log(`[VirusTube] Removed point from ${paramName}: ${currentValue} â†’ ${currentValue - 1}`);
     return true;
   }
 
   /**
-   * Получить количество использованных очков
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð½Ñ‹Ñ… Ð¾Ñ‡ÐºÐ¾Ð²
    */
   private getUsedPoints(): number {
     let total = 0;
@@ -236,31 +232,31 @@ export class VirusTubeManager {
   }
 
   /**
-   * Обновить отображение всех параметров
+   * ÐžÐ±Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ð¾Ñ‚Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ðµ Ð²ÑÐµÑ… Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð²
    */
   updateDisplay(): void {
-    // Обновляем каждую пробирку
+    // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ ÐºÐ°Ð¶Ð´ÑƒÑŽ Ð¿Ñ€Ð¾Ð±Ð¸Ñ€ÐºÑƒ
     this.params.forEach((value, paramName) => {
-      // Обновляем цифру
+      // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ñ†Ð¸Ñ„Ñ€Ñƒ
       const valueEl = this.paramValues.get(paramName);
       if (valueEl) {
         valueEl.textContent = value.toString();
       }
 
-      // Обновляем высоту жидкости
+      // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ð²Ñ‹ÑÐ¾Ñ‚Ñƒ Ð¶Ð¸Ð´ÐºÐ¾ÑÑ‚Ð¸
       const liquidEl = this.paramLiquids.get(paramName);
       if (liquidEl) {
         const heightPercent = (value / this.maxPerParam) * 100;
         liquidEl.style.height = `${heightPercent}%`;
       }
 
-      // Обновляем состояние disabled для пробирки
+      // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ disabled Ð´Ð»Ñ Ð¿Ñ€Ð¾Ð±Ð¸Ñ€ÐºÐ¸
       const cell = this.paramCells.get(paramName);
       if (cell) {
         const usedPoints = this.getUsedPoints();
         const isFull = value >= this.maxPerParam;
         const noPointsLeft = usedPoints >= this.maxTotalPoints && value === 0;
-
+        
         if (isFull || noPointsLeft) {
           cell.classList.add('disabled');
         } else {
@@ -269,13 +265,13 @@ export class VirusTubeManager {
       }
     });
 
-    // Обновляем счётчик оставшихся очков
+    // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸Ðº Ð¾ÑÑ‚Ð°Ð²ÑˆÐ¸Ñ…ÑÑ Ð¾Ñ‡ÐºÐ¾Ð²
     if (this.pointsRemainingElement) {
       const remaining = this.maxTotalPoints - this.getUsedPoints();
       this.pointsRemainingElement.textContent = remaining.toString();
     }
 
-    // Обновляем состояние кнопки READY
+    // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ ÐºÐ½Ð¾Ð¿ÐºÐ¸ READY
     if (this.readyBtn) {
       const usedPoints = this.getUsedPoints();
       if (usedPoints === this.maxTotalPoints) {
@@ -289,7 +285,7 @@ export class VirusTubeManager {
   }
 
   /**
-   * Проиграть анимацию капли для параметра
+   * ÐŸÑ€Ð¾Ð¸Ð³Ñ€Ð°Ñ‚ÑŒ Ð°Ð½Ð¸Ð¼Ð°Ñ†Ð¸ÑŽ ÐºÐ°Ð¿Ð»Ð¸ Ð´Ð»Ñ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð°
    */
   private playDropAnimation(paramName: string): void {
     const cell = this.paramCells.get(paramName);
@@ -297,29 +293,29 @@ export class VirusTubeManager {
 
     const color = this.paramColors[paramName] || '#00ffff';
 
-    // Создаём каплю
+    // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ ÐºÐ°Ð¿Ð»ÑŽ
     const drop = document.createElement('div');
     drop.className = 'tube-drop';
     drop.style.setProperty('--tube-color', color);
     cell.appendChild(drop);
 
-    // Запускаем падение
+    // Ð—Ð°Ð¿ÑƒÑÐºÐ°ÐµÐ¼ Ð¿Ð°Ð´ÐµÐ½Ð¸Ðµ
     requestAnimationFrame(() => {
       drop.classList.add('falling');
     });
 
-    // После падения: всплеск и пузырьки
+    // ÐŸÐ¾ÑÐ»Ðµ Ð¿Ð°Ð´ÐµÐ½Ð¸Ñ: Ð²ÑÐ¿Ð»ÐµÑÐº Ð¸ Ð¿ÑƒÐ·Ñ‹Ñ€ÑŒÐºÐ¸
     setTimeout(() => {
       this.playSplashEffect(cell, color);
       this.playBubblesEffect(cell, color);
-
-      // Удаляем каплю
+      
+      // Ð£Ð´Ð°Ð»ÑÐµÐ¼ ÐºÐ°Ð¿Ð»ÑŽ
       drop.remove();
     }, 400);
   }
 
   /**
-   * Эффект всплеска
+   * Ð­Ñ„Ñ„ÐµÐºÑ‚ Ð²ÑÐ¿Ð»ÐµÑÐºÐ°
    */
   private playSplashEffect(cell: HTMLElement, color: string): void {
     const splash = document.createElement('div');
@@ -337,7 +333,7 @@ export class VirusTubeManager {
   }
 
   /**
-   * Эффект пузырьков (2-3 пузырька)
+   * Ð­Ñ„Ñ„ÐµÐºÑ‚ Ð¿ÑƒÐ·Ñ‹Ñ€ÑŒÐºÐ¾Ð² (2-3 Ð¿ÑƒÐ·Ñ‹Ñ€ÑŒÐºÐ°)
    */
   private playBubblesEffect(cell: HTMLElement, color: string): void {
     const bubbleCount = 2 + Math.floor(Math.random() * 2); // 2 or 3
@@ -346,17 +342,17 @@ export class VirusTubeManager {
       setTimeout(() => {
         const bubble = document.createElement('div');
         bubble.className = 'tube-bubble';
-
-        // Случайная позиция и размер
+        
+        // Ð¡Ð»ÑƒÑ‡Ð°Ð¹Ð½Ð°Ñ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ñ Ð¸ Ñ€Ð°Ð·Ð¼ÐµÑ€
         const left = 20 + Math.random() * 60; // 20-80%
         const size = 4 + Math.random() * 4; // 4-8px
-
+        
         bubble.style.left = `${left}%`;
         bubble.style.bottom = '10%';
         bubble.style.width = `${size}px`;
         bubble.style.height = `${size}px`;
         bubble.style.background = `rgba(255, 255, 255, 0.4)`;
-
+        
         cell.appendChild(bubble);
 
         setTimeout(() => {
@@ -367,42 +363,42 @@ export class VirusTubeManager {
   }
 
   /**
-   * Случайное распределение 12 очков
+   * Ð¡Ð»ÑƒÑ‡Ð°Ð¹Ð½Ð¾Ðµ Ñ€Ð°ÑÐ¿Ñ€ÐµÐ´ÐµÐ»ÐµÐ½Ð¸Ðµ 12 Ð¾Ñ‡ÐºÐ¾Ð²
    */
   randomize(): void {
-    // Сброс
+    // Ð¡Ð±Ñ€Ð¾Ñ
     this.params.forEach((_, key) => {
       this.params.set(key, 0);
     });
 
-    // Распределяем 12 очков случайно
+    // Ð Ð°ÑÐ¿Ñ€ÐµÐ´ÐµÐ»ÑÐµÐ¼ 12 Ð¾Ñ‡ÐºÐ¾Ð² ÑÐ»ÑƒÑ‡Ð°Ð¹Ð½Ð¾
     let pointsLeft = this.maxTotalPoints;
     const paramKeys = Array.from(this.params.keys());
 
     while (pointsLeft > 0) {
-      // Выбираем случайный параметр
+      // Ð’Ñ‹Ð±Ð¸Ñ€Ð°ÐµÐ¼ ÑÐ»ÑƒÑ‡Ð°Ð¹Ð½Ñ‹Ð¹ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€
       const randomIndex = Math.floor(Math.random() * paramKeys.length);
       const paramName = paramKeys[randomIndex];
       const currentValue = this.params.get(paramName) || 0;
 
-      // Если ещё не достигнут максимум для этого параметра
+      // Ð•ÑÐ»Ð¸ ÐµÑ‰Ñ‘ Ð½Ðµ Ð´Ð¾ÑÑ‚Ð¸Ð³Ð½ÑƒÑ‚ Ð¼Ð°ÐºÑÐ¸Ð¼ÑƒÐ¼ Ð´Ð»Ñ ÑÑ‚Ð¾Ð³Ð¾ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð°
       if (currentValue < this.maxPerParam) {
         this.params.set(paramName, currentValue + 1);
         pointsLeft--;
       }
     }
 
-    // Обновляем UI
+    // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ UI
     this.updateDisplay();
-
-    // Вызываем callback
+    
+    // Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÐ¼ callback
     this.notifyParamsChange();
 
     console.log('[VirusTube] Randomized params:', Object.fromEntries(this.params));
   }
 
   /**
-   * Сбросить все параметры в 0
+   * Ð¡Ð±Ñ€Ð¾ÑÐ¸Ñ‚ÑŒ Ð²ÑÐµ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ñ‹ Ð² 0
    */
   reset(): void {
     this.params.forEach((_, key) => {
@@ -416,7 +412,7 @@ export class VirusTubeManager {
   }
 
   /**
-   * Получить текущие значения параметров
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ñ‚ÐµÐºÑƒÑ‰Ð¸Ðµ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ñ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð²
    */
   getParams(): { [key: string]: number } {
     const result: { [key: string]: number } = {};
@@ -427,7 +423,7 @@ export class VirusTubeManager {
   }
 
   /**
-   * Получить параметры как VirusParams
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ñ‹ ÐºÐ°Ðº VirusParams
    */
   getParamsAsVirusParams(): VirusParams {
     const params = this.getParams();
@@ -448,14 +444,14 @@ export class VirusTubeManager {
   }
 
   /**
-   * Установить callback при изменении параметров
+   * Ð£ÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ callback Ð¿Ñ€Ð¸ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ð¸ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð²
    */
   setOnParamsChange(callback: (params: { [key: string]: number }) => void): void {
     this.onParamsChangeCallback = callback;
   }
 
   /**
-   * Уведомить об изменении параметров
+   * Ð£Ð²ÐµÐ´Ð¾Ð¼Ð¸Ñ‚ÑŒ Ð¾Ð± Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ð¸ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð²
    */
   private notifyParamsChange(): void {
     if (this.onParamsChangeCallback) {
@@ -464,7 +460,7 @@ export class VirusTubeManager {
   }
 
   /**
-   * Установить параметры извне (при получении от сервера)
+   * Ð£ÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ñ‹ Ð¸Ð·Ð²Ð½Ðµ (Ð¿Ñ€Ð¸ Ð¿Ð¾Ð»ÑƒÑ‡ÐµÐ½Ð¸Ð¸ Ð¾Ñ‚ ÑÐµÑ€Ð²ÐµÑ€Ð°)
    */
   setParams(params: { [key: string]: number }): void {
     Object.entries(params).forEach(([key, value]) => {
@@ -478,16 +474,17 @@ export class VirusTubeManager {
   }
 
   /**
-   * Получить количество оставшихся очков
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð¾ÑÑ‚Ð°Ð²ÑˆÐ¸Ñ…ÑÑ Ð¾Ñ‡ÐºÐ¾Ð²
    */
   getRemainingPoints(): number {
     return this.maxTotalPoints - this.getUsedPoints();
   }
 
   /**
-   * Проверить, все ли очки распределены
+   * ÐŸÑ€Ð¾Ð²ÐµÑ€Ð¸Ñ‚ÑŒ, Ð²ÑÐµ Ð»Ð¸ Ð¾Ñ‡ÐºÐ¸ Ñ€Ð°ÑÐ¿Ñ€ÐµÐ´ÐµÐ»ÐµÐ½Ñ‹
    */
   isMaxedOut(): boolean {
     return this.getUsedPoints() >= this.maxTotalPoints;
   }
 }
+

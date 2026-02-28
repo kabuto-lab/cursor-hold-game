@@ -1,0 +1,202 @@
+﻿@echo off
+chcp 65001 >nul
+setlocal enabledelayedexpansion
+
+echo ========================================
+echo   CREATE DEBUG PACKAGE
+echo ========================================
+echo.
+
+REM Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ Ð¿Ð°Ð¿ÐºÑƒ DEBUG
+set DEBUG_DIR=%~dp0DEBUG
+if exist "%DEBUG_DIR%" (
+    echo [INFO] Removing old DEBUG folder...
+    rmdir /s /q "%DEBUG_DIR%"
+)
+
+echo [1/5] Creating DEBUG folder...
+mkdir "%DEBUG_DIR%"
+mkdir "%DEBUG_DIR%\client"
+mkdir "%DEBUG_DIR%\client\src"
+mkdir "%DEBUG_DIR%\client\src\core"
+mkdir "%DEBUG_DIR%\client\src\ui"
+mkdir "%DEBUG_DIR%\client\src\chat"
+mkdir "%DEBUG_DIR%\client\src\features"
+mkdir "%DEBUG_DIR%\client\src\features\mouse-follower"
+mkdir "%DEBUG_DIR%\client\src\features\draggable"
+mkdir "%DEBUG_DIR%\client\src\features\battle"
+mkdir "%DEBUG_DIR%\client\src\types"
+mkdir "%DEBUG_DIR%\server"
+mkdir "%DEBUG_DIR%\server\src"
+mkdir "%DEBUG_DIR%\server\src\rooms"
+mkdir "%DEBUG_DIR%\fnt"
+mkdir "%DEBUG_DIR%\.qwen"
+
+echo [2/5] Copying root files...
+call :copy_file "%~dp0package.json" "%DEBUG_DIR%\package.json.txt"
+call :copy_file "%~dp0README.md" "%DEBUG_DIR%\README.md.txt"
+call :copy_file "%~dp0ARCHITECTURE.md" "%DEBUG_DIR%\ARCHITECTURE.md.txt"
+call :copy_file "%~dp0.gitignore" "%DEBUG_DIR%\.gitignore.txt"
+
+echo [3/5] Copying client files...
+call :copy_file "%~dp0client\package.json" "%DEBUG_DIR%\client\package.json.txt"
+call :copy_file "%~dp0client\tsconfig.json" "%DEBUG_DIR%\client\tsconfig.json.txt"
+call :copy_file "%~dp0client\vite.config.ts" "%DEBUG_DIR%\client\vite.config.ts.txt"
+call :copy_file "%~dp0client\index.html" "%DEBUG_DIR%\client\index.html.txt"
+call :copy_file "%~dp0client\src\main.ts" "%DEBUG_DIR%\client\src\main.ts.txt"
+call :copy_file "%~dp0client\src\core\GameEngine.ts" "%DEBUG_DIR%\client\src\core\GameEngine.ts.txt"
+call :copy_file "%~dp0client\src\core\InputManager.ts" "%DEBUG_DIR%\client\src\core\InputManager.ts.txt"
+call :copy_file "%~dp0client\src\core\NetworkManager.ts" "%DEBUG_DIR%\client\src\core\NetworkManager.ts.txt"
+call :copy_file "%~dp0client\src\ui\UIController.ts" "%DEBUG_DIR%\client\src\ui\UIController.ts.txt"
+call :copy_file "%~dp0client\src\chat\ChatManager.ts" "%DEBUG_DIR%\client\src\chat\ChatManager.ts.txt"
+call :copy_file "%~dp0client\src\features\mouse-follower\MouseFollowerManager.ts" "%DEBUG_DIR%\client\src\features\mouse-follower\MouseFollowerManager.ts.txt"
+call :copy_file "%~dp0client\src\features\draggable\DraggableObject.ts" "%DEBUG_DIR%\client\src\features\draggable\DraggableObject.ts.txt"
+call :copy_file "%~dp0client\src\features\battle\BattleManager.ts" "%DEBUG_DIR%\client\src\features\battle\BattleManager.ts.txt"
+call :copy_file "%~dp0client\src\features\battle\BattleRenderer.ts" "%DEBUG_DIR%\client\src\features\battle\BattleRenderer.ts.txt"
+call :copy_file "%~dp0client\src\features\battle\VirusTubeManager.ts" "%DEBUG_DIR%\client\src\features\battle\VirusTubeManager.ts.txt"
+call :copy_file "%~dp0client\src\types\schema.ts" "%DEBUG_DIR%\client\src\types\schema.ts.txt"
+
+echo [4/5] Copying server files...
+call :copy_file "%~dp0server\package.json" "%DEBUG_DIR%\server\package.json.txt"
+call :copy_file "%~dp0server\tsconfig.json" "%DEBUG_DIR%\server\tsconfig.json.txt"
+call :copy_file "%~dp0server\src\index.ts" "%DEBUG_DIR%\server\src\index.ts.txt"
+call :copy_file "%~dp0server\src\rooms\HoldingRoom.ts" "%DEBUG_DIR%\server\src\rooms\HoldingRoom.ts.txt"
+call :copy_file "%~dp0server\src\rooms\schema.ts" "%DEBUG_DIR%\server\src\rooms\schema.ts.txt"
+
+echo [5/5] Creating HTML structure file...
+call :create_html_structure
+
+echo.
+echo ========================================
+echo   DEBUG PACKAGE CREATED!
+echo ========================================
+echo   Location: %DEBUG_DIR%
+echo ========================================
+echo.
+pause
+goto :eof
+
+REM Ð¤ÑƒÐ½ÐºÑ†Ð¸Ñ ÐºÐ¾Ð¿Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ñ Ñ„Ð°Ð¹Ð»Ð° Ñ Ð·Ð°Ð³Ð¾Ð»Ð¾Ð²ÐºÐ¾Ð¼
+:copy_file
+set "SOURCE=%~1"
+set "DEST=%~2"
+
+if not exist "%SOURCE%" (
+    echo [SKIP] %SOURCE% (not found)
+    goto :eof
+)
+
+REM ÐŸÐ¾Ð»ÑƒÑ‡Ð°ÐµÐ¼ Ð°Ð±ÑÐ¾Ð»ÑŽÑ‚Ð½Ñ‹Ð¹ Ð¿ÑƒÑ‚ÑŒ
+for %%I in ("%SOURCE%") do set "ABS_PATH=%%~fI"
+
+REM Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ Ñ„Ð°Ð¹Ð» Ñ Ð·Ð°Ð³Ð¾Ð»Ð¾Ð²ÐºÐ¾Ð¼ Ð¸ ÑÐ¾Ð´ÐµÑ€Ð¶Ð¸Ð¼Ñ‹Ð¼
+(
+    echo ========================================
+    echo ORIGINAL FILE PATH: %ABS_PATH%
+    echo ========================================
+    echo.
+    type "%SOURCE%"
+) > "%DEST%"
+
+echo [COPY] %DEST%
+goto :eof
+
+REM Ð¡Ð¾Ð·Ð´Ð°Ð½Ð¸Ðµ HTML Ñ„Ð°Ð¹Ð»Ð° ÑÐ¾ ÑÑ‚Ñ€ÑƒÐºÑ‚ÑƒÑ€Ð¾Ð¹
+:create_html_structure
+(
+    echo ^<!DOCTYPE html^>
+    echo ^<html lang="en"^>
+    echo ^<head^>
+    echo   ^<meta charset="UTF-8" /^>
+    echo   ^<meta name="viewport" content="width=device-width, initial-scale=1.0" /^>
+    echo   ^<title^>TOVCH Project Structure^</title^>
+    echo   ^<style^>
+    echo     body {
+    echo       font-family: 'Courier New', monospace;
+    echo       background: #0f0f23;
+    echo       color: #00ff00;
+    echo       padding: 20px;
+    echo     }
+    echo     .tree {
+    echo       white-space: pre;
+    echo       line-height: 1.5;
+    echo     }
+    echo     .folder { color: #00ffff; }
+    echo     .file { color: #ff00ff; }
+    echo     .desc { color: #888; }
+    echo     a {
+    echo       color: #00ff00;
+    echo       text-decoration: underline;
+    echo     }
+    echo     a:hover {
+    echo       color: #ffff00;
+    echo     }
+    echo   ^</style^>
+    echo ^</head^>
+    echo ^<body^>
+    echo   ^<h1^>TOVCH Project Structure^</h1^>
+    echo   ^<p^>Debug Package Generated: ^<script^>document.write(new Date().toLocaleString())^</script^>^</p^>
+    echo   ^<h2^>File Structure^</h2^>
+    echo   ^<div class="tree"^>
+    echo TOVCH/
+    echo â”œâ”€â”€ ðŸ“„ ^<a href="package.json.txt"^>package.json^</a^>                 ^<span class="desc"^># ÐšÐ¾Ñ€Ð½ÐµÐ²Ð¾Ð¹ workspace (npm workspaces)^</span^>
+    echo â”œâ”€â”€ ðŸ“„ ^<a href="README.md.txt"^>README.md^</a^>                    ^<span class="desc"^># ÐŸÐ¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»ÑŒÑÐºÐ°Ñ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð°Ñ†Ð¸Ñ^</span^>
+    echo â”œâ”€â”€ ðŸ“„ ^<a href="ARCHITECTURE.md.txt"^>ARCHITECTURE.md^</a^>              ^<span class="desc"^># Ð¢ÐµÑ…Ð½Ð¸Ñ‡ÐµÑÐºÐ°Ñ Ð°Ñ€Ñ…Ð¸Ñ‚ÐµÐºÑ‚ÑƒÑ€Ð°^</span^>
+    echo â”œâ”€â”€ ðŸ“„ ^<a href=".gitignore.txt"^>.gitignore^</a^>                   ^<span class="desc"^># Git ignore Ð¿Ñ€Ð°Ð²Ð¸Ð»Ð°^</span^>
+    echo â”‚
+    echo â”œâ”€â”€ ðŸ“‚ ^<span class="folder"^>client/^</span^>                      ^<span class="desc"^># Ð¤Ñ€Ð¾Ð½Ñ‚ÐµÐ½Ð´ (PixiJS + TypeScript + Vite)^</span^>
+    echo â”‚   â”œâ”€â”€ ðŸ“„ ^<a href="client/package.json.txt"^>package.json^</a^>            ^<span class="desc"^># Ð—Ð°Ð²Ð¸ÑÐ¸Ð¼Ð¾ÑÑ‚Ð¸ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð°^</span^>
+    echo â”‚   â”œâ”€â”€ ðŸ“„ ^<a href="client/tsconfig.json.txt"^>tsconfig.json^</a^>            ^<span class="desc"^># TypeScript ÐºÐ¾Ð½Ñ„Ð¸Ð³^</span^>
+    echo â”‚   â”œâ”€â”€ ðŸ“„ ^<a href="client/vite.config.ts.txt"^>vite.config.ts^</a^>            ^<span class="desc"^># Vite ÐºÐ¾Ð½Ñ„Ð¸Ð³^</span^>
+    echo â”‚   â”œâ”€â”€ ðŸ“„ ^<a href="client/index.html.txt"^>index.html^</a^>                ^<span class="desc"^># HTML + CSS ÑÑ‚Ð¸Ð»Ð¸^</span^>
+    echo â”‚   â”œâ”€â”€ ðŸ“‚ ^<span class="folder"^>src/^</span^>
+    echo â”‚   â”‚   â”œâ”€â”€ ðŸ“„ ^<a href="client/src/main.ts.txt"^>main.ts^</a^>                  ^<span class="desc"^># Ð¢Ð¾Ñ‡ÐºÐ° Ð²Ñ…Ð¾Ð´Ð° Ð¿Ñ€Ð¸Ð»Ð¾Ð¶ÐµÐ½Ð¸Ñ^</span^>
+    echo â”‚   â”‚   â”œâ”€â”€ ðŸ“‚ ^<span class="folder"^>core/^</span^>
+    echo â”‚   â”‚   â”‚   â”œâ”€â”€ ðŸ“„ ^<a href="client/src/core/GameEngine.ts.txt"^>GameEngine.ts^</a^>   ^<span class="desc"^># PixiJS Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ^</span^>
+    echo â”‚   â”‚   â”‚   â”œâ”€â”€ ðŸ“„ ^<a href="client/src/core/InputManager.ts.txt"^>InputManager.ts^</a^> ^<span class="desc"^># ÐœÑ‹ÑˆÑŒ/ÐºÐ»Ð°Ð²Ð¸Ð°Ñ‚ÑƒÑ€Ð° input^</span^>
+    echo â”‚   â”‚   â”‚   â””â”€â”€ ðŸ“„ ^<a href="client/src/core/NetworkManager.ts.txt"^>NetworkManager.ts^</a^> ^<span class="desc"^># Colyseus ÐºÐ»Ð¸ÐµÐ½Ñ‚^</span^>
+    echo â”‚   â”‚   â”œâ”€â”€ ðŸ“‚ ^<span class="folder"^>ui/^</span^>
+    echo â”‚   â”‚   â”‚   â””â”€â”€ ðŸ“„ ^<a href="client/src/ui/UIController.ts.txt"^>UIController.ts^</a^> ^<span class="desc"^># Lobby â†” Room UI^</span^>
+    echo â”‚   â”‚   â”œâ”€â”€ ðŸ“‚ ^<span class="folder"^>chat/^</span^>
+    echo â”‚   â”‚   â”‚   â””â”€â”€ ðŸ“„ ^<a href="client/src/chat/ChatManager.ts.txt"^>ChatManager.ts^</a^>   ^<span class="desc"^># Ð§Ð°Ñ‚ Ð² ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ðµ^</span^>
+    echo â”‚   â”‚   â””â”€â”€ ðŸ“‚ ^<span class="folder"^>features/^</span^>
+    echo â”‚   â”‚       â”œâ”€â”€ ðŸ“‚ ^<span class="folder"^>mouse-follower/^</span^>
+    echo â”‚   â”‚       â”‚   â””â”€â”€ ðŸ“„ ^<a href="client/src/features/mouse-follower/MouseFollowerManager.ts.txt"^>MouseFollowerManager.ts^</a^>
+    echo â”‚   â”‚       â”œâ”€â”€ ðŸ“‚ ^<span class="folder"^>draggable/^</span^>
+    echo â”‚   â”‚       â”‚   â””â”€â”€ ðŸ“„ ^<a href="client/src/features/draggable/DraggableObject.ts.txt"^>DraggableObject.ts^</a^>
+    echo â”‚   â”‚       â””â”€â”€ ðŸ“‚ ^<span class="folder"^>battle/^</span^>
+    echo â”‚   â”‚           â”œâ”€â”€ ðŸ“„ ^<a href="client/src/features/battle/BattleManager.ts.txt"^>BattleManager.ts^</a^>
+    echo â”‚   â”‚           â”œâ”€â”€ ðŸ“„ ^<a href="client/src/features/battle/BattleRenderer.ts.txt"^>BattleRenderer.ts^</a^>
+    echo â”‚   â”‚           â””â”€â”€ ðŸ“„ ^<a href="client/src/features/battle/VirusTubeManager.ts.txt"^>VirusTubeManager.ts^</a^>
+    echo â”‚   â””â”€â”€ ðŸ“‚ ^<span class="folder"^>types/^</span^>
+    echo â”‚       â””â”€â”€ ðŸ“„ ^<a href="client/src/types/schema.ts.txt"^>schema.ts^</a^>                ^<span class="desc"^># Colyseus ÑÑ…ÐµÐ¼Ñ‹^</span^>
+    echo â”‚
+    echo â”œâ”€â”€ ðŸ“‚ ^<span class="folder"^>server/^</span^>                      ^<span class="desc"^># Ð‘ÑÐºÐµÐ½Ð´ (Node.js + Colyseus)^</span^>
+    echo â”‚   â”œâ”€â”€ ðŸ“„ ^<a href="server/package.json.txt"^>package.json^</a^>                ^<span class="desc"^># Ð—Ð°Ð²Ð¸ÑÐ¸Ð¼Ð¾ÑÑ‚Ð¸ ÑÐµÑ€Ð²ÐµÑ€Ð°^</span^>
+    echo â”‚   â”œâ”€â”€ ðŸ“„ ^<a href="server/tsconfig.json.txt"^>tsconfig.json^</a^>                ^<span class="desc"^># TypeScript ÐºÐ¾Ð½Ñ„Ð¸Ð³^</span^>
+    echo â”‚   â””â”€â”€ ðŸ“‚ ^<span class="folder"^>src/^</span^>
+    echo â”‚       â”œâ”€â”€ ðŸ“„ ^<a href="server/src/index.ts.txt"^>index.ts^</a^>                    ^<span class="desc"^># Ð¢Ð¾Ñ‡ÐºÐ° Ð²Ñ…Ð¾Ð´Ð° ÑÐµÑ€Ð²ÐµÑ€Ð°^</span^>
+    echo â”‚       â””â”€â”€ ðŸ“‚ ^<span class="folder"^>rooms/^</span^>
+    echo â”‚           â”œâ”€â”€ ðŸ“„ ^<a href="server/src/rooms/HoldingRoom.ts.txt"^>HoldingRoom.ts^</a^>  ^<span class="desc"^># Ð›Ð¾Ð³Ð¸ÐºÐ° ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹^</span^>
+    echo â”‚           â””â”€â”€ ðŸ“„ ^<a href="server/src/rooms/schema.ts.txt"^>schema.ts^</a^>              ^<span class="desc"^># Colyseus ÑÑ…ÐµÐ¼Ñ‹^</span^>
+    echo â”‚
+    echo â””â”€â”€ ðŸ“‚ ^<span class="folder"^>fnt/^</span^>                         ^<span class="desc"^># Ð¨Ñ€Ð¸Ñ„Ñ‚Ñ‹^</span^>
+    echo     â”œâ”€â”€ ðŸ“„ PIXY.otf                    ^<span class="desc"^># Ð ÐµÑ‚Ñ€Ð¾ ÑˆÑ€Ð¸Ñ„Ñ‚ (Ð¾ÑÐ½Ð¾Ð²Ð½Ð¾Ð¹)^</span^>
+    echo     â””â”€â”€ ðŸ“„ PIXY.ttf                    ^<span class="desc"^># Ð ÐµÑ‚Ñ€Ð¾ ÑˆÑ€Ð¸Ñ„Ñ‚ (fallback)^</span^>
+    echo   ^</div^>
+    echo   
+    echo   ^<h2^>Quick Links^</h2^>
+    echo   ^<ul^>
+    echo     ^<li^>^<a href="client/src/main.ts.txt"^>Client Entry Point (main.ts)^</a^>^</li^>
+    echo     ^<li^>^<a href="client/src/core/GameEngine.ts.txt"^>Game Engine (GameEngine.ts)^</a^>^</li^>
+    echo     ^<li^>^<a href="client/src/core/NetworkManager.ts.txt"^>Network Manager (NetworkManager.ts)^</a^>^</li^>
+    echo     ^<li^>^<a href="server/src/rooms/HoldingRoom.ts.txt"^>Server Room (HoldingRoom.ts)^</a^>^</li^>
+    echo     ^<li^>^<a href="server/src/rooms/schema.ts.txt"^>Server Schema (schema.ts)^</a^>^</li^>
+    echo   ^</ul^>
+    echo ^</body^>
+    echo ^</html^>
+) > "%DEBUG_DIR%\project_structure.html"
+
+echo [CREATE] project_structure.html
+goto :eof
+

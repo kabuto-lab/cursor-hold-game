@@ -1,0 +1,236 @@
+================================================================================
+TOVCH (VYRU5) - PROJECT SNAPSHOT INDEX
+================================================================================
+Date: 2026-02-28
+Version: v11 (Current Production Version)
+Description: Complete text snapshot of all important project files
+
+================================================================================
+FILE LIST (48 files total)
+================================================================================
+
+ROOT FILES (11):
+----------------
+1.  package.json.txt                      - Root workspace configuration
+2.  README.md.txt                         - User-facing documentation
+3.  ARCHITECTURE.md.txt                   - Developer documentation
+4.  ROLLBACK_INSTRUCTIONS.md.txt          - Rollback guide
+5.  project-context.txt.txt               - Project context
+6.  commit_changes.bat.txt                - Windows commit script
+7.  create_debug1.bat.txt                 - Debug package script
+8.  create_debug_package.bat.txt          - Debug package script
+9.  push.bat.txt                          - Push script
+10. push_to_github.bat.txt                - Push to GitHub script
+11. package.json.txt                      - Duplicate (root)
+
+CLIENT ROOT FILES (8):
+----------------------
+12. client__index.html.txt                - Main HTML template + CSS (984 lines)
+13. client__package.json.txt              - Client dependencies & scripts
+14. client__tsconfig.json.txt             - TypeScript compiler config
+15. client__vite.config.ts.txt            - Vite bundler configuration
+16. client__vitest.config.ts.txt          - Vitest test configuration
+17. client__vitest.setup.ts.txt           - Vitest setup file
+18. client__.npmrc.txt                    - NPM configuration
+19. client__.env.txt                      - Environment variables
+
+CLIENT SOURCE FILES (2):
+------------------------
+20. client__src__main.ts.txt              - Application entry point
+21. client__src__NetworkManager.ts.txt    - (DEPRECATED - legacy file)
+
+CLIENT CORE MODULES (3):
+------------------------
+22. client__src__core__GameEngine.ts.txt  - PixiJS initialization & ticker
+23. client__src__core__InputManager.ts.txt - Mouse/keyboard handling
+24. client__src__core__NetworkManager.ts.txt - Colyseus client wrapper (ACTIVE)
+
+CLIENT UI MODULES (1):
+----------------------
+25. client__src__ui__UIController.ts.txt  - Lobby/Room UI, sidebars
+
+CLIENT CHAT MODULES (2):
+------------------------
+26. client__src__chat__ChatManager.ts.txt - In-room chat functionality
+27. client__src__chat__DraggableChatManager.ts.txt - Draggable chat window
+
+CLIENT FEATURES - MOUSE FOLLOWER (1):
+-------------------------------------
+28. client__src__features__mouse-follower__MouseFollowerManager.ts.txt
+
+CLIENT FEATURES - DRAGGABLE (1):
+--------------------------------
+29. client__src__features__draggable__DraggableObject.ts.txt
+
+CLIENT FEATURES - BATTLE (4):
+-----------------------------
+30. client__src__features__battle__BattleManager.ts.txt
+31. client__src__features__battle__BattleRenderer.ts.txt
+32. client__src__features__battle__VirusParamsUI.ts.txt
+33. client__src__features__battle__VirusTubeManager.ts.txt
+
+CLIENT FEATURES - OTHER (3):
+----------------------------
+34. client__src__features__chat__ChatManager.ts.txt (alternative implementation)
+35. client__src__features__follower__FollowerCircle.ts.txt (DEPRECATED)
+36. client__src__features__follower__FollowerUI.ts.txt (DEPRECATED)
+
+CLIENT TYPES (3):
+-----------------
+37. client__src__types__schema.ts.txt           - TypeScript interfaces
+38. client__src__types__pixi-extend.d.ts.txt    - PixiJS type extensions
+39. client__src__types__pixi-filters.d.ts.txt   - Filter type definitions
+
+SERVER ROOT FILES (2):
+----------------------
+40. server__package.json.txt              - Server dependencies & scripts
+41. server__tsconfig.json.txt             - TypeScript compiler config
+
+SERVER SOURCE FILES (3):
+------------------------
+42. server__src__index.ts.txt             - Server entry (Express + Colyseus)
+43. server__src__rooms__HoldingRoom.ts.txt - Main game room logic (773 lines)
+44. server__src__rooms__schema.ts.txt     - Colyseus state schemas
+
+DOCUMENTATION FILES (4):
+------------------------
+45. INDEX.txt                             - This file (snapshot index)
+46. ARCHITECTURE.txt                      - Detailed project architecture
+47. _PROMPT.txt                           - Prompt for recreating snapshot
+48. README.md.txt                         - Duplicate (root)
+
+================================================================================
+PROJECT STRUCTURE (ORIGINAL)
+================================================================================
+
+TOVCH/
+├── package.json                 # Root workspace config
+├── README.md                    # Documentation
+├── ARCHITECTURE.md              # Developer docs
+├── РАЗНЫЕ .bat ФАЙЛЫ            # Windows scripts
+│
+├── client/                      # Frontend (Port 3000)
+│   ├── .env                     # Environment (server URL)
+│   ├── .npmrc                   # NPM config
+│   ├── index.html               # Main HTML + CSS
+│   ├── package.json             # Dependencies
+│   ├── tsconfig.json            # TypeScript config
+│   ├── vite.config.ts           # Vite config
+│   ├── vitest.config.ts         # Test config
+│   ├── vitest.setup.ts          # Test setup
+│   └── src/
+│       ├── main.ts              # Entry point
+│       ├── NetworkManager.ts    # (DEPRECATED)
+│       ├── core/
+│       │   ├── GameEngine.ts    # PixiJS
+│       │   ├── InputManager.ts  # Input
+│       │   └── NetworkManager.ts # Colyseus client (ACTIVE)
+│       ├── ui/
+│       │   └── UIController.ts  # UI management
+│       ├── chat/
+│       │   ├── ChatManager.ts   # Chat
+│       │   └── DraggableChatManager.ts
+│       ├── features/
+│       │   ├── mouse-follower/  # MFL system
+│       │   ├── draggable/       # Draggable orb
+│       │   ├── battle/          # Virus battle
+│       │   ├── chat/            # (alt)
+│       │   └── follower/        # (DEPRECATED)
+│       └── types/
+│           ├── schema.ts        # Types
+│           ├── pixi-extend.d.ts
+│           └── pixi-filters.d.ts
+│
+└── server/                      # Backend (Port 2567)
+    ├── package.json
+    ├── tsconfig.json
+    └── src/
+        ├── index.ts             # Server entry
+        └── rooms/
+            ├── HoldingRoom.ts   # Room logic
+            └── schema.ts        # State schemas
+
+================================================================================
+TECH STACK
+================================================================================
+
+Frontend:
+- TypeScript ^5.0.2
+- PixiJS ^8.16.0
+- Vite ^5.0.0
+- Colyseus.js ^0.15.28
+- Pixi Filters (@pixi/filter-*)
+
+Backend:
+- Node.js v16+
+- TypeScript ^5.0.2
+- Colyseus ^0.15.0
+- Express ^4.18.2
+- @colyseus/schema ^2.0.0
+
+Infrastructure:
+- Render (deployment)
+- npm workspaces (monorepo)
+
+================================================================================
+KEY FEATURES
+================================================================================
+
+✅ Room System (Create/Join via ID)
+✅ Mouse Followers (MFL) - Real-time cursor sync (red/blue)
+✅ Draggable Center Orb with hover sync
+✅ In-Game Chat (with draggable window)
+✅ Virus Parameters UI (12 params, 12 points total)
+✅ Virus Battle System (20x32 grid, 500ms ticks)
+✅ Retro Neon Aesthetics (PIXY font, neon colors)
+✅ Responsive design (desktop + mobile)
+✅ Portrait orientation lock
+
+================================================================================
+DEPLOYMENT
+================================================================================
+
+Client: https://cursor-hold-game.onrender.com
+Server: https://cursor-hold-game-server.onrender.com
+Health: https://cursor-hold-game-server.onrender.com/health
+
+================================================================================
+HOW TO USE THIS SNAPSHOT
+================================================================================
+
+1. Each file is named with its path relative to project root
+   Example: client__src__core__GameEngine.ts.txt = client/src/core/GameEngine.ts
+
+2. To restore a file:
+   - Read the .txt file content
+   - Copy to the original path (replace __ with / and remove .txt)
+   - Example: client__src__main.ts.txt → client/src/main.ts
+
+3. This snapshot can be used for:
+   - Backup/restore project state
+   - Transfer project to another AI
+   - Debug/compare file changes
+   - Offline code review
+
+================================================================================
+SNAPSHOT STATISTICS
+================================================================================
+
+Total files:     48
+Total lines:     ~8000+ (estimated)
+Largest file:    client__index.html.txt (984 lines)
+Second largest:  server__src__rooms__HoldingRoom.ts.txt (773 lines)
+Archive size:    ~100 KB (compressed)
+
+================================================================================
+ARCHIVE INFORMATION
+================================================================================
+
+Archive name:    TOVCH_snapshot_v11_2026-02-28.zip
+Archive size:    101,223 bytes (101 KB)
+Created:         2026-02-28
+Location:        C:\__Qwen1\TOVCH\
+
+================================================================================
+END OF INDEX
+================================================================================

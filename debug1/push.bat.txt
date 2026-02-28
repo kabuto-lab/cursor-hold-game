@@ -1,0 +1,32 @@
+﻿@echo off
+chcp 65001 >nul
+echo ========================================
+echo   GIT PUSH TO GITHUB
+echo ========================================
+echo.
+
+REM Check if we are on main branch
+git branch --show-current > temp_branch.txt
+set /p BRANCH=<temp_branch.txt
+del temp_branch.txt
+
+echo Current branch: %BRANCH%
+echo.
+
+REM Push to GitHub
+echo Pushing to GitHub...
+git push origin %BRANCH%
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo Error: Push failed!
+    pause
+    goto :eof
+)
+
+echo.
+echo ========================================
+echo   PUSH SUCCESSFUL!
+echo ========================================
+echo.
+pause
+

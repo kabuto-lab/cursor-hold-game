@@ -1,8 +1,4 @@
-// ========================================
-// ORIGINAL PATH: client/src/main.ts
-// ========================================
-
-import { GameEngine } from './core/GameEngine';
+﻿import { GameEngine } from './core/GameEngine';
 import { NetworkManager } from './core/NetworkManager';
 import { InputManager } from './core/InputManager';
 import { UIController } from './ui/UIController';
@@ -23,9 +19,9 @@ class MainApp {
   private mouseFollower!: MouseFollowerManager;
   private virusTubeManager!: VirusTubeManager;
   private battleManager!: BattleManager;
-  private battleRenderer: BattleRenderer | null = null;  // Инициализируется позже
+  private battleRenderer: BattleRenderer | null = null;  // Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€ÑƒÐµÑ‚ÑÑ Ð¿Ð¾Ð·Ð¶Ðµ
 
-  // Метод для обновления прогресса битвы
+  // ÐœÐµÑ‚Ð¾Ð´ Ð´Ð»Ñ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ Ð¿Ñ€Ð¾Ð³Ñ€ÐµÑÑÐ° Ð±Ð¸Ñ‚Ð²Ñ‹
   private updateBattleProgress!: (grid: number[]) => void;
 
   constructor() {
@@ -44,8 +40,8 @@ class MainApp {
       this.inputManager = new InputManager();
       console.log('[MainApp] Creating UIController... (will set view to lobby)');
       this.uiController = new UIController();
-
-      // Проверка: убеждаемся, что мы в лобби после создания UIController
+      
+      // ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ°: ÑƒÐ±ÐµÐ¶Ð´Ð°ÐµÐ¼ÑÑ, Ñ‡Ñ‚Ð¾ Ð¼Ñ‹ Ð² Ð»Ð¾Ð±Ð±Ð¸ Ð¿Ð¾ÑÐ»Ðµ ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ñ UIController
       const landingScreen = document.getElementById('landingScreen');
       const gameScreen = document.getElementById('gameScreen');
       console.log('[MainApp] After UIController creation:');
@@ -53,7 +49,7 @@ class MainApp {
       console.log('  - gameScreen.style.display:', gameScreen?.style.display);
       console.log('  - landingScreen has hidden class:', landingScreen?.classList.contains('hidden'));
       console.log('  - gameScreen has hidden class:', gameScreen?.classList.contains('hidden'));
-
+      
       console.log('[MainApp] Creating ChatManager...');
       this.chatManager = new ChatManager();
       console.log('[MainApp] Creating VirusTubeManager...');
@@ -64,28 +60,28 @@ class MainApp {
       console.log('[MainApp] Setting up interactions...');
       this.setupInteractions();
 
-      // Инициализация PixiJS (асинхронно) — потом создаём mouse follower
+      // Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ PixiJS (Ð°ÑÐ¸Ð½Ñ…Ñ€Ð¾Ð½Ð½Ð¾) â€” Ð¿Ð¾Ñ‚Ð¾Ð¼ ÑÐ¾Ð·Ð´Ð°Ñ‘Ð¼ mouse follower
       console.log('[MainApp] Initializing GameEngine...');
       this.gameEngine.init('canvasContainer').then(() => {
         console.log('[MainApp] GameEngine initialized!');
 
-        // Создаём MouseFollowerManager ПОСЛЕ инициализации PixiJS
+        // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ MouseFollowerManager ÐŸÐžÐ¡Ð›Ð• Ð¸Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ð¸ PixiJS
         console.log('[MainApp] Creating MouseFollowerManager...');
         this.mouseFollower = new MouseFollowerManager(this.gameEngine.app!.stage, this.networkManager);
 
-        // BattleRenderer создаётся позже, при старте битвы
+        // BattleRenderer ÑÐ¾Ð·Ð´Ð°Ñ‘Ñ‚ÑÑ Ð¿Ð¾Ð·Ð¶Ðµ, Ð¿Ñ€Ð¸ ÑÑ‚Ð°Ñ€Ñ‚Ðµ Ð±Ð¸Ñ‚Ð²Ñ‹
         // console.log('[MainApp] Creating BattleRenderer...');
         // this.battleRenderer = new BattleRenderer(this.gameEngine.app!.stage);
 
-        // Подключаем InputManager к MouseFollowerManager
+        // ÐŸÐ¾Ð´ÐºÐ»ÑŽÑ‡Ð°ÐµÐ¼ InputManager Ðº MouseFollowerManager
         this.inputManager.onMouseMove = (x, y) => {
           this.mouseFollower.updateLocalPosition(x, y);
         };
 
         console.log('[MainApp] Mouse follower initialized!');
         this.gameEngine.start();
-
-        // Обработчик изменения размера окна
+        
+        // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸Ðº Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ Ñ€Ð°Ð·Ð¼ÐµÑ€Ð° Ð¾ÐºÐ½Ð°
         window.addEventListener('resize', () => {
           if (this.gameEngine.app) {
             this.gameEngine.app.renderer.resize(window.innerWidth, window.innerHeight);
@@ -105,13 +101,13 @@ class MainApp {
   private setupInteractions(): void {
     console.log('[MainApp] Setting up interactions...');
 
-    // Настраиваем VirusTubeManager
+    // ÐÐ°ÑÑ‚Ñ€Ð°Ð¸Ð²Ð°ÐµÐ¼ VirusTubeManager
     this.virusTubeManager.setOnParamsChange((params) => {
       console.log('[MainApp] Virus params changed:', params);
       this.networkManager.sendParameterUpdate(params);
     });
 
-    // Кнопка RANDOMIZE
+    // ÐšÐ½Ð¾Ð¿ÐºÐ° RANDOMIZE
     const randomizeBtn = document.getElementById('randomizeBtn');
     if (randomizeBtn) {
       randomizeBtn.addEventListener('click', () => {
@@ -120,25 +116,25 @@ class MainApp {
       });
     }
 
-    // Кнопка READY
+    // ÐšÐ½Ð¾Ð¿ÐºÐ° READY
     const readyBtn = document.getElementById('readyBtn');
     if (readyBtn) {
       readyBtn.addEventListener('click', () => {
         console.log('[MainApp] Ready button clicked');
-
-        // Получаем параметры игрока
+        
+        // ÐŸÐ¾Ð»ÑƒÑ‡Ð°ÐµÐ¼ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ñ‹ Ð¸Ð³Ñ€Ð¾ÐºÐ°
         const playerParams = this.virusTubeManager.getParamsAsVirusParams();
-
-        // Определяем, какой игрок (Player 1 или Player 2)
+        
+        // ÐžÐ¿Ñ€ÐµÐ´ÐµÐ»ÑÐµÐ¼, ÐºÐ°ÐºÐ¾Ð¹ Ð¸Ð³Ñ€Ð¾Ðº (Player 1 Ð¸Ð»Ð¸ Player 2)
         const isPlayer1 = this.uiController.getCurrentView() === 'room';
-
-        // Устанавливаем параметры в BattleManager
+        
+        // Ð£ÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼ Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ñ‹ Ð² BattleManager
         if (isPlayer1) {
           this.battleManager.setParamsA(playerParams);
         } else {
           this.battleManager.setParamsB(playerParams);
         }
-
+        
         this.networkManager.sendToggleReady(true);
       });
     }
@@ -153,7 +149,7 @@ class MainApp {
           this.battleRenderer.show();
         }
       } else if (state.type === 'ended') {
-        // Определяем победителя по цвету вируса
+        // ÐžÐ¿Ñ€ÐµÐ´ÐµÐ»ÑÐµÐ¼ Ð¿Ð¾Ð±ÐµÐ´Ð¸Ñ‚ÐµÐ»Ñ Ð¿Ð¾ Ñ†Ð²ÐµÑ‚Ñƒ Ð²Ð¸Ñ€ÑƒÑÐ°
         const winnerText = state.winner === 'A'
           ? 'RED (Player 1)'
           : state.winner === 'B'
@@ -176,11 +172,11 @@ class MainApp {
         this.battleRenderer.updateGrid(grid);
       }
 
-      // Обновляем прогресс битвы в верхней панели
+      // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ð¿Ñ€Ð¾Ð³Ñ€ÐµÑÑ Ð±Ð¸Ñ‚Ð²Ñ‹ Ð² Ð²ÐµÑ€Ñ…Ð½ÐµÐ¹ Ð¿Ð°Ð½ÐµÐ»Ð¸
       this.updateBattleProgress(grid);
     });
 
-    // Обратный отсчёт
+    // ÐžÐ±Ñ€Ð°Ñ‚Ð½Ñ‹Ð¹ Ð¾Ñ‚ÑÑ‡Ñ‘Ñ‚
     this.battleManager.setOnCountdown((count) => {
       const overlay = document.getElementById('countdownOverlay');
       const countdownText = document.getElementById('countdownText');
@@ -188,24 +184,24 @@ class MainApp {
       if (!overlay || !countdownText) return;
 
       if (count > 0) {
-        // Показываем цифру
+        // ÐŸÐ¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ Ñ†Ð¸Ñ„Ñ€Ñƒ
         overlay.style.display = 'flex';
         countdownText.textContent = count.toString();
       } else if (count === 0) {
-        // Показываем "БИТВА!" и запускаем битву автоматически
-        countdownText.textContent = 'БИТВА!';
+        // ÐŸÐ¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ "Ð‘Ð˜Ð¢Ð’Ð!" Ð¸ Ð·Ð°Ð¿ÑƒÑÐºÐ°ÐµÐ¼ Ð±Ð¸Ñ‚Ð²Ñƒ Ð°Ð²Ñ‚Ð¾Ð¼Ð°Ñ‚Ð¸Ñ‡ÐµÑÐºÐ¸
+        countdownText.textContent = 'Ð‘Ð˜Ð¢Ð’Ð!';
         countdownText.style.color = '#ff00ff';
-
-        // Отправляем серверу сигнал начать битву
+        
+        // ÐžÑ‚Ð¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼ ÑÐµÑ€Ð²ÐµÑ€Ñƒ ÑÐ¸Ð³Ð½Ð°Ð» Ð½Ð°Ñ‡Ð°Ñ‚ÑŒ Ð±Ð¸Ñ‚Ð²Ñƒ
         this.networkManager.sendToRoom('startBattleNow', {});
 
-        // Запускаем битву локально
+        // Ð—Ð°Ð¿ÑƒÑÐºÐ°ÐµÐ¼ Ð±Ð¸Ñ‚Ð²Ñƒ Ð»Ð¾ÐºÐ°Ð»ÑŒÐ½Ð¾
         const gridData = this.battleManager.getGridData();
         if (gridData) {
           this.battleManager.startBattle(gridData.grid, gridData.width, gridData.height);
         }
 
-        // Скрываем overlay через 1.5 секунды
+        // Ð¡ÐºÑ€Ñ‹Ð²Ð°ÐµÐ¼ overlay Ñ‡ÐµÑ€ÐµÐ· 1.5 ÑÐµÐºÑƒÐ½Ð´Ñ‹
         setTimeout(() => {
           overlay.style.display = 'none';
           countdownText.style.color = '#00ffff';
@@ -213,21 +209,21 @@ class MainApp {
       }
     });
 
-    // Network listeners для битвы
+    // Network listeners Ð´Ð»Ñ Ð±Ð¸Ñ‚Ð²Ñ‹
     this.networkManager.onVirusBattleStarted = (data) => {
       console.log('[MainApp] Virus battle started:', data);
-
-      // Создаём BattleRenderer с правильными размерами
+      
+      // Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ð¼ BattleRenderer Ñ Ð¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ñ‹Ð¼Ð¸ Ñ€Ð°Ð·Ð¼ÐµÑ€Ð°Ð¼Ð¸
       if (!this.battleRenderer && this.gameEngine.app) {
         this.battleRenderer = new BattleRenderer(this.gameEngine.app.stage);
       }
-
-      // Инициализируем сетку
+      
+      // Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð¸Ñ€ÑƒÐµÐ¼ ÑÐµÑ‚ÐºÑƒ
       if (this.battleRenderer) {
         this.battleRenderer.initGrid(data.width, data.height);
       }
-
-      // Запускаем обратный отсчёт
+      
+      // Ð—Ð°Ð¿ÑƒÑÐºÐ°ÐµÐ¼ Ð¾Ð±Ñ€Ð°Ñ‚Ð½Ñ‹Ð¹ Ð¾Ñ‚ÑÑ‡Ñ‘Ñ‚
       this.battleManager.startCountdownAndBattle(data.battleGrid, data.width, data.height);
     };
 
@@ -246,11 +242,11 @@ class MainApp {
 
     this.networkManager.onStartCountdown = (data) => {
       console.log('[MainApp] Start countdown:', data);
-      // Запускаем обратный отсчёт
+      // Ð—Ð°Ð¿ÑƒÑÐºÐ°ÐµÐ¼ Ð¾Ð±Ñ€Ð°Ñ‚Ð½Ñ‹Ð¹ Ð¾Ñ‚ÑÑ‡Ñ‘Ñ‚
       this.battleManager.startCountdownAndBattle(data.battleGrid, data.width, data.height);
     };
 
-    // Инициализация метода обновления прогресса
+    // Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ Ð¼ÐµÑ‚Ð¾Ð´Ð° Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ Ð¿Ñ€Ð¾Ð³Ñ€ÐµÑÑÐ°
     this.updateBattleProgress = (grid: number[]) => {
       let countA = 0;
       let countB = 0;
@@ -266,16 +262,16 @@ class MainApp {
 
       const progressEl = document.getElementById('battleProgress');
       if (progressEl) {
-        // Обновляем градиент: красный слева, синий справа
+        // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ð³Ñ€Ð°Ð´Ð¸ÐµÐ½Ñ‚: ÐºÑ€Ð°ÑÐ½Ñ‹Ð¹ ÑÐ»ÐµÐ²Ð°, ÑÐ¸Ð½Ð¸Ð¹ ÑÐ¿Ñ€Ð°Ð²Ð°
         const redEnd = percentA;
         const blueStart = 100 - percentB;
-
-        progressEl.style.background = `linear-gradient(90deg,
-          rgba(255, 0, 0, 0.4) 0%,
-          rgba(255, 0, 0, 0.4) ${redEnd}%,
-          rgba(0, 0, 0, 0.5) ${redEnd}%,
-          rgba(0, 0, 0, 0.5) ${blueStart}%,
-          rgba(0, 0, 255, 0.4) ${blueStart}%,
+        
+        progressEl.style.background = `linear-gradient(90deg, 
+          rgba(255, 0, 0, 0.4) 0%, 
+          rgba(255, 0, 0, 0.4) ${redEnd}%, 
+          rgba(0, 0, 0, 0.5) ${redEnd}%, 
+          rgba(0, 0, 0, 0.5) ${blueStart}%, 
+          rgba(0, 0, 255, 0.4) ${blueStart}%, 
           rgba(0, 0, 255, 0.4) 100%)`;
       }
     };
@@ -287,29 +283,29 @@ class MainApp {
         const roomId = await this.networkManager.createRoom();
         console.log('[MainApp] Room created with ID:', roomId);
 
-        // Ждём следующего тика, чтобы DOM был готов
+        // Ð–Ð´Ñ‘Ð¼ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰ÐµÐ³Ð¾ Ñ‚Ð¸ÐºÐ°, Ñ‡Ñ‚Ð¾Ð±Ñ‹ DOM Ð±Ñ‹Ð» Ð³Ð¾Ñ‚Ð¾Ð²
         await new Promise(resolve => setTimeout(resolve, 0));
 
         console.log('[MainApp] Calling setView(room)...');
         this.uiController.setView('room');
         console.log('[MainApp] setView(room) completed');
 
-        // Показываем ID комнаты сразу
+        // ÐŸÐ¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ ID ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹ ÑÑ€Ð°Ð·Ñƒ
         this.uiController.showCreatedRoomId(roomId);
 
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
-          // Устанавливаем network listeners для mouse follower
+          // Ð£ÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼ network listeners Ð´Ð»Ñ mouse follower
           this.mouseFollower.setupNetworkListeners();
-          // Устанавливаем mouse follower для создателя
+          // Ð£ÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼ mouse follower Ð´Ð»Ñ ÑÐ¾Ð·Ð´Ð°Ñ‚ÐµÐ»Ñ
           this.mouseFollower.onRoomJoined(true, this.networkManager.getSessionId()!);
 
-          // Подписываемся на изменение количества игроков
+          // ÐŸÐ¾Ð´Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÐ¼ÑÑ Ð½Ð° Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ðµ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð° Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð²
           this.networkManager.onRoomStateChange = (count, max) => {
             this.uiController.updatePlayerCount(count, max);
           };
-          // Обновляем счётчик при создании комнаты
+          // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸Ðº Ð¿Ñ€Ð¸ ÑÐ¾Ð·Ð´Ð°Ð½Ð¸Ð¸ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
           this.uiController.updatePlayerCount(this.networkManager.getPlayerCount(), 2);
         }
         this.uiController.setPlayerName('Player 1');
@@ -325,29 +321,29 @@ class MainApp {
         await this.networkManager.joinRoom(roomId);
         console.log('[MainApp] Joined room successfully');
 
-        // Ждём следующего тика, чтобы DOM был готов
+        // Ð–Ð´Ñ‘Ð¼ ÑÐ»ÐµÐ´ÑƒÑŽÑ‰ÐµÐ³Ð¾ Ñ‚Ð¸ÐºÐ°, Ñ‡Ñ‚Ð¾Ð±Ñ‹ DOM Ð±Ñ‹Ð» Ð³Ð¾Ñ‚Ð¾Ð²
         await new Promise(resolve => setTimeout(resolve, 0));
 
         console.log('[MainApp] Calling setView(room)...');
         this.uiController.setView('room');
         console.log('[MainApp] setView(room) completed');
 
-        // Показываем ID комнаты сразу
+        // ÐŸÐ¾ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÐ¼ ID ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹ ÑÑ€Ð°Ð·Ñƒ
         this.uiController.showCreatedRoomId(roomId);
 
         const room = this.networkManager.getCurrentRoom();
         if (room) {
           this.chatManager.attachToRoom(room);
-          // Устанавливаем network listeners для mouse follower
+          // Ð£ÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼ network listeners Ð´Ð»Ñ mouse follower
           this.mouseFollower.setupNetworkListeners();
-          // Устанавливаем mouse follower для присоединившегося
+          // Ð£ÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼ mouse follower Ð´Ð»Ñ Ð¿Ñ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½Ð¸Ð²ÑˆÐµÐ³Ð¾ÑÑ
           this.mouseFollower.onRoomJoined(false, this.networkManager.getSessionId()!);
 
-          // Подписываемся на изменение количества игроков
+          // ÐŸÐ¾Ð´Ð¿Ð¸ÑÑ‹Ð²Ð°ÐµÐ¼ÑÑ Ð½Ð° Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ðµ ÐºÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð° Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð²
           this.networkManager.onRoomStateChange = (count, max) => {
             this.uiController.updatePlayerCount(count, max);
           };
-          // Обновляем счётчик при присоединении
+          // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ ÑÑ‡Ñ‘Ñ‚Ñ‡Ð¸Ðº Ð¿Ñ€Ð¸ Ð¿Ñ€Ð¸ÑÐ¾ÐµÐ´Ð¸Ð½ÐµÐ½Ð¸Ð¸
           this.uiController.updatePlayerCount(this.networkManager.getPlayerCount(), 2);
         }
         this.uiController.setPlayerName('Player 2');
@@ -359,12 +355,12 @@ class MainApp {
   }
 }
 
-// Запуск приложения при загрузке страницы
+// Ð—Ð°Ð¿ÑƒÑÐº Ð¿Ñ€Ð¸Ð»Ð¾Ð¶ÐµÐ½Ð¸Ñ Ð¿Ñ€Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†Ñ‹
 console.log('[MainApp] Registering load event listener...');
 
-// Функция для получения версии из Git
+// Ð¤ÑƒÐ½ÐºÑ†Ð¸Ñ Ð´Ð»Ñ Ð¿Ð¾Ð»ÑƒÑ‡ÐµÐ½Ð¸Ñ Ð²ÐµÑ€ÑÐ¸Ð¸ Ð¸Ð· Git
 async function getVersion(): Promise<string> {
-  // Пытаемся получить короткий хэш коммита из файла (генерируется при билде)
+  // ÐŸÑ‹Ñ‚Ð°ÐµÐ¼ÑÑ Ð¿Ð¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ ÐºÐ¾Ñ€Ð¾Ñ‚ÐºÐ¸Ð¹ Ñ…ÑÑˆ ÐºÐ¾Ð¼Ð¼Ð¸Ñ‚Ð° Ð¸Ð· Ñ„Ð°Ð¹Ð»Ð° (Ð³ÐµÐ½ÐµÑ€Ð¸Ñ€ÑƒÐµÑ‚ÑÑ Ð¿Ñ€Ð¸ Ð±Ð¸Ð»Ð´Ðµ)
   try {
     const response = await fetch('/version.txt');
     if (response.ok) {
@@ -374,8 +370,8 @@ async function getVersion(): Promise<string> {
   } catch (error) {
     console.log('[MainApp] Could not get version from version.txt:', error);
   }
-
-  // Fallback: версия из package.json
+  
+  // Fallback: Ð²ÐµÑ€ÑÐ¸Ñ Ð¸Ð· package.json
   try {
     const pkg = await fetch('/package.json').then(r => r.json());
     return `v${pkg.version}`;
@@ -384,7 +380,7 @@ async function getVersion(): Promise<string> {
   }
 }
 
-// Обновляем бейдж с версией
+// ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ð±ÐµÐ¹Ð´Ð¶ Ñ Ð²ÐµÑ€ÑÐ¸ÐµÐ¹
 async function updateVersionBadge() {
   const version = await getVersion();
   const badge = document.getElementById('versionBadge');
@@ -397,10 +393,10 @@ async function updateVersionBadge() {
 window.addEventListener('load', () => {
   console.log('[MainApp] LOAD EVENT FIRED');
   console.log('Creating new MainApp()...');
-
-  // Обновляем версию сразу
+  
+  // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ð²ÐµÑ€ÑÐ¸ÑŽ ÑÑ€Ð°Ð·Ñƒ
   updateVersionBadge();
-
+  
   new MainApp();
   console.log('MainApp() created!');
 });

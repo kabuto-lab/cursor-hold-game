@@ -1,0 +1,245 @@
+﻿/**
+ * NetworkManager - ÑƒÐ¿Ñ€Ð°Ð²Ð»ÑÐµÑ‚ ÑÐµÑ‚ÐµÐ²Ñ‹Ð¼ Ð²Ð·Ð°Ð¸Ð¼Ð¾Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸ÐµÐ¼
+ * Ð˜Ð·Ð¾Ð»Ð¸Ñ€ÑƒÐµÑ‚ ÑÐµÑ‚ÐµÐ²Ñ‹Ðµ Ð¾Ð¿ÐµÑ€Ð°Ñ†Ð¸Ð¸ Ð¾Ñ‚ Ð¾ÑÑ‚Ð°Ð»ÑŒÐ½Ð¾Ð¹ Ð»Ð¾Ð³Ð¸ÐºÐ¸ Ð¸Ð³Ñ€Ñ‹
+ */
+
+import { Client, Room } from 'colyseus.js';
+import { PlayerSchema, DraggableObjectSchema } from './types/schema';
+
+export class NetworkManager {
+  private client: Client;
+  private room: Room | null = null;
+  
+  // Callbacks Ð´Ð»Ñ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ñ
+  onPlayerJoined?: (playerId: string, player: PlayerSchema) => void;
+  onPlayerLeft?: (_playerId: string) => void;
+  onPlayerUpdated?: (playerId: string, player: PlayerSchema) => void;
+  onObjectAdded?: (objectId: string, obj: DraggableObjectSchema) => void;
+  onObjectRemoved?: (_objectId: string) => void;
+  onObjectUpdated?: (objectId: string, obj: DraggableObjectSchema) => void;
+  onVirusParamsUpdated?: (playerId: string, params: { [key: string]: number }) => void;
+  onVirusBattleStarted?: (_message: string) => void;
+  onVirusBattleEnded?: (_message: string) => void;
+  onVirusTick?: (_tick: number, _message: string) => void;
+  onCursorUpdate?: (playerId: string, x: number, y: number) => void;
+  onError?: (error: unknown) => void;
+  onDisconnected?: () => void;
+
+  constructor() {
+    // Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÐµÐ¼ Ñ‚Ð¾Ñ‚ Ð¶Ðµ URL, Ñ‡Ñ‚Ð¾ Ð¸ Ð² Ð¾Ñ€Ð¸Ð³Ð¸Ð½Ð°Ð»ÑŒÐ½Ð¾Ð¼ ÐºÐ¾Ð´Ðµ
+    const serverUrl = window.location.protocol === 'https:'
+      ? 'wss://cursor-hold-game-server.onrender.com'
+      : `ws://${window.location.hostname}:2567`;
+
+    this.client = new Client(serverUrl);
+  }
+
+  async connectToRoom(roomId: string): Promise<void> {
+    try {
+      this.room = await this.client.joinById(roomId);
+      this.setupEventHandlers();
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Failed to join room:', error);
+      if (this.onError) {
+        this.onError(error);
+      }
+      return Promise.reject(error);
+    }
+  }
+
+  async createRoom(): Promise<string> {
+    try {
+      this.room = await this.client.create('holding_room', {});
+      this.setupEventHandlers();
+      return Promise.resolve(this.room.id);
+    } catch (error) {
+      console.error('Failed to create room:', error);
+      if (this.onError) {
+        this.onError(error);
+      }
+      return Promise.reject(error);
+    }
+  }
+
+  private setupEventHandlers(): void {
+    if (!this.room) return;
+
+    // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ñ ÐºÐ¾Ð¼Ð½Ð°Ñ‚Ñ‹
+    this.room.onStateChange.once(() => {
+      // Ð˜Ð½Ð¸Ñ†Ð¸Ð°Ð»Ð¸Ð·Ð°Ñ†Ð¸Ñ Ð½Ð°Ñ‡Ð°Ð»ÑŒÐ½Ð¾Ð³Ð¾ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ñ
+      this.room!.state.players.forEach((player: PlayerSchema, playerId: string) => {
+        if (playerId === this.room?.sessionId) {
+          // Ð£ÑÑ‚Ð°Ð½Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÐ¼ Ñ‚ÐµÐºÑƒÑ‰ÐµÐ³Ð¾ Ð¸Ð³Ñ€Ð¾ÐºÐ°
+        }
+        if (this.onPlayerJoined) {
+          this.onPlayerJoined(playerId, player);
+        }
+      });
+
+      this.room!.state.objects.forEach((obj: DraggableObjectSchema, objectId: string) => {
+        if (this.onObjectAdded) {
+          this.onObjectAdded(objectId, obj);
+        }
+      });
+    });
+
+    // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ Ð´Ð¾Ð±Ð°Ð²Ð»ÐµÐ½Ð¸Ñ/ÑƒÐ´Ð°Ð»ÐµÐ½Ð¸Ñ Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð²
+    this.room.state.players.onAdd = (player: PlayerSchema, playerId: string) => {
+      if (this.onPlayerJoined) {
+        this.onPlayerJoined(playerId, player);
+      }
+    };
+
+    this.room.state.players.onRemove = (_player: PlayerSchema, playerId: string) => {
+      if (this.onPlayerLeft) {
+        this.onPlayerLeft(playerId);
+      }
+    };
+
+    // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ Ð¸Ð³Ñ€Ð¾ÐºÐ¾Ð²
+    this.room.state.players.onChange = (player: PlayerSchema, playerId: string) => {
+      if (this.onPlayerUpdated) {
+        this.onPlayerUpdated(playerId, player);
+      }
+    };
+
+    // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ Ð¾Ð±ÑŠÐµÐºÑ‚Ð¾Ð²
+    this.room.state.objects.onAdd = (obj: DraggableObjectSchema, objectId: string) => {
+      if (this.onObjectAdded) {
+        this.onObjectAdded(objectId, obj);
+      }
+    };
+
+    this.room.state.objects.onRemove = (_obj: DraggableObjectSchema, objectId: string) => {
+      if (this.onObjectRemoved) {
+        this.onObjectRemoved(objectId);
+      }
+    };
+
+    // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ð¹
+    this.room.onMessage('updatePosition', (data: { playerId: string; x: number; y: number }) => {
+      if (this.onPlayerUpdated) {
+        // ÐžÐ±Ð½Ð¾Ð²Ð»ÑÐµÐ¼ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸ÑŽ Ð¸Ð³Ñ€Ð¾ÐºÐ° Ð² ÑÑ…ÐµÐ¼Ðµ
+        const player = this.room?.state.players.get(data.playerId);
+        if (player) {
+          const updatedPlayer = { ...player, x: data.x, y: data.y };
+          this.onPlayerUpdated(data.playerId, updatedPlayer);
+        }
+      }
+    });
+
+    this.room.onMessage('holdHands', (_data: { player1Id: string; player2Id: string }) => {
+      // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ° "Ð´ÐµÑ€Ð¶Ð°Ð½Ð¸Ñ Ð·Ð° Ñ€ÑƒÐºÐ¸"
+    });
+
+    this.room.onMessage('releaseHands', (_data: { player1Id: string; player2Id: string }) => {
+      // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ° Ð¾Ñ‚Ð¿ÑƒÑÐºÐ°Ð½Ð¸Ñ Ñ€ÑƒÐº
+    });
+
+    this.room.onMessage('playerNameUpdated', (data: { playerId: string; name: string }) => {
+      // ÐžÐ±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ Ð¸Ð¼ÐµÐ½Ð¸ Ð¸Ð³Ñ€Ð¾ÐºÐ°
+      const player = this.room?.state.players.get(data.playerId);
+      if (player) {
+        const updatedPlayer = { ...player, name: data.name };
+        if (this.onPlayerUpdated) {
+          this.onPlayerUpdated(data.playerId, updatedPlayer);
+        }
+      }
+    });
+
+    // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ Ð²Ð¸Ñ€ÑƒÑÐ½Ð¾Ð¹ Ð±Ð¸Ñ‚Ð²Ñ‹
+    this.room.onMessage('virusParamsUpdated', (data: { playerId: string; params: { [key: string]: number } }) => {
+      if (this.onVirusParamsUpdated) {
+        this.onVirusParamsUpdated(data.playerId, data.params);
+      }
+    });
+
+    this.room.onMessage('virusBattleStarted', (data: { message: string }) => {
+      if (this.onVirusBattleStarted) {
+        this.onVirusBattleStarted(data.message);
+      }
+    });
+
+    this.room.onMessage('virusBattleEnded', (data: { message: string }) => {
+      if (this.onVirusBattleEnded) {
+        this.onVirusBattleEnded(data.message);
+      }
+    });
+
+    this.room.onMessage('virusTick', (data: { tick: number; message: string }) => {
+      if (this.onVirusTick) {
+        this.onVirusTick(data.tick, data.message);
+      }
+    });
+
+    // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ ÐºÑƒÑ€ÑÐ¾Ñ€Ð°
+    this.room.onMessage('cursorUpdate', (data: { playerId: string; x: number; y: number }) => {
+      if (this.onCursorUpdate) {
+        this.onCursorUpdate(data.playerId, data.x, data.y);
+      }
+    });
+
+    // ÐžÐ±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ Ð¾Ñ‚ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ñ
+    this.room.onLeave(() => {
+      if (this.onDisconnected) {
+        this.onDisconnected();
+      }
+    });
+
+    this.room.onError((error) => {
+      if (this.onError) {
+        this.onError(error);
+      }
+    });
+  }
+
+  sendPosition(x: number, y: number): void {
+    if (this.room) {
+      this.room.send('updatePosition', { x, y });
+    }
+  }
+
+  sendToggleHoldHands(targetPlayerId: string): void {
+    if (this.room) {
+      this.room.send('toggleHoldHands', { targetPlayerId });
+    }
+  }
+
+  sendParameterUpdate(params: { [key: string]: number }): void {
+    if (this.room) {
+      this.room.send('updateVirusParams', { params });
+    }
+  }
+
+  sendToggleReady(isReady: boolean): void {
+    if (this.room) {
+      this.room.send('toggleReady', { isReady });
+    }
+  }
+
+  sendCursorUpdate(x: number, y: number): void {
+    if (this.room) {
+      this.room.send('updateCursor', { x, y });
+    }
+  }
+
+  leaveRoom(): void {
+    if (this.room) {
+      this.room.leave();
+      this.room = null;
+    }
+  }
+
+  getRoomId(): string | null {
+    return this.room ? this.room.id : null;
+  }
+
+  getSessionId(): string | null {
+    return this.room ? this.room.sessionId : null;
+  }
+
+  isConnected(): boolean {
+    return this.room !== null;
+  }
+}

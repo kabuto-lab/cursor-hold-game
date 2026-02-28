@@ -1,14 +1,21 @@
 /**
  * Контроллер пользовательского интерфейса
- * Управляет переключением между lobby ↔ room и боковыми панелями
+ * Управляет переключением между lobby ↔ room ↔ sandbox и боковыми панелями
  */
 export class UIController {
   private lobbyContainer: HTMLElement;
   private roomContainer: HTMLElement;
+  private sandboxContainer: HTMLElement;
   private createRoomBtn: HTMLButtonElement;
   private joinRoomBtn: HTMLButtonElement;
+  private sandboxBtn: HTMLButtonElement;
+  private backToLobbyBtn: HTMLButtonElement;
   private roomIdInput: HTMLInputElement;
-  private currentView: 'lobby' | 'room' = 'lobby'; // eslint-disable-line @typescript-eslint/no-unused-vars
+  private currentView: 'lobby' | 'room' | 'sandbox' = 'lobby'; // eslint-disable-line @typescript-eslint/no-unused-vars
+
+  // Callbacks for sandbox
+  onEnterSandbox?: () => void;
+  onLeaveSandbox?: () => void;
 
   // Элементы для боковых панелей
   private leftMenuBtn: HTMLButtonElement;
@@ -21,19 +28,25 @@ export class UIController {
   constructor() {
     console.log('[UIController] Constructor started');
     console.log('[UIController] document.readyState:', document.readyState);
-    
+
     // Основные элементы
     this.lobbyContainer = document.getElementById('landingScreen')!;
     this.roomContainer = document.getElementById('gameScreen')!;
+    this.sandboxContainer = document.getElementById('sandboxScreen')!;
     this.createRoomBtn = document.getElementById('createRoomBtn') as HTMLButtonElement;
     this.joinRoomBtn = document.getElementById('joinRoomBtn') as HTMLButtonElement;
+    this.sandboxBtn = document.getElementById('sandboxBtn') as HTMLButtonElement;
+    this.backToLobbyBtn = document.getElementById('backToLobbyBtn') as HTMLButtonElement;
     this.roomIdInput = document.getElementById('roomIdInput') as HTMLInputElement;
 
     console.log('[UIController] Elements found:', {
       lobby: !!this.lobbyContainer,
       room: !!this.roomContainer,
+      sandbox: !!this.sandboxContainer,
       createBtn: !!this.createRoomBtn,
       joinBtn: !!this.joinRoomBtn,
+      sandboxBtn: !!this.sandboxBtn,
+      backToLobbyBtn: !!this.backToLobbyBtn,
       roomIdInput: !!this.roomIdInput
     });
 
@@ -49,11 +62,13 @@ export class UIController {
     console.log('[UIController] Initial state before setView:');
     console.log('  - landingScreen display:', this.lobbyContainer.style.display);
     console.log('  - gameScreen display:', this.roomContainer.style.display);
+    console.log('  - sandboxScreen display:', this.sandboxContainer.style.display);
     console.log('  - landingScreen hidden class:', this.lobbyContainer.classList.contains('hidden'));
     console.log('  - gameScreen hidden class:', this.roomContainer.classList.contains('hidden'));
+    console.log('  - sandboxScreen hidden class:', this.sandboxContainer.classList.contains('hidden'));
 
     this.setupEventListeners();
-    
+
     // Устанавливаем lobby view явно
     console.log('[UIController] Calling setView(lobby)...');
     this.setView('lobby');
@@ -71,6 +86,16 @@ export class UIController {
 
     this.joinRoomBtn?.addEventListener('click', () => {
       this.onJoinRoomClick();
+    });
+
+    // Обработчик для Sandbox кнопки
+    this.sandboxBtn?.addEventListener('click', () => {
+      this.onSandboxClick();
+    });
+
+    // Обработчик для возврата из sandbox
+    this.backToLobbyBtn?.addEventListener('click', () => {
+      this.onBackToLobbyClick();
     });
 
     // Обработка Enter в поле ввода ID комнаты
@@ -137,39 +162,85 @@ export class UIController {
   }
 
   /**
+   * Обработчик клика на "Sandbox"
+   */
+  private onSandboxClick(): void {
+    console.log('[UIController] Sandbox button clicked!');
+    
+    // Вызываем callback для входа в sandbox
+    if (this.onEnterSandbox) {
+      this.onEnterSandbox();
+    }
+    
+    // Переключаем вид на sandbox
+    this.setView('sandbox');
+  }
+
+  /**
+   * Обработчик клика на "Back to Lobby"
+   */
+  private onBackToLobbyClick(): void {
+    console.log('[UIController] Back to Lobby button clicked!');
+    
+    // Вызываем callback для выхода из sandbox
+    if (this.onLeaveSandbox) {
+      this.onLeaveSandbox();
+    }
+    
+    // Переключаем вид на lobby
+    this.setView('lobby');
+  }
+
+  /**
    * Установить текущее представление
    */
-  setView(view: 'lobby' | 'room'): void {
+  setView(view: 'lobby' | 'room' | 'sandbox'): void {
     console.log('[UIController] setView called with:', view);
     console.trace('[UIController] setView stack trace');
     this.currentView = view;
 
     if (view === 'lobby') {
-      console.log('[UIController] Showing landing screen, hiding game screen');
+      console.log('[UIController] Showing landing screen, hiding game screen and sandbox');
       this.lobbyContainer.style.display = 'flex';
       this.roomContainer.style.display = 'none';
+      this.sandboxContainer.style.display = 'none';
       this.lobbyContainer.classList.remove('hidden');
       this.roomContainer.classList.add('hidden');
-      
+      this.sandboxContainer.classList.add('hidden');
+
       // Проверка после установки
       console.log('[UIController] After setView(lobby):');
       console.log('  - landingScreen.style.display:', this.lobbyContainer.style.display);
       console.log('  - gameScreen.style.display:', this.roomContainer.style.display);
-      console.log('  - landingScreen.hidden:', this.lobbyContainer.classList.contains('hidden'));
-      console.log('  - gameScreen.hidden:', this.roomContainer.classList.contains('hidden'));
-    } else {
-      console.log('[UIController] Showing game screen, hiding landing screen');
+      console.log('  - sandboxScreen.style.display:', this.sandboxContainer.style.display);
+    } else if (view === 'room') {
+      console.log('[UIController] Showing game screen, hiding landing screen and sandbox');
       this.lobbyContainer.style.display = 'none';
       this.roomContainer.style.display = 'flex';
+      this.sandboxContainer.style.display = 'none';
       this.lobbyContainer.classList.add('hidden');
       this.roomContainer.classList.remove('hidden');
-      
+      this.sandboxContainer.classList.add('hidden');
+
       // Проверка после установки
       console.log('[UIController] After setView(room):');
       console.log('  - landingScreen.style.display:', this.lobbyContainer.style.display);
       console.log('  - gameScreen.style.display:', this.roomContainer.style.display);
-      console.log('  - landingScreen.hidden:', this.lobbyContainer.classList.contains('hidden'));
-      console.log('  - gameScreen.hidden:', this.roomContainer.classList.contains('hidden'));
+      console.log('  - sandboxScreen.style.display:', this.sandboxContainer.style.display);
+    } else if (view === 'sandbox') {
+      console.log('[UIController] Showing sandbox screen, hiding landing and game screens');
+      this.lobbyContainer.style.display = 'none';
+      this.roomContainer.style.display = 'none';
+      this.sandboxContainer.style.display = 'flex';
+      this.lobbyContainer.classList.add('hidden');
+      this.roomContainer.classList.add('hidden');
+      this.sandboxContainer.classList.remove('hidden');
+
+      // Проверка после установки
+      console.log('[UIController] After setView(sandbox):');
+      console.log('  - landingScreen.style.display:', this.lobbyContainer.style.display);
+      console.log('  - gameScreen.style.display:', this.roomContainer.style.display);
+      console.log('  - sandboxScreen.style.display:', this.sandboxContainer.style.display);
     }
   }
 
@@ -322,7 +393,7 @@ export class UIController {
    * Получить текущее представление
    * Используется для предотвращения ошибки неиспользуемой переменной
    */
-  getCurrentView(): 'lobby' | 'room' {
+  getCurrentView(): 'lobby' | 'room' | 'sandbox' {
     return this.currentView;
   }
 

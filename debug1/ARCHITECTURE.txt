@@ -1,0 +1,399 @@
+================================================================================
+TOVCH (VYRU5) - PROJECT ARCHITECTURE
+================================================================================
+Version: v11 (Current Production)
+Last Updated: 2026-02-28
+Type: 2-Player Real-Time Multiplayer Browser Game
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+TOVCH (also known as VYRU5 or Cursor Hold Game) is a real-time collaborative 
+browser game for 2 players with virus battle mechanics.
+
+**Core Experience:**
+- Player 1 creates room → gets shareable ID
+- Player 2 enters ID → joins same room
+- Both players see each other's mouse cursors (red/blue followers)
+- Players distribute 12 points across 12 virus parameters
+- Both click READY → triggers virus battle (20x32 grid)
+- Viruses spread every 500ms based on parameters
+- Battle ends when one virus dominates (≥99%)
+
+**Visual Style:**
+- Retro neon aesthetics (Courier New / PIXY font)
+- Neon colors: #00ff00 (green), #ff00ff (magenta), #00ffff (cyan)
+- Dark background: #0f0f23 (dark blue)
+- Grid overlay on canvas
+
+================================================================================
+2. TECH STACK
+================================================================================
+
+FRONTEND (Client):
+------------------
+| Technology    | Version    | Purpose                        |
+|---------------|------------|--------------------------------|
+| TypeScript    | ^5.0.2     | Type-safe JavaScript           |
+| PixiJS        | ^8.16.0    | 2D WebGL rendering engine      |
+| Vite          | ^5.0.0     | Build tool & dev server        |
+| Colyseus.js   | ^0.15.28   | WebSocket client library       |
+| Pixi Filters  | ^5.x.x     | Bloom, CRT, Noise, Pixelate    |
+
+BACKEND (Server):
+-----------------
+| Technology       | Version   | Purpose                       |
+|------------------|-----------|-------------------------------|
+| Node.js          | v16+      | Runtime environment           |
+| TypeScript       | ^5.0.2    | Type-safe JavaScript          |
+| Colyseus         | ^0.15.0   | Multiplayer framework         |
+| Express          | ^4.18.2   | HTTP server                   |
+| @colyseus/schema | ^2.0.0    | State synchronization         |
+
+INFRASTRUCTURE:
+---------------
+| Service        | Purpose                              |
+|----------------|--------------------------------------|
+| Render         | Deployment (client + server)         |
+| npm workspaces | Monorepo management                  |
+
+================================================================================
+3. PROJECT STRUCTURE (SNAPSHOT FORMAT)
+================================================================================
+
+All files in debug1/ use double underscore (__) as path separator:
+  client__src__core__GameEngine.ts.txt = client/src/core/GameEngine.ts
+
+ROOT FILES (11):
+----------------
+- package.json.txt              - Root workspace configuration
+- README.md.txt                 - User-facing documentation
+- ARCHITECTURE.md.txt           - Developer docs
+- ROLLBACK_INSTRUCTIONS.md.txt  - Rollback guide
+- *.bat.txt                     - Windows scripts (5 files)
+
+CLIENT FILES (27 files):
+------------------------
+- client__index.html.txt           - Main HTML + CSS (984 lines)
+- client__package.json.txt         - Client dependencies
+- client__tsconfig.json.txt        - TypeScript config
+- client__vite.config.ts.txt       - Vite config
+- client__vitest.*.txt             - Test configs (3 files)
+- client__.npmrc.txt               - NPM settings
+- client__.env.txt                 - Environment variables
+
+Client Source:
+- client__src__main.ts.txt         - Entry point
+- client__src__NetworkManager.ts.txt - (DEPRECATED)
+
+Client Core (3 modules):
+- client__src__core__GameEngine.ts.txt   - PixiJS init + ticker
+- client__src__core__InputManager.ts.txt - Mouse/keyboard input
+- client__src__core__NetworkManager.ts.txt - Colyseus client (ACTIVE)
+
+Client UI:
+- client__src__ui__UIController.ts.txt - Lobby/Room switching, sidebars
+
+Client Chat (2 modules):
+- client__src__chat__ChatManager.ts.txt - In-room chat
+- client__src__chat__DraggableChatManager.ts.txt - Draggable chat
+
+Client Features:
+- client__src__features__mouse-follower__MouseFollowerManager.ts.txt
+- client__src__features__draggable__DraggableObject.ts.txt
+- client__src__features__battle__BattleManager.ts.txt
+- client__src__features__battle__BattleRenderer.ts.txt
+- client__src__features__battle__VirusParamsUI.ts.txt
+- client__src__features__battle__VirusTubeManager.ts.txt
+- client__src__features__chat__ChatManager.ts.txt (alternative)
+- client__src__features__follower__FollowerCircle.ts.txt (DEPRECATED)
+- client__src__features__follower__FollowerUI.ts.txt (DEPRECATED)
+
+Client Types:
+- client__src__types__schema.ts.txt - TypeScript interfaces
+- client__src__types__pixi-extend.d.ts.txt - PixiJS extensions
+- client__src__types__pixi-filters.d.ts.txt - Filter definitions
+
+SERVER FILES (5 files):
+------------------------
+- server__package.json.txt         - Server dependencies
+- server__tsconfig.json.txt        - TypeScript config
+- server__src__index.ts.txt        - Server entry (Express + Colyseus)
+- server__src__rooms__HoldingRoom.ts.txt - Room logic (773 lines)
+- server__src__rooms__schema.ts.txt - State schemas
+
+================================================================================
+4. ARCHITECTURE DIAGRAM
+================================================================================
+
+┌─────────────────────────────────────────────────────────────────┐
+│                         CLIENT (Browser)                        │
+│  Port: 3000 (dev) | https://cursor-hold-game.onrender.com      │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │  index.html                                               │ │
+│  │  - UI: Landing screen, game screen, sidebars              │ │
+│  │  - CSS: Retro-neon styles, animations                     │ │
+│  │  - Virus params grid (3x4, 12 emojis)                     │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│                              │                                  │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │  main.ts (Entry Point)                                    │ │
+│  │  - Initializes all managers                               │ │
+│  │  - Sets up create/join callbacks                          │ │
+│  │  - BattleRenderer init on battle start                    │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│                              │                                  │
+│  ┌────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
+│  │ GameEngine │  │ NetworkMgr   │  │ UIController         │   │
+│  │ - PixiJS   │  │ - Colyseus   │  │ - Lobby/Room views   │   │
+│  │ - Ticker   │  │ - WebSocket  │  │ - Sidebars           │   │
+│  │ - Grid     │  │ - Battle msg │  │ - Player names       │   │
+│  └────────────┘  └──────────────┘  └──────────────────────┘   │
+│         │                │                      │               │
+│  ┌────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
+│  │ InputMgr   │  │ ChatManager  │  │ VirusTubeManager     │   │
+│  │ - Mouse    │  │ - Messaging  │  │ - 12 params UI       │   │
+│  │ - Keyboard │  │ - Timestamps │  │ - 12 points total    │   │
+│  └────────────┘  └──────────────┘  └──────────────────────┘   │
+│         │                                                        │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  Features                                               │   │
+│  │  ┌──────────────────┐  ┌──────────────────────────┐    │   │
+│  │  │ MouseFollowerMgr │  │ BattleManager            │    │   │
+│  │  │ - mfl1 (RED)     │  │ - State machine          │    │   │
+│  │  │ - mfl2 (BLUE)    │  │ - Grid updates           │    │   │
+│  │  │ - Trail effects  │  │ - Countdown              │    │   │
+│  │  └──────────────────┘  └──────────────────────────┘    │   │
+│  │  ┌──────────────────┐  ┌──────────────────────────┐    │   │
+│  │  │ DraggableObject  │  │ BattleRenderer           │    │   │
+│  │  │ - Center orb     │  │ - Neuron cells           │    │   │
+│  │  │ - Hover sync     │  │ - Synapse lines          │    │   │
+│  │  │ - Drag sync      │  │ - Pulse animation        │    │   │
+│  │  └──────────────────┘  └──────────────────────────┘    │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                            │
+                            │ WebSocket (Colyseus Protocol)
+                            │ Port: 2567
+                            │
+┌─────────────────────────────────────────────────────────────────┐
+│                         SERVER (Node.js)                        │
+│  Port: 2567 | https://cursor-hold-game-server.onrender.com     │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │  index.ts                                                 │ │
+│  │  - Express setup                                          │ │
+│  │  - Colyseus server initialization                         │ │
+│  │  - Health check: GET /health → OK                         │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│                              │                                  │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │  HoldingRoom.ts (Room Logic)                              │ │
+│  │  - Player join/leave (max 2)                              │ │
+│  │  - Message handlers:                                      │ │
+│  │    • mflUpdate (mouse position)                           │ │
+│  │    • updateObjectHover (orb hover)                        │ │
+│  │    • startDragObject / updateObjectPosition               │ │
+│  │    • chatMessage                                          │ │
+│  │    • updateVirusParams                                    │ │
+│  │    • toggleReady → triggers battle                        │ │
+│  │    • startBattleNow (client request)                      │ │
+│  │  - Battle simulation:                                     │ │
+│  │    • 20x32 grid (640 cells)                               │ │
+│  │    • 500ms ticks                                          │ │
+│  │    • 30% spread chance, 50% conflict win                  │ │
+│  │  - Auto-cleanup (5 min after empty)                       │ │
+│  └───────────────────────────────────────────────────────────┘ │
+│                              │                                  │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │  schema.ts (State Definitions)                            │ │
+│  │  - PlayerSchema: id, name, isReady, virusParams           │ │
+│  │  - DraggableObjectSchema: id, x, y, isHovered             │ │
+│  │  - RoomState: players, objects, roomId, battleGrid        │ │
+│  └───────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+
+================================================================================
+5. KEY MECHANICS
+================================================================================
+
+VIRUS PARAMETERS (12 total, 12 points to distribute):
+------------------------------------------------------
+1. Aggression ⚔️ - Attack strength
+2. Mutation 🧬 - Mutation chance
+3. Speed ⚡ - Spread speed
+4. Defense 🛡️ - Defense against capture
+5. Reproduction 🦠 - Reproduction rate
+6. Stealth 👻 - Stealth (not implemented)
+7. Virulence ☣️ - Destruction power
+8. Resilience 💪 - Survival
+9. Mobility 🚶 - Movement
+10. Intellect 🧠 - Strategy (not implemented)
+11. Contagiousness 🫁 - Infection rate
+12. Lethality 💀 - Lethality
+
+BATTLE MECHANICS:
+-----------------
+- Grid: 20 columns × 32 rows = 640 cells
+- Initial: Virus A (red) at top center, Virus B (blue) at bottom center
+- Tick rate: 500ms (2 times per second)
+- Spread chance: 30% to empty neighbor
+- Conflict: 50% chance to capture opposing virus cell
+- Win condition: ≥99% territory OR opponent eliminated
+- Max ticks: 1000 (auto-end)
+
+================================================================================
+6. NETWORK COMMUNICATION
+================================================================================
+
+CLIENT → SERVER MESSAGES:
+-------------------------
+| Message Type         | Data                              | Purpose           |
+|----------------------|-----------------------------------|-------------------|
+| mflUpdate            | { isCreator, x, y }               | Mouse position    |
+| updateObjectHover    | { objectId, isHovered }           | Orb hover         |
+| startDragObject      | { objectId, startX, startY }      | Start drag        |
+| updateObjectPosition | { objectId, x, y }                | Update position   |
+| stopDragObject       | { objectId, endX, endY }          | Stop drag         |
+| chatMessage          | { message, timestamp }            | Send chat         |
+| updateVirusParams    | { params: { [key: string]: num }} | Update params     |
+| toggleReady          | { isReady: boolean }              | Toggle ready      |
+| startBattleNow       | {}                                | Start battle      |
+
+SERVER → CLIENT MESSAGES:
+-------------------------
+| Message Type          | Data                              | Purpose          |
+|-----------------------|-----------------------------------|------------------|
+| mflUpdate             | { playerId, isCreator, x, y }     | Sync follower    |
+| objectHoverChanged    | { objectId, isHovered, hoveredBy }| Sync hover       |
+| objectDragStarted     | { objectId, playerId }            | Drag started     |
+| objectPositionUpdated | { objectId, x, y }                | Position update  |
+| objectDragStopped     | { objectId, playerId }            | Drag stopped     |
+| chatMessage           | { playerId, playerName, msg, ts } | Chat message     |
+| virusParamsUpdated    | { playerId, params }              | Params update    |
+| playerReadyStatus     | { playerId, isReady }             | Ready status     |
+| startCountdown        | { battleGrid, width, height }     | Start countdown  |
+| virusTick             | { tick, battleGrid }              | Battle tick      |
+| virusBattleEnded      | { winner, virusACount, virusBCount } | Battle ended |
+
+================================================================================
+7. BUILD & DEPLOYMENT
+================================================================================
+
+DEVELOPMENT:
+------------
+# Install all dependencies
+npm install
+
+# Run both client (3000) and server (2567)
+npm start
+
+# Run separately
+npm run dev:client   # Client only (port 3000)
+npm run dev:server   # Server only (port 2567)
+
+PRODUCTION BUILD:
+-----------------
+# Build client
+cd client && npm run build
+# Output: client/dist/
+
+# Build server
+cd server && npm run build
+# Output: server/dist/
+
+# Start production server
+cd server && npm start
+
+DEPLOYMENT (Render):
+--------------------
+Client: https://cursor-hold-game.onrender.com
+Server: https://cursor-hold-game-server.onrender.com
+Health: https://cursor-hold-game-server.onrender.com/health
+
+Deployment Process:
+1. Push to GitHub
+2. Render auto-deploys from main branch
+3. Client builds with Vite (includes version.txt with git hash)
+4. Server builds with TypeScript
+5. Deploy takes 2-3 minutes
+
+================================================================================
+8. CONTROLS
+================================================================================
+
+MOUSE:
+- Move cursor: Move your follower (red for P1, blue for P2)
+- Click on orb: Drag the orb
+- Click on chat: Send message
+- Click on virus param tube: +1 point
+- Click on emoji/name/value: -1 point
+
+KEYBOARD:
+- Enter (in lobby): Join room (when ID entered)
+- Spacebar: Not implemented
+- Escape: Not implemented
+
+UI:
+- ☰ (left): Open controls sidebar
+- ☰ (right): Open virus params sidebar
+- CREATE ROOM: Create new room
+- JOIN ROOM: Join existing room (enter ID first)
+- RANDOMIZE: Random virus params (12 points)
+- READY: Ready for battle (disabled until 12 points distributed)
+
+================================================================================
+9. TROUBLESHOOTING
+================================================================================
+
+Common Issues:
+1. Battle not starting
+   - Check both players clicked READY
+   - Verify 12 points distributed (READY button enabled)
+   - Check console for "startCountdown" message
+   - Verify NetworkManager subscribes to 'startCountdown'
+
+2. Connection problems
+   - Check server is running (port 2567)
+   - Check client is running (port 3000)
+   - Verify WebSocket connection in console
+
+3. Battle grid not visible
+   - Check BattleRenderer.initGrid() called
+   - Verify grid dimensions match (20x32)
+   - Check BattleRenderer.show() called
+
+4. Console warnings "onMessage() not registered"
+   - Add handlers for virusParamsUpdated, playerReadyStatus
+   - These are non-critical (warnings only)
+
+Development Tips:
+- Server runs on port 2567 by default
+- Client runs on port 3000 by default
+- Check browser console for [BattleManager], [NetworkManager] logs
+- Use /health endpoint to verify server
+- Battle ticks every 500ms (check server logs)
+
+================================================================================
+10. CURRENT KNOWN ISSUES (v11)
+================================================================================
+
+1. Unregistered Message Types (Non-Critical)
+   - virusParamsUpdated: Handler missing in NetworkManager
+   - playerReadyStatus: Handler missing in NetworkManager
+   - Impact: Console spam, but functionality works
+
+2. Battle Renderer Performance
+   - 640 cells × 60 FPS may cause lag on low-end devices
+   - Consider reducing cell count or update rate
+
+3. Params Not Used in Battle
+   - Server spread logic ignores virus parameters
+   - Currently: 30% spread, 50% conflict (hardcoded)
+   - TODO: Implement param-based probabilities
+
+================================================================================
+END OF ARCHITECTURE DOCUMENT
+================================================================================

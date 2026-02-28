@@ -1,8 +1,4 @@
-// ========================================
-// ORIGINAL PATH: server/package.json
-// ========================================
-
-{
+﻿{
   "name": "@holding-hands/server",
   "private": true,
   "version": "1.0.0",
@@ -29,3 +25,4 @@
     "typescript": "^5.0.2"
   }
 }
+

@@ -1,10 +1,6 @@
-// ========================================
-// ORIGINAL PATH: client/src/core/InputManager.ts
-// ========================================
-
-/**
- * Менеджер ввода
- * Обрабатывает клавиатуру и мышь
+﻿/**
+ * ÐœÐµÐ½ÐµÐ´Ð¶ÐµÑ€ Ð²Ð²Ð¾Ð´Ð°
+ * ÐžÐ±Ñ€Ð°Ð±Ð°Ñ‚Ñ‹Ð²Ð°ÐµÑ‚ ÐºÐ»Ð°Ð²Ð¸Ð°Ñ‚ÑƒÑ€Ñƒ Ð¸ Ð¼Ñ‹ÑˆÑŒ
  */
 export class InputManager {
   private keyboardState: Map<string, boolean>;
@@ -15,7 +11,7 @@ export class InputManager {
     rightButton: boolean;
   };
 
-  // Callback для обновления позиции мыши (для follower circle)
+  // Callback Ð´Ð»Ñ Ð¾Ð±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ñ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸Ð¸ Ð¼Ñ‹ÑˆÐ¸ (Ð´Ð»Ñ follower circle)
   public onMouseMove?: (x: number, y: number) => void;
 
   constructor() {
@@ -31,7 +27,7 @@ export class InputManager {
   }
 
   /**
-   * Установить обработчики событий
+   * Ð£ÑÑ‚Ð°Ð½Ð¾Ð²Ð¸Ñ‚ÑŒ Ð¾Ð±Ñ€Ð°Ð±Ð¾Ñ‚Ñ‡Ð¸ÐºÐ¸ ÑÐ¾Ð±Ñ‹Ñ‚Ð¸Ð¹
    */
   private setupEventListeners(): void {
     // Keyboard events
@@ -49,7 +45,7 @@ export class InputManager {
       this.mouseState.x = e.clientX;
       this.mouseState.y = e.clientY;
 
-      // Вызываем callback для follower circle
+      // Ð’Ñ‹Ð·Ñ‹Ð²Ð°ÐµÐ¼ callback Ð´Ð»Ñ follower circle
       if (this.onMouseMove) {
         this.onMouseMove(this.mouseState.x, this.mouseState.y);
       }
@@ -84,21 +80,21 @@ export class InputManager {
   }
 
   /**
-   * Проверить, нажата ли клавиша
+   * ÐŸÑ€Ð¾Ð²ÐµÑ€Ð¸Ñ‚ÑŒ, Ð½Ð°Ð¶Ð°Ñ‚Ð° Ð»Ð¸ ÐºÐ»Ð°Ð²Ð¸ÑˆÐ°
    */
   isKeyPressed(keyCode: string): boolean {
     return this.keyboardState.get(keyCode) === true;
   }
 
   /**
-   * Получить состояние мыши
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ ÑÐ¾ÑÑ‚Ð¾ÑÐ½Ð¸Ðµ Ð¼Ñ‹ÑˆÐ¸
    */
   getMouseState(): { x: number; y: number; leftButton: boolean; rightButton: boolean } {
     return { ...this.mouseState };
   }
 
   /**
-   * Получить позицию мыши
+   * ÐŸÐ¾Ð»ÑƒÑ‡Ð¸Ñ‚ÑŒ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸ÑŽ Ð¼Ñ‹ÑˆÐ¸
    */
   getMousePosition(): { x: number; y: number } {
     return { x: this.mouseState.x, y: this.mouseState.y };
