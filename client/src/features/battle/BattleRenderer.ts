@@ -50,10 +50,13 @@ export class BattleRenderer {
   private cellAges: Map<number, CellAgeData> = new Map();
   private lifecycleEnabled: boolean = true;
 
-  // Lifecycle timing (in milliseconds)
-  private readonly NEWBORN_DURATION = 2000;  // 0-2s: newborn
-  private readonly MATURING_DURATION = 3000; // 2-5s: maturing
-  private readonly MATURE_TIME = 5000;       // 5s+: mature
+  // Lifecycle timing (in milliseconds) - 10x slower than before
+  private readonly NEWBORN_DURATION = 20000;  // 0-20s: newborn (was 2s)
+  private readonly MATURING_DURATION = 30000; // 20-50s: maturing (was 3s)
+  private readonly MATURE_TIME = 50000;       // 50s+: mature (was 5s)
+
+  // Visual collision tracking
+  private contestedCells: Set<number> = new Set();
 
   private gridWidth: number = 32;
   private gridHeight: number = 20;
@@ -193,12 +196,12 @@ export class BattleRenderer {
         };
       }
       
-      // New virus cell
+      // New virus cell - START AT 20%
       ageData = {
         birthTime: now,
         stage: 'newborn',
-        sizeMultiplier: 0.5,
-        opacity: 0.5,
+        sizeMultiplier: 0.2,  // Start at 20%
+        opacity: 0.2,         // Start at 20%
         fillRatio: 0
       };
       this.cellAges.set(cellIndex, ageData);
@@ -208,25 +211,25 @@ export class BattleRenderer {
     const age = now - ageData.birthTime;
 
     if (age < this.NEWBORN_DURATION) {
-      // Newborn: 0-2 seconds
+      // Newborn: 0-20 seconds (20% → 50%)
       const progress = age / this.NEWBORN_DURATION;
       ageData.stage = 'newborn';
-      ageData.sizeMultiplier = 0.5 + (0.25 * progress);  // 0.5 → 0.75
-      ageData.opacity = 0.5 + (0.25 * progress);          // 0.5 → 0.75
-      ageData.fillRatio = progress * 0.5;                 // 0 → 0.5
+      ageData.sizeMultiplier = 0.2 + (0.3 * progress);  // 0.2 → 0.5
+      ageData.opacity = 0.2 + (0.3 * progress);          // 0.2 → 0.5
+      ageData.fillRatio = progress * 0.3;                // 0 → 0.3
     } else if (age < this.NEWBORN_DURATION + this.MATURING_DURATION) {
-      // Maturing: 2-5 seconds
+      // Maturing: 20-50 seconds (50% → 80%)
       const progress = (age - this.NEWBORN_DURATION) / this.MATURING_DURATION;
       ageData.stage = 'maturing';
-      ageData.sizeMultiplier = 0.75 + (0.25 * progress);  // 0.75 → 1.0
-      ageData.opacity = 0.75 + (0.25 * progress);         // 0.75 → 1.0
-      ageData.fillRatio = 0.5 + (0.5 * progress);         // 0.5 → 1.0
+      ageData.sizeMultiplier = 0.5 + (0.3 * progress);  // 0.5 → 0.8
+      ageData.opacity = 0.5 + (0.3 * progress);         // 0.5 → 0.8
+      ageData.fillRatio = 0.3 + (0.5 * progress);       // 0.3 → 0.8
     } else {
-      // Mature: 5+ seconds
+      // Mature: 50+ seconds (80% → 100%)
       ageData.stage = 'mature';
-      ageData.sizeMultiplier = 1.0;
-      ageData.opacity = 1.0;
-      ageData.fillRatio = 1.0;
+      ageData.sizeMultiplier = 0.8 + (0.2 * Math.min(1, (age - this.MATURE_TIME) / 10000));  // 0.8 → 1.0
+      ageData.opacity = 0.8 + (0.2 * Math.min(1, (age - this.MATURE_TIME) / 10000));        // 0.8 → 1.0
+      ageData.fillRatio = 0.8 + (0.2 * Math.min(1, (age - this.MATURE_TIME) / 10000));      // 0.8 → 1.0
     }
 
     return ageData;
@@ -665,7 +668,7 @@ export class BattleRenderer {
   }
 
   /**
-   * Проверить, является ли клетка "спорной" (соседствуют вирусы A и B)
+   * Check if cell is contested (adjacent to enemy virus)
    */
   private isContested(index: number): boolean {
     if (!this.currentGrid) return false;
@@ -676,7 +679,7 @@ export class BattleRenderer {
 
     if (cellValue === 0) return false;
 
-    // Проверяем соседей (4 направления)
+    // Check 4 directions for enemies
     const neighbors = [
       { dx: -1, dy: 0 },
       { dx: 1, dy: 0 },
@@ -692,7 +695,7 @@ export class BattleRenderer {
         const nIdx = ny * this.gridWidth + nx;
         const neighborValue = this.currentGrid[nIdx];
 
-        // Если сосед другого типа - клетка спорная
+        // If neighbor is different virus type - contested
         if (neighborValue !== 0 && neighborValue !== cellValue) {
           return true;
         }
@@ -702,11 +705,30 @@ export class BattleRenderer {
     return false;
   }
 
+  /**
+   * Update contested cells tracking
+   */
+  private updateContestedCells(): void {
+    this.contestedCells.clear();
+    
+    if (!this.currentGrid) return;
+
+    for (let i = 0; i < this.totalCells; i++) {
+      if (this.isContested(i)) {
+        this.contestedCells.add(i);
+      }
+    }
+  }
+
   update(delta: number): void {
     if (!this.currentGrid || !this.lifecycleEnabled) {
       return;
     }
 
+    // Update contested cells
+    this.updateContestedCells();
+
+    const now = Date.now();
     let activeCount = 0;
 
     for (let i = 0; i < this.totalCells; i++) {
@@ -731,12 +753,22 @@ export class BattleRenderer {
         const virusColor = cellValue === 1 ? this.COLORS.virusA : this.COLORS.virusB;
         const virusLightColor = cellValue === 1 ? this.COLORS.virusALight : this.COLORS.virusBLight;
         
+        // Check if contested (adjacent to enemy)
+        const isContested = this.contestedCells.has(i);
+        
         // Interpolate color based on lifecycle stage
-        const currentColor = this.interpolateColor(
+        let currentColor = this.interpolateColor(
           virusLightColor,
           virusColor,
-          lifecycle.opacity - 0.5
+          lifecycle.opacity - 0.2
         );
+
+        // Contested cells get white-hot flash effect
+        if (isContested) {
+          const flashSpeed = 100; // ms per flash cycle
+          const flashIntensity = 0.5 + 0.5 * Math.sin((now / flashSpeed) * Math.PI * 2);
+          currentColor = this.interpolateColor(currentColor, 0xffffff, flashIntensity * 0.6);
+        }
 
         // Current size based on lifecycle
         const currentRadius = baseRadius * lifecycle.sizeMultiplier;
@@ -745,8 +777,9 @@ export class BattleRenderer {
         cell.clear();
         glow.clear();
 
-        // Cell border
-        cell.lineStyle(2, currentColor, lifecycle.opacity);
+        // Cell border - thicker for contested cells
+        const borderWidth = isContested ? 3 : 2;
+        cell.lineStyle(borderWidth, currentColor, lifecycle.opacity);
         
         // Cell fill
         cell.beginFill(currentColor, lifecycle.opacity * 0.8);
@@ -761,11 +794,39 @@ export class BattleRenderer {
           cell.endFill();
         }
 
-        // Glow
-        glow.beginFill(currentColor, lifecycle.opacity * 0.3);
-        glow.drawCircle(0, 0, currentRadius + 5);
+        // Glow - stronger for contested cells
+        const glowAlpha = isContested ? lifecycle.opacity * 0.6 : lifecycle.opacity * 0.3;
+        const glowRadius = isContested ? currentRadius + 8 : currentRadius + 5;
+        glow.beginFill(currentColor, glowAlpha);
+        glow.drawCircle(0, 0, glowRadius);
         glow.endFill();
+
+        // Add combat sparks for contested cells
+        if (isContested) {
+          this.drawCombatSparks(cell, currentRadius, now);
+        }
       }
+    }
+  }
+
+  /**
+   * Draw combat sparks around contested cells
+   */
+  private drawCombatSparks(graphics: PIXI.Graphics, radius: number, now: number): void {
+    const sparkCount = 4;
+    const sparkSpeed = 200; // ms per rotation
+    
+    for (let i = 0; i < sparkCount; i++) {
+      const angle = ((now / sparkSpeed) + (i * (360 / sparkCount))) * Math.PI / 180;
+      const sparkX = Math.cos(angle) * (radius + 3);
+      const sparkY = Math.sin(angle) * (radius + 3);
+      
+      // Flickering spark
+      const flicker = 0.5 + 0.5 * Math.sin((now / 50) + i);
+      
+      graphics.beginFill(0xffffff, flicker);
+      graphics.drawCircle(sparkX, sparkY, 2);
+      graphics.endFill();
     }
   }
 
