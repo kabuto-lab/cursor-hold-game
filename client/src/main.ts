@@ -251,6 +251,23 @@ class MainApp {
 
     this.networkManager.onStartCountdown = (data) => {
       console.log('[MainApp] Start countdown:', data);
+      
+      // Создаём BattleRenderer если ещё не создан
+      if (!this.battleRenderer && this.gameEngine.app) {
+        this.battleRenderer = new BattleRenderer(this.gameEngine.app.stage);
+      }
+
+      // Инициализируем сетку
+      if (this.battleRenderer) {
+        this.battleRenderer.initGrid(data.width, data.height);
+        
+        // Подписываем BattleRenderer на ticker для анимации
+        this.gameEngine.addTickerUpdate((delta) => {
+          this.battleRenderer!.update(delta);
+        });
+        console.log('[MainApp] BattleRenderer subscribed to ticker in onStartCountdown');
+      }
+      
       // Запускаем обратный отсчёт
       this.battleManager.startCountdownAndBattle(data.battleGrid, data.width, data.height);
     };
