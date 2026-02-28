@@ -44,9 +44,17 @@ export class BattleManager {
   private onStateChangeCallback?: (state: BattleState) => void;
   private onGridUpdateCallback?: (grid: number[]) => void;
   
-  // Параметры вирусов
+  // Virus params for defense visualization
   private paramsA: VirusParams | null = null;
   private paramsB: VirusParams | null = null;
+
+  // Infestation tracking
+  private infestedCells: Map<number, {
+    hostType: number;      // Original owner
+    infestorType: number;  // Who is infesting
+    progress: number;      // 0.0 - 1.0
+    stage: 'hidden' | 'visible' | 'critical';
+  }> = new Map();
   
   // Таймер распространения
   private spreadInterval: number | null = null;
@@ -215,6 +223,9 @@ export class BattleManager {
     // Обновляем сетку
     this.gridData.grid = newGrid;
 
+    // Обновляем инфестации
+    this.updateInfestationsWrapper();
+
     // Увеличиваем счётчик тика
     if (this.state.type === 'running') {
       this.state = {
@@ -281,9 +292,10 @@ export class BattleManager {
   }
 
   /**
-   * Attempt to convert enemy cell (Mutation + Intellect vs Intellect + Stealth)
+   * Attempt to infest enemy cell (parasitic takeover)
+   * Stealthy conversion that happens over time
    */
-  private attemptConversion(
+  private attemptInfestation(
     grid: number[],
     idx: number,
     attackerType: number,
@@ -292,42 +304,252 @@ export class BattleManager {
     defenderParams: VirusParams,
     surroundPressure: number
   ): boolean {
-    // === ШАНС КОНВЕРТАЦИИ ===
-    // Mutation: основной параметр конвертации (+5% за пункт = макс 60%)
-    const mutationChance = attackerParams.mutation * 0.05;
+    // Check if cell is already infested
+    const existingInfestation = this.infestedCells.get(idx);
+    
+    if (existingInfestation) {
+      // Cell already infested - check if by same attacker
+      if (existingInfestation.infestorType === attackerType) {
+        // Continue existing infestation
+        const infestChance = this.calculateInfestationChance(
+          attackerParams, defenderParams, surroundPressure
+        );
+        
+        if (Math.random() < infestChance) {
+          existingInfestation.progress += 0.08; // +8% per tick
+          
+          // Update stage
+          if (existingInfestation.progress >= 1.0) {
+            // Capture complete!
+            grid[idx] = attackerType;
+            this.infestedCells.delete(idx);
+            return true;
+          } else if (existingInfestation.progress >= 0.7) {
+            existingInfestation.stage = 'critical';
+          } else if (existingInfestation.progress >= 0.3) {
+            existingInfestation.stage = 'visible';
+          }
+        }
+        return false;
+      } else {
+        // Cell infested by different virus - compete!
+        const competingChance = attackerParams.mutation / (attackerParams.mutation + defenderParams.intellect);
+        if (Math.random() < competingChance) {
+          // Override infestation
+          this.infestedCells.set(idx, {
+            hostType: defenderType,
+            infestorType: attackerType,
+            progress: 0.1,
+            stage: 'hidden'
+          });
+        }
+        return false;
+      }
+    }
+    
+    // New infestation attempt
+    // === ШАНС ИНФЕСТАЦИИ ===
+    const infestChance = this.calculateInfestationChance(
+      attackerParams, defenderParams, surroundPressure
+    );
+    
+    if (Math.random() < infestChance) {
+      // Start infestation
+      this.infestedCells.set(idx, {
+        hostType: defenderType,
+        infestorType: attackerType,
+        progress: 0.1,
+        stage: 'hidden'
+      });
+      return true; // Infestation started (but cell not captured yet)
+    }
+    
+    return false;
+  }
+
+  /**
+   * Calculate infestation chance based on parameters
+   */
+  private calculateInfestationChance(
+    attackerParams: VirusParams,
+    defenderParams: VirusParams,
+    surroundPressure: number
+  ): number {
+    // === БАЗОВЫЙ ШАНС ===
+    const baseChance = 0.2; // 20%
+
+    // === MUTATION: основной параметр ===
+    // +4% за пункт (макс 48%)
+    const mutationBonus = attackerParams.mutation * 0.04;
+
+    // === CONTAGIOUSNESS: количество целей ===
+    // +2% за пункт
+    const contagiousBonus = attackerParams.contagiousness * 0.02;
+
+    // === STEALTH: скрытность ===
+    // +3% за пункт (игнорирует защиту)
+    const stealthBonus = attackerParams.stealth * 0.03;
+
+    // === VIRULENCE: повреждение хозяина ===
+    // +1.5% за пункт
+    const virulenceBonus = attackerParams.virulence * 0.015;
 
     // === БОНУС ОТ ДАВЛЕНИЯ ОКРУЖЕНИЯ ===
-    // Чем больше вражеских клеток вокруг, тем выше шанс конвертации
-    // Давление 0.5 (4 врага) = +20%, давление 1.0 (8 врагов) = +40%
-    const pressureBonus = surroundPressure * 0.4;
+    // +20% при полном окружении
+    const pressureBonus = surroundPressure * 0.2;
 
-    // === ИНТЕЛЛЕКТ АТАКУЮЩЕГО ===
-    // Интеллект увеличивает точность конвертации (+2% за пункт)
-    const intellectBonus = attackerParams.intellect * 0.02;
+    // === ЗАЩИТА ЗАЩИТНИКА ===
+    // Intellect: -3% за пункт
+    const intellectResist = defenderParams.intellect * 0.03;
+    
+    // Defense: -2% за пункт (но Stealth игнорирует часть)
+    const stealthPenetration = attackerParams.stealth / 12; // 0-100% penetration
+    const effectiveDefense = defenderParams.defense * (1 - stealthPenetration);
+    const defenseResist = effectiveDefense * 0.02;
 
-    // === СОПРОТИВЛЕНИЕ ЗАЩИТНИКА ===
-    // Интеллект защитника снижает шанс конвертации (-3% за пункт)
-    const defenderIntellectResist = defenderParams.intellect * 0.03;
-
-    // === СКРЫТНОСТЬ ЗАЩИТНИКА ===
-    // Stealth снижает точность конвертации (-2.5% за пункт)
-    const stealthResist = defenderParams.stealth * 0.025;
-
-    // === БАЗОВЫЙ ШАНС ===
-    const baseChance = 0.15; // 15% база
+    // Defense: -1.5% за пункт
+    const resilienceResist = defenderParams.resilience * 0.015;
 
     // === ИТОГОВЫЙ ШАНС ===
-    const finalChance = baseChance + mutationChance + pressureBonus + intellectBonus 
-                        - defenderIntellectResist - stealthResist;
+    const finalChance = baseChance + mutationBonus + contagiousBonus + 
+                        stealthBonus + virulenceBonus + pressureBonus -
+                        intellectResist - defenseResist - resilienceResist;
 
-    // Проверяем шанс конвертации
-    if (Math.random() < finalChance) {
-      // Конвертация успешна!
-      grid[idx] = attackerType;
-      return true;
+    return Math.max(0.02, Math.min(0.95, finalChance)); // 2% - 95%
+  }
+
+  /**
+   * Update all infested cells (progress, symptoms)
+   */
+  private updateInfestations(grid: number[]): void {
+    const toRemove: number[] = [];
+
+    for (const [idx, infestation] of this.infestedCells.entries()) {
+      // Check if host cell still exists
+      const currentCell = grid[idx];
+      if (currentCell !== infestation.hostType) {
+        // Host cell died or was captured
+        toRemove.push(idx);
+        continue;
+      }
+
+      // Apply infestation symptoms based on stage
+      this.applyInfestationSymptoms(grid, idx, infestation);
     }
 
-    return false;
+    // Clean up removed infestations
+    for (const idx of toRemove) {
+      this.infestedCells.delete(idx);
+    }
+  }
+
+  /**
+   * Apply infestation symptoms to cell
+   */
+  private applyInfestationSymptoms(
+    grid: number[],
+    idx: number,
+    infestation: { hostType: number; infestorType: number; progress: number; stage: string }
+  ): void {
+    // Symptoms affect cell behavior
+    const x = idx % this.gridData!.width;
+    const y = Math.floor(idx / this.gridData!.height);
+
+    // === HIDDEN STAGE (0-30%): No symptoms ===
+    if (infestation.stage === 'hidden') {
+      // Cell behaves normally, no penalties
+      return;
+    }
+
+    // === VISIBLE STAGE (30-70%): Reduced defense ===
+    if (infestation.stage === 'visible') {
+      // Cell has reduced defense (handled in defense calculation)
+      // Visual: slight color change toward infestor color
+    }
+
+    // === CRITICAL STAGE (70-100%): Cell about to turn ===
+    if (infestation.stage === 'critical') {
+      // Cell may spread infestation to neighbors
+      this.spreadInfestationToNeighbors(grid, idx, infestation);
+    }
+  }
+
+  /**
+   * Spread infestation to adjacent cells of same type
+   */
+  private spreadInfestationToNeighbors(
+    grid: number[],
+    idx: number,
+    infestation: { hostType: number; infestorType: number; progress: number; stage: string }
+  ): void {
+    const x = idx % this.gridData!.width;
+    const y = Math.floor(idx / this.gridData!.height);
+    const hostParams = infestation.hostType === 1 ? this.paramsA : this.paramsB;
+    
+    if (!hostParams) return;
+
+    // Contagiousness determines spread attempts
+    const attempts = 1 + Math.floor(hostParams.contagiousness / 6);
+
+    const neighbors = [
+      { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+      { dx: 0, dy: -1 }, { dx: 0, dy: 1 }
+    ];
+
+    for (let i = 0; i < attempts; i++) {
+      const neighbor = neighbors[Math.floor(Math.random() * neighbors.length)];
+      const nx = x + neighbor.dx;
+      const ny = y + neighbor.dy;
+
+      if (nx >= 0 && nx < this.gridData!.width && ny >= 0 && ny < this.gridData!.height) {
+        const nIdx = ny * this.gridData!.width + nx;
+        const neighborCell = grid[nIdx];
+
+        // Can only spread to same host type
+        if (neighborCell === infestation.hostType && !this.infestedCells.has(nIdx)) {
+          // Chance to spread infestation
+          const spreadChance = 0.15 + (hostParams.contagiousness * 0.02);
+          if (Math.random() < spreadChance) {
+            this.infestedCells.set(nIdx, {
+              hostType: infestation.hostType,
+              infestorType: infestation.infestorType,
+              progress: 0.15,
+              stage: 'hidden'
+            });
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Get infestation data for a cell (for rendering)
+   */
+  getInfestationData(idx: number) {
+    return this.infestedCells.get(idx);
+  }
+
+  /**
+   * Get all infestations (for rendering)
+   */
+  getInfestations(): Map<number, { infestor: number; progress: number; stage: string }> {
+    // Convert internal format to renderer format
+    const rendererFormat = new Map<number, { infestor: number; progress: number; stage: string }>();
+    for (const [idx, data] of this.infestedCells.entries()) {
+      rendererFormat.set(idx, {
+        infestor: data.infestorType,
+        progress: data.progress,
+        stage: data.stage
+      });
+    }
+    return rendererFormat;
+  }
+
+  /**
+   * Clear all infestations
+   */
+  clearInfestations(): void {
+    this.infestedCells.clear();
   }
 
   /**
@@ -537,24 +759,24 @@ export class BattleManager {
           grid[nIdx] = virusType;
         }
       }
-      // === КЛЕТКА ВРАГА - АТАКА С ВОЗМОЖНОСТЬЮ КОНВЕРТАЦИИ ===
+      // === КЛЕТКА ВРАГА - АТАКА С ВОЗМОЖНОСТЬЮ ИНФЕСТАЦИИ ===
       else if (neighborCell !== virusType) {
         // Aggression даёт бонус к шансу захвата вражеской клетки
         const attackChance = baseSpreadChance + aggressionBonus;
         if (Math.random() < attackChance) {
-          // Проверяем, является ли это атакой или конвертацией
+          // Проверяем, является ли это атакой или инфестацией
           const idx = y * width + x;
           const surroundPressure = this.calculateSurroundPressure(grid, nx, ny, neighborCell, width, height).pressureLevel;
-
+          
           // Параметры врага
           const enemyParams = neighborCell === 1 ? this.paramsA : this.paramsB;
-
-          // Пытаемся конвертировать вместо уничтожения
-          if (params.mutation >= 4 && enemyParams && Math.random() < 0.4) {
-            // Попытка конвертации
-            const converted = this.attemptConversion(grid, nIdx, virusType, neighborCell, params, enemyParams, surroundPressure);
-            if (!converted) {
-              // Если конвертация не удалась - обычная атака
+          
+          // Пытаемся инфестировать вместо уничтожения (если Mutation >= 4)
+          if (params.mutation >= 4 && enemyParams && Math.random() < 0.5) {
+            // Попытка инфестации
+            const infested = this.attemptInfestation(grid, nIdx, virusType, neighborCell, params, enemyParams, surroundPressure);
+            if (!infested) {
+              // Если инфестация не удалась - обычная атака
               this.attackCell(grid, nIdx, virusType, neighborCell, params);
             }
           } else {
@@ -568,6 +790,15 @@ export class BattleManager {
     // === ОБРАБОТКА ОКРУЖЁННЫХ КЛЕТОК ===
     // Проверяем, не окружена ли эта клетка врагами
     this.handleSurroundedCell(grid, y * width + x, x, y, virusType, params, width, height);
+  }
+
+  /**
+   * Update infestations each tick
+   */
+  private updateInfestationsWrapper(): void {
+    if (this.gridData) {
+      this.updateInfestations(this.gridData.grid);
+    }
   }
 
   /**

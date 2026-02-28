@@ -266,6 +266,12 @@ class MainApp {
 
     this.networkManager.onVirusTick = (tick, data) => {
       this.battleManager.onBattleTick({ vGrid: data.vGrid, tick });
+      
+      // Update infestation visualization
+      if (this.battleRenderer) {
+        const infestations = this.battleManager.getInfestations();
+        this.battleRenderer.setInfestationData(infestations);
+      }
     };
 
     this.networkManager.onVirusBattleEnded = (data) => {

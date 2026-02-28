@@ -59,6 +59,7 @@ export class BattleRenderer {
   private contestedCells: Set<number> = new Set();
   private convertingCells: Map<number, { from: number; to: number; progress: number }> = new Map();
   private surroundPressure: Map<number, number> = new Map();  // cell index -> pressure (0-1)
+  private infestedCells: Map<number, { infestor: number; progress: number; stage: string }> = new Map();
 
   private gridWidth: number = 32;
   private gridHeight: number = 20;
@@ -756,11 +757,15 @@ export class BattleRenderer {
         
         // Check if contested (adjacent to enemy)
         const isContested = this.contestedCells.has(i);
-        
+
         // Check if cell is being converted
         const conversionData = this.convertingCells.get(i);
         const isConverting = conversionData !== undefined;
-        
+
+        // Check if cell is infested
+        const infestationData = this.infestedCells.get(i);
+        const isInfested = infestationData !== undefined;
+
         // Get surround pressure
         const pressure = this.surroundPressure.get(i) || 0;
         const isSurrounded = pressure > 0.5;
@@ -768,13 +773,33 @@ export class BattleRenderer {
         // Base virus colors
         let virusColor = cellValue === 1 ? this.COLORS.virusA : this.COLORS.virusB;
         let virusLightColor = cellValue === 1 ? this.COLORS.virusALight : this.COLORS.virusBLight;
-        
+
+        // === INFESTATION VISUAL EFFECT ===
+        // Infested cells show parasite color mixing
+        if (isInfested && infestationData) {
+          const infestorColor = infestationData.infestor === 1 ? this.COLORS.virusA : this.COLORS.virusB;
+          
+          // Mix host color with infestor color based on progress
+          virusColor = this.interpolateColor(virusColor, infestorColor, infestationData.progress * 0.7);
+          virusLightColor = this.interpolateColor(
+            virusLightColor,
+            infestationData.infestor === 1 ? this.COLORS.virusALight : this.COLORS.virusBLight,
+            infestationData.progress * 0.5
+          );
+
+          // Critical stage: strong pulsing
+          if (infestationData.stage === 'critical') {
+            const pulse = 0.5 + 0.5 * Math.sin((now / 150) * Math.PI * 2);
+            virusColor = this.interpolateColor(virusColor, 0xff00ff, pulse * 0.4);
+          }
+        }
+
         // === CONVERSION VISUAL EFFECT ===
         // Cell color interpolates between old and new virus during conversion
         if (isConverting && conversionData) {
           const fromColor = conversionData.from === 1 ? this.COLORS.virusA : this.COLORS.virusB;
           const toColor = conversionData.to === 1 ? this.COLORS.virusA : this.COLORS.virusB;
-          
+
           // Interpolate based on conversion progress
           virusColor = this.interpolateColor(fromColor, toColor, conversionData.progress);
           virusLightColor = this.interpolateColor(
@@ -852,8 +877,13 @@ export class BattleRenderer {
         }
 
         // Add pressure indicators for surrounded cells
-        if (isSurrounded && !isConverting) {
+        if (isSurrounded && !isConverting && !isInfested) {
           this.drawPressureIndicators(cell, currentRadius, pressure, now);
+        }
+
+        // Add parasite particles for infested cells
+        if (isInfested && infestationData) {
+          this.drawInfestationParticles(cell, currentRadius, infestationData, now);
         }
       }
     }
@@ -975,6 +1005,61 @@ export class BattleRenderer {
       ]);
       graphics.endFill();
     }
+  }
+
+  /**
+   * Draw infestation particles for infested cells
+   */
+  private drawInfestationParticles(
+    graphics: PIXI.Graphics,
+    radius: number,
+    infestationData: { infestor: number; progress: number; stage: string },
+    now: number
+  ): void {
+    const parasiteColor = infestationData.infestor === 1 ? 0xff3333 : 0x3333ff;
+    
+    // Number of particles based on progress
+    const particleCount = 2 + Math.floor(infestationData.progress * 6);
+    const particleSpeed = 400 - (infestationData.progress * 200); // Faster as progress increases
+    
+    for (let i = 0; i < particleCount; i++) {
+      const angle = ((i / particleCount) * Math.PI * 2) + (now / particleSpeed);
+      const wobble = Math.sin((now / 100) + i) * 3;
+      const distance = radius + 5 + wobble;
+      const particleX = Math.cos(angle) * distance;
+      const particleY = Math.sin(angle) * distance;
+      
+      // Parasite particle (small, pulsing)
+      const pulse = 0.5 + 0.5 * Math.sin((now / 80) + i);
+      const alpha = 0.4 + (infestationData.progress * 0.6) * pulse;
+      
+      graphics.beginFill(parasiteColor, alpha);
+      graphics.drawCircle(particleX, particleY, 2 + infestationData.progress * 2);
+      graphics.endFill();
+    }
+
+    // Critical stage: add spiky tendrils
+    if (infestationData.stage === 'critical') {
+      const tendrilCount = 8;
+      for (let i = 0; i < tendrilCount; i++) {
+        const angle = ((i / tendrilCount) * Math.PI * 2) + (now / 300);
+        const tendrilLength = radius * 0.5 * Math.sin((now / 100) + i);
+        
+        graphics.lineStyle(2, parasiteColor, 0.7);
+        graphics.moveTo(Math.cos(angle) * radius, Math.sin(angle) * radius);
+        graphics.lineTo(
+          Math.cos(angle) * (radius + tendrilLength),
+          Math.sin(angle) * (radius + tendrilLength)
+        );
+      }
+    }
+  }
+
+  /**
+   * Set infestation data from BattleManager
+   */
+  setInfestationData(infestations: Map<number, { infestor: number; progress: number; stage: string }>): void {
+    this.infestedCells = new Map(infestations);
   }
 
   /**
