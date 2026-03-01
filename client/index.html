@@ -142,13 +142,18 @@
       height: 100%;
     }
 
+    #gameScreen {
+      position: relative;        /* важно! создаёт stacking context */
+      z-index: 10;               /* выше canvas */
+    }
+
     #canvasContainer {
       position: absolute;
       top: 0;
       left: 0; /* Full screen - starts at left edge */
       width: 100%; /* Full width */
       height: 100%;
-      z-index: 1; /* Below the grid */
+      z-index: 1;                /* canvas ниже кнопок */
       pointer-events: auto; /* Allow mouse events for drag-and-drop */
     }
 
@@ -811,10 +816,10 @@
       <div class="corner-circle bottom-right"></div>
 
       <!-- Left menu button -->
-      <button id="leftMenuBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+      <button id="leftMenuBtn" class="btn" style="position: fixed !important; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 1000 !important;">☰</button>
 
       <!-- Menu button in top right corner -->
-      <button id="menuBtn" class="btn" style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">☰</button>
+      <button id="menuBtn" class="btn" style="position: fixed !important; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 1000 !important;">☰</button>
 
       <!-- Top panel wrapper with player names and room ID -->
       <div id="topPanelWrapper">

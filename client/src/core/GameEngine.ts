@@ -37,9 +37,12 @@ export class GameEngine {
 
     console.log('[GameEngine] PixiJS initialized, getting ticker...');
 
-    // КРИТИЧЕСКАЯ СТРОКА — отключаем pointer events на canvas
-    // ВАЖНО: Оставляем pointer-events: auto для интерактивных объектов (drag-and-drop)
-    this.app.canvas.style.pointerEvents = 'auto';
+    // КРИТИЧЕСКИЕ СТИЛИ — позиционирование canvas ниже кнопок
+    this.app.canvas.style.position = 'absolute';
+    this.app.canvas.style.top = '0';
+    this.app.canvas.style.left = '0';
+    this.app.canvas.style.zIndex = '1';                // низкий z-index
+    this.app.canvas.style.pointerEvents = 'auto';      // для интерактивных объектов
 
     console.log('[GameEngine] Appending canvas...');
     // Добавляем canvas в контейнер

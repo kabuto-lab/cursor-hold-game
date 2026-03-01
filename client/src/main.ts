@@ -209,11 +209,15 @@ class MainApp {
         // Показываем цифру
         overlay.style.display = 'flex';
         countdownText.textContent = count.toString();
+        
+        // Автоматически закрываем все боковые панели
+        this.uiController.closeLeftSidebar();
+        this.uiController.closeRightSidebar();
       } else if (count === 0) {
         // Показываем "БИТВА!" и запускаем битву автоматически
         countdownText.textContent = 'БИТВА!';
         countdownText.style.color = '#ff00ff';
-        
+
         // Отправляем серверу сигнал начать битву
         this.networkManager.sendToRoom('startBattleNow', {});
 
