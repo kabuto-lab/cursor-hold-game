@@ -1,0 +1,560 @@
+================================================================================
+TOVCH (VYRU5) - VIRUS BATTLE MECHANICS
+================================================================================
+Version: 1.0
+Last Updated: 2026-03-01
+Status: Design Document
+
+================================================================================
+SECTION 1: BATTLE OVERVIEW
+================================================================================
+
+The virus battle is a real-time territorial conflict between 2-4 viruses on a 
+64x40 grid. Each virus starts from a corner and spreads across the grid, 
+converting cells to their color. The battle is driven by 12 parameters that 
+players distribute 12 points across before the battle begins.
+
+BATTLE DURATION: 60-120 seconds (average)
+GRID SIZE: 64 x 40 = 2,560 cells
+WIN CONDITION: Control 80% of grid OR have most territory when time expires
+
+================================================================================
+SECTION 2: THE 12 PARAMETERS
+================================================================================
+
+Each virus has 12 parameters. Players distribute exactly 12 points across them.
+No parameter can exceed 10 points.
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PARAMETER TABLE                                                             │
+├──────────────┬────────┬──────────────────────────────────────────────────────┤
+│ PARAMETER    │ ICON   │ CORE FUNCTION                                        │
+├──────────────┼────────┼──────────────────────────────────────────────────────┤
+│ AGGRESSION   │ ⚔️     │ Offensive power / conversion speed in contact        │
+│ MUTATION     │ 🧬     │ Adaptation / resistance / random bonuses             │
+│ SPEED        │ ⚡     │ Expansion rate / growth velocity                     │
+│ DEFENSE      │ 🛡️     │ Territory stability / resistance to conversion       │
+│ REPRODUCTION │ 🦠     │ Base replication / cell generation rate              │
+│ STEALTH      │ 👻     │ Detection evasion / hidden expansion                 │
+│ VIRULENCE    │ ☣️     │ Infection severity / damage to enemy cells           │
+│ RESILIENCE   │ 💪     │ Recovery from losses / bounce-back ability           │
+│ MOBILITY     │ 🚶     │ Cell movement / repositioning within grid            │
+│ INTELLECT    │ 🧠     │ Strategic behavior / pattern recognition             │
+│ CONTAGIOUS   │ 🫁     │ Spread range / area-of-effect conversion             │
+│ LETHALITY    │ 💀     │ Kill speed / terminal damage (vs convert)            │
+└──────────────┴────────┴──────────────────────────────────────────────────────┘
+
+================================================================================
+SECTION 3: BATTLE PHASES
+================================================================================
+
+PHASE 1: EXPANSION (0-30% grid coverage)
+─────────────────────────────────────────
+• No contact between viruses yet
+• Primary parameters: SPEED, REPRODUCTION, STEALTH
+• Visual: Clean territory edges, smooth growth animation
+• Mechanics:
+  - Each virus expands from its corner
+  - Empty cells convert to virus color based on REPRODUCTION stat
+  - SPEED determines animation playback rate
+  - STEALTH keeps virus hidden from enemy view until contact
+
+PHASE 2: DETECTION (30-50% grid coverage)
+─────────────────────────────────────────
+• Viruses approach each other
+• Stealth check occurs
+• Primary parameters: STEALTH, INTELLECT
+• Visual: Border cells glow when enemy is near
+• Mechanics:
+  - INTELLECT vs STEALTH contest
+  - If INTELLECT > STEALTH: enemy revealed early
+  - If STEALTH > INTELLECT: enemy remains hidden longer
+  - First visual contact triggers border glow effect
+
+PHASE 3: CONTACT (50-70% grid coverage)
+─────────────────────────────────────────
+• Active border cells meet
+• Contested zone established
+• Primary parameters: AGGRESSION, DEFENSE, VIRULENCE, RESILIENCE
+• Visual: Noise texture mixing both virus colors, pulsing cells
+• Mechanics:
+  - Contested cells show mixed colors
+  - AGGRESSION + VIRULENCE vs DEFENSE + RESILIENCE
+  - Cells "wobble" between colors based on pressure
+  - Higher pressure wins conversion
+
+PHASE 4: DOMINATION (70-100% grid coverage)
+─────────────────────────────────────────
+• Winner emerges or stalemate declared
+• LETHALITY triggers (kill vs convert decision)
+• Visual: Cascade animation, rapid conversion
+• Mechanics:
+  - Losing virus cells rapidly convert
+  - LETHALITY can instantly kill instead of convert
+  - Victory cascade sweeps across grid
+
+================================================================================
+SECTION 4: PARAMETER MECHANICS (DETAILED)
+================================================================================
+
+AGGRESSION (⚔️)
+───────────────
+Mechanical Effect:
+  • +10% conversion speed per point in contested zones
+  • Higher chance to win cell-to-cell combat
+  • Formula: conversionChance = baseChance + (aggression × 0.1)
+
+Visual Effect:
+  • Red-tinged cell borders
+  • Sharp angular growth patterns
+  • Border glow intensity = aggression × contact pressure
+
+Combat Example:
+  • Virus A (AGG: 5) vs Virus B (AGG: 2)
+  • Virus A converts contested cells 30% faster
+  • Visual: Virus A cells have brighter red borders
+
+
+MUTATION (🧬)
+─────────────
+Mechanical Effect:
+  • 5% chance per point to gain +1 random stat bonus in contested zones
+  • Resistance to enemy conversion attempts
+  • Can trigger "evolution event" - random parameter redistribution
+
+Visual Effect:
+  • Cells flicker through rainbow spectrum
+  • Chromatic aberration shader on mutation events
+  • Temporary color shifts
+
+Combat Example:
+  • Virus A (MUT: 4) has 20% chance to mutate
+  • On mutation: gains +1 SPEED temporarily
+  • Visual: Cell flashes purple, then pulses brighter
+
+
+SPEED (⚡)
+──────────
+Mechanical Effect:
+  • Reduces tick interval between growth checks
+  • Formula: tickInterval = 1000ms / (1 + speed × 0.1)
+  • At SPEED 0: 1000ms per tick
+  • At SPEED 10: 500ms per tick (2x faster)
+
+Visual Effect:
+  • Expansion animation plays faster
+  • Cells "pulse" with energy
+  • Animation speed multiplier = 1 + (speed × 0.05)
+
+Combat Example:
+  • Virus A (SPD: 8) vs Virus B (SPD: 2)
+  • Virus A checks growth every 555ms
+  • Virus B checks growth every 833ms
+  • Virus A expands 50% faster
+
+
+DEFENSE (🛡️)
+────────────
+Mechanical Effect:
+  • Resistance to conversion - enemy needs higher local pressure
+  • Formula: defenseMultiplier = 1 + (defense × 0.15)
+  • At DEFENSE 10: enemy needs 2.5x pressure to convert
+
+Visual Effect:
+  • Cells have thicker borders
+  • More saturated color
+  • Border thickness shader parameter
+
+Combat Example:
+  • Virus A (DEF: 7) vs Virus B (AGG: 4)
+  • Virus A resists conversion with 2.05x multiplier
+  • Virus B needs 2x aggression to overcome
+
+
+REPRODUCTION (🦠)
+─────────────────
+Mechanical Effect:
+  • Base growth rate - determines empty→owned conversion speed
+  • Formula: baseGrowth = 1 + (reproduction × 0.2)
+  • At REPRODUCTION 10: 3x base growth rate
+
+Visual Effect:
+  • Cells appear "fuller"
+  • Organic rounded shapes
+  • Cell scale pulse animation frequency
+
+Combat Example:
+  • Virus A (REP: 9) vs Virus B (REP: 3)
+  • Virus A converts empty cells 2.8x faster
+  • Early game advantage for Virus A
+
+
+STEALTH (👻)
+────────────
+Mechanical Effect:
+  • Lower opacity to enemies
+  • Enemy sees cells as "dormant" until contact duration > stealth value
+  • Formula: revealDelay = stealth × 2 seconds
+  • At STEALTH 10: 20 second delay before reveal
+
+Visual Effect:
+  • Desaturated color to enemies
+  • Lower opacity (0.3-0.7 based on stealth)
+  • Fades to normal opacity on reveal
+
+Combat Example:
+  • Virus A (STL: 8) vs Virus B (INT: 3)
+  • Virus A remains hidden for 16 seconds
+  • Virus B doesn't see Virus A expansion until late
+
+
+VIRULENCE (☣️)
+──────────────
+Mechanical Effect:
+  • Damage to enemy cell health on contact (not just conversion)
+  • Formula: damagePerTick = virulence × 0.5
+  • At VIRULENCE 10: 5 damage per tick
+
+Visual Effect:
+  • Cells have "spike" protrusions
+  • Aggressive texture
+  • Damage numbers float up on contact
+
+Combat Example:
+  • Virus A (VIR: 6) contacts Virus B
+  • Virus B cells take 3 damage per tick
+  • Visual: Purple spikes, floating damage numbers
+
+
+RESILIENCE (💪)
+───────────────
+Mechanical Effect:
+  • Recently lost cells easier to reclaim
+  • Conversion resistance for X ticks after loss
+  • Formula: reclaimBonus = resilience × 0.1 (for 10 ticks)
+  • At RESILIENCE 8: +0.8 reclaim chance for 10 ticks
+
+Visual Effect:
+  • Cells "heal" visual damage
+  • Resilient texture
+  • Health bar overlay on cells
+
+Combat Example:
+  • Virus A loses cell, has RES: 7
+  • For next 10 ticks: +0.7 chance to reclaim
+  • Visual: Cell pulses green (healing)
+
+
+MOBILITY (🚶)
+─────────────
+Mechanical Effect:
+  • Cells can "slide" - position shifts within grid slot
+  • Can reposition to reinforce weak fronts
+  • Formula: moveRange = mobility × 1 cell
+  • At MOBILITY 10: can move up to 10 cells
+
+Visual Effect:
+  • Cells not locked to grid centers
+  • Smooth position interpolation
+  • Movement trails
+
+Combat Example:
+  • Virus A (MOB: 5) detects weak flank
+  • Cells slide 5 positions to reinforce
+  • Visual: Cells glide to new positions
+
+
+INTELLECT (🧠)
+──────────────
+Mechanical Effect:
+  • Prioritizes expansion toward enemy weak points
+  • Avoids strong defenses
+  • Information access based on intellect level:
+    - 0-2: See only territory colors
+    - 3-5: See effect types (not causes)
+    - 6-8: See enemy parameter categories
+    - 9-12: See exact contested cell dominance values
+
+Visual Effect:
+  • Connection lines between cells
+  • Network visualization
+  • Bezier curves with data packets
+
+Combat Example:
+  • Virus A (INT: 10) vs Virus B (DEF: 8 on left, 2 on right)
+  • Virus A sees weak right flank
+  • Expands toward weak side, avoids strong left
+  • Visual: Blue connection lines pulse toward weak point
+
+
+CONTAGIOUSNESS (🫁)
+───────────────────
+Mechanical Effect:
+  • "Cloud" particles emanate from cells
+  • Area-of-effect radius conversion
+  • Formula: splashRadius = contagiousness × 1 cell
+  • At CONTAGIOUSNESS 10: affects neighbors within 10 cells
+
+Visual Effect:
+  • Particle system for contagion clouds
+  • Radial gradient overlays
+  • Airborne "spores" float between cells
+
+Combat Example:
+  • Virus A (CON: 8) converts cell
+  • All cells within 8 cells have 50% conversion chance
+  • Visual: Purple cloud spreads from converted cell
+
+
+LETHALITY (💀)
+──────────────
+Mechanical Effect:
+  • Instantly kills low-health enemy cells instead of converting
+  • Formula: killThreshold = lethality × 10 HP
+  • At LETHALITY 10: kills cells with <100 HP
+
+Visual Effect:
+  • Dark cores in cells
+  • "Deadly" aesthetic
+  • Cell death animation (implosion)
+  • Skull icon briefly appears
+
+Combat Example:
+  • Virus A (LETH: 9) contacts Virus B (HP: 50)
+  • Virus B cell instantly killed (not converted)
+  • Visual: Cell implodes, skull appears, fades to black
+
+================================================================================
+SECTION 5: THE CONTACT MECHANIC (BATTLEFIELD DYNAMICS)
+================================================================================
+
+THE CONTESTED ZONE SHADER
+─────────────────────────
+When two territories touch, a special shader region is created:
+
+Visual Properties:
+  • Noise texture mixing both player colors
+  • Cells "wobble" between colors
+  • Faster oscillation = more intense battle
+
+Shader Uniforms (real-time combat data):
+  • uPressureA = local AGGRESSION + VIRULENCE of player A
+  • uPressureB = same for player B
+  • uDominance = 0.0 to 1.0 (who is winning this specific cell)
+
+Formula:
+  pressureA = (aggA + virA) × cellCountA
+  pressureB = (aggB + virB) × cellCountB
+  dominance = pressureA / (pressureA + pressureB)
+
+Example:
+  • Virus A: AGG=5, VIR=3, 50 cells = 400 pressure
+  • Virus B: AGG=7, VIR=2, 30 cells = 270 pressure
+  • Dominance A = 400 / 670 = 0.597 (59.7%)
+  • Visual: Cell is 60% red, 40% blue, wobbling
+
+
+THE FOUR-PARAMETER COMBAT RESOLUTION
+────────────────────────────────────
+When cells are in contact, four parameters fight:
+
+Attack Side (Aggressor):
+  • AGGRESSION: Raw conversion power
+  • VIRULENCE: Damage over time
+
+Defense Side (Defender):
+  • DEFENSE: Resistance multiplier
+  • RESILIENCE: Recovery and reclaim chance
+
+Resolution Formula:
+  attackPower = aggression + virulence + (random 0-2)
+  defensePower = (defense × 1.5) + resilience + (random 0-2)
+  
+  if attackPower > defensePower:
+    cell converts to attacker
+    damage = attackPower - defensePower
+  else:
+    cell remains defender
+    reclaimChance = (defensePower - attackPower) × 0.1
+
+Example Combat:
+  • Attacker: AGG=6, VIR=4 = 10 attack power
+  • Defender: DEF=5, RES=3 = 10.5 defense power
+  • Defender wins! Cell remains, 5% reclaim chance
+
+================================================================================
+SECTION 6: PARAMETER SYNERGIES & BUILD ARCHETYPES
+================================================================================
+
+THE GLASS CANNON
+────────────────
+Build: AGG=5, VIR=4, LETH=3, DEF=0, RES=0
+Strategy: Win contacts instantly, but loses territory fast if pushed back
+Visual: Sharp red spikes, dark cores, thin borders
+Risk: One bad contact = cascade loss
+Counter: High DEFENSE + RESILIENCE ("The Turtle")
+
+
+THE HIVE MIND
+─────────────
+Build: INT=4, REP=4, CON=4, MOB=0, LETH=0
+Strategy: Networked cells share resources, expand efficiently, surround enemy
+Visual: Connection lines everywhere, cloud particles, geometric patterns
+Weakness: MOBILITY breaks network chains
+Counter: High LETHALITY (kills cells before network forms)
+
+
+THE GHOST
+─────────
+Build: STL=5, SPD=4, MUT=3, AGG=0, DEF=0
+Strategy: Expand invisible, mutate on contact to counter enemy build
+Visual: Faded colors, rainbow flickers, sudden reveals
+Counter: High INTELLECT detects hidden cells earlier
+
+
+THE TURTLE
+──────────
+Build: DEF=5, RES=4, DEF=3 (stacked), AGG=0, SPD=0
+Strategy: Minimal expansion, impenetrable core, win by stalemate mutation
+Visual: Thick borders, healing animations, compact shape
+Risk: CONTAGIOUSNESS bypasses defenses
+
+
+THE PLAGUE
+──────────
+Build: CON=5, REP=4, MOB=3, DEF=0, AGG=0
+Strategy: Ignore direct contact, spread everywhere, choke enemy growth
+Visual: Clouds cover map, cells slide constantly, chaotic borders
+Counter: LETHALITY kills cells before they spread
+
+
+THE SCHOLAR
+───────────
+Build: INT=5, MUT=4, RES=3, SPD=0, AGG=0
+Strategy: Perfect information, adapts to enemy, outmaneuvers
+Visual: Network visualization, data packets, calculated movements
+Counter: Aggressive rush before intel gathers
+
+================================================================================
+SECTION 7: VICTORY CONDITIONS & ENDGAME
+================================================================================
+
+STANDARD VICTORY (80% Control)
+──────────────────────────────
+• Control 80% of grid for 5 consecutive seconds
+• Cascade animation: remaining enemy cells rapidly convert
+• Winner color sweeps across entire grid
+• Duration: 5-10 seconds cascade
+
+LETHALITY VICTORY (Extinction)
+──────────────────────────────
+• Kill (not convert) 50 enemy cells via LETHALITY parameter
+• Special "extinction" animation
+• Skull icons fill screen
+• Black void spreads from killed cells
+
+STALEMATE RESOLUTION (60 Second Timer)
+──────────────────────────────────────
+• If 60 seconds pass with neither above 60% control
+• Mutation Event: Both players' parameters randomly redistributed
+• Visual: Entire grid flashes white, new colors emerge
+• Battle continues with new parameters
+
+INTELLECT VICTORY (Rare - Assimilation)
+───────────────────────────────────────
+• If INTELLECT ≥ 10 and enemy has 0 INTELLECT
+• "Assimilation": Enemy cells gradually switch without combat
+• Visual: Enemy color desaturates, then shifts to your hue
+• Duration: 10 seconds gradual shift
+
+================================================================================
+SECTION 8: VISUAL EFFECTS PRIORITY SYSTEM
+================================================================================
+
+EFFECT PRIORITY 1 (Always Visible):
+  • Territory colors
+  • Cell borders
+  • Grid lines
+
+EFFECT PRIORITY 2 (Visible on Hover):
+  • Parameter values
+  • Cell health bars
+  • Conversion progress
+
+EFFECT PRIORITY 3 (High-Energy Only):
+  • Mutation rainbow flickers
+  • Aggression spikes
+  • Contagion clouds
+  • Screen shake on major conversions
+
+PARTICLE LIMITS:
+  • Max 500 particles on screen
+  • If exceeded: merge nearby into "cluster" sprites
+  • Cluster shows number overlay (e.g., "×5")
+
+================================================================================
+SECTION 9: PERFORMANCE OPTIMIZATION
+================================================================================
+
+TIER 1: DORMANT CELLS (90% of grid)
+  • Rendered once to offscreen RenderTexture
+  • Only redrawn if changed
+  • PixiJS: Single large sprite with cached texture
+
+TIER 2: ACTIVE CELLS (8% of grid)
+  • Cells near territory edges
+  • Updated every 5-10 frames
+  • PixiJS: Container with individual sprites, batched
+
+TIER 3: CONTESTED CELLS (2% of grid)
+  • Active battle zones
+  • Updated every frame with shader effects
+  • PixiJS: Special container with custom filters
+
+RULE: If total cell updates exceed 1000/frame, downgrade Tier 2 to 10-frame updates.
+
+================================================================================
+SECTION 10: EXAMPLE BATTLE FLOW
+================================================================================
+
+0:00 - Battle Start
+  • Virus A (RED) spawns top-left, Virus B (BLUE) spawns bottom-right
+  • Both have 12 points distributed
+  • Grid: 64x40 = 2560 cells
+
+0:05 - Expansion Phase
+  • Virus A: SPD=6, REP=4 - fast expansion
+  • Virus B: STL=5, SPD=3 - slow but hidden
+  • Grid: 40% A, 10% B, 50% empty
+
+0:15 - Detection Phase
+  • Virus A (INT=2) doesn't see Virus B (STL=5)
+  • Virus B remains hidden until 0:25
+  • Grid: 55% A, 20% B, 25% empty
+
+0:30 - First Contact
+  • Border cells meet in center
+  • Contested zone established (10% of grid)
+  • Virus A: AGG=5, VIR=3 vs Virus B: DEF=4, RES=3
+  • Grid: 60% A, 30% B, 10% contested
+
+0:45 - Battle Intensifies
+  • Virus B mutation triggers: +2 AGG temporarily
+  • Contested zone grows to 25%
+  • Virus A lethality kicks in: kills 5 B cells
+  • Grid: 55% A, 35% B, 10% contested
+
+1:00 - Domination Phase
+  • Virus A wins contested zone (60% dominance)
+  • Cascade begins: B cells rapidly convert
+  • Virus A reaches 82% control
+  • VICTORY: Virus A (RED) wins!
+
+1:05 - Victory Animation
+  • Remaining B cells convert to A
+  • Red sweep across grid
+  • Score screen: A=82%, B=18%
+
+================================================================================
+END OF DOCUMENT
+================================================================================

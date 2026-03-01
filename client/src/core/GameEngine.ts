@@ -44,11 +44,14 @@ export class GameEngine {
     this.app.canvas.style.zIndex = '1';                // низкий z-index
     this.app.canvas.style.pointerEvents = 'auto';      // для интерактивных объектов
 
+    // Получаем ticker после инициализации
+    this.ticker = this.app.ticker;
+
     console.log('[GameEngine] Appending canvas...');
     // Добавляем canvas в контейнер
     container.appendChild(this.app.canvas);
 
-    console.log('[GameEngine] Canvas appended');
+    console.log('[GameEngine] Canvas appended, ticker ready:', !!this.ticker);
   }
 
   /**

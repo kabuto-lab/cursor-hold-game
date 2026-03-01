@@ -88,4 +88,12 @@ export class ChatManager {
       this.chatContainer.innerHTML = '';
     }
   }
+
+  /**
+   * Уничтожить менеджер чата
+   */
+  destroy(): void {
+    this.room = null;
+    this.clear();
+  }
 }

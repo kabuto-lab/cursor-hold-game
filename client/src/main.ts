@@ -140,21 +140,43 @@ class MainApp {
     if (readyBtn) {
       readyBtn.addEventListener('click', () => {
         console.log('[MainApp] Ready button clicked');
-        
+
         // Получаем параметры игрока
         const playerParams = this.virusTubeManager.getParamsAsVirusParams();
-        
+
         // Определяем, какой игрок (Player 1 или Player 2)
         const isPlayer1 = this.uiController.getCurrentView() === 'room';
-        
+
         // Устанавливаем параметры в BattleManager
         if (isPlayer1) {
           this.battleManager.setParamsA(playerParams);
         } else {
           this.battleManager.setParamsB(playerParams);
         }
-        
+
         this.networkManager.sendToggleReady(true);
+      });
+    }
+
+    // Кнопка LEAVE ROOM
+    const leaveRoomBtn = document.getElementById('leaveRoomBtn');
+    if (leaveRoomBtn) {
+      leaveRoomBtn.addEventListener('click', () => {
+        console.log('[MainApp] Leave Room button clicked');
+        
+        // Покидаем комнату
+        this.networkManager.leaveCurrentRoom();
+        
+        // Возвращаемся в лобби
+        this.uiController.setView('lobby');
+        
+        // Очищаем mouse follower
+        this.mouseFollower.destroy();
+        
+        // Очищаем чат
+        this.chatManager.destroy();
+        
+        console.log('[MainApp] Left room and returned to lobby');
       });
     }
 
@@ -452,17 +474,109 @@ class MainApp {
     // Start the sandbox app ticker
     this.sandboxApp.ticker.start();
 
-    // Optional: Add some debug text
-    const debugText = new PIXI.Text('SANDBOX MODE\nEmpty canvas for testing', {
+    // Create 64x40 battle grid
+    this.createBattleGrid(64, 40);
+    
+    // Setup sandbox menu buttons
+    this.setupSandboxMenuButtons();
+  }
+  
+  /**
+   * Setup sandbox menu button handlers
+   */
+  private setupSandboxMenuButtons(): void {
+    console.log('[MainApp] Setting up sandbox menu buttons...');
+    
+    // Right menu button - virus params sidebar
+    const sandboxMenuBtn = document.getElementById('sandboxMenuBtn');
+    const rightSidebar = document.getElementById('sidebar');
+    
+    console.log('[MainApp] sandboxMenuBtn:', sandboxMenuBtn);
+    console.log('[MainApp] rightSidebar:', rightSidebar);
+
+    if (sandboxMenuBtn && rightSidebar) {
+      sandboxMenuBtn.addEventListener('click', () => {
+        console.log('[MainApp] Sandbox right menu clicked');
+        console.log('[MainApp] rightSidebar classList before:', rightSidebar.classList);
+        rightSidebar.classList.toggle('active');
+        console.log('[MainApp] rightSidebar classList after:', rightSidebar.classList);
+      });
+      console.log('[MainApp] Menu button handler attached');
+    } else {
+      console.error('[MainApp] Missing elements:', { sandboxMenuBtn, rightSidebar });
+    }
+
+    // Back to lobby button
+    const backToLobbyBtn = document.getElementById('backToLobbyBtn');
+    if (backToLobbyBtn) {
+      backToLobbyBtn.addEventListener('click', () => {
+        console.log('[MainApp] Back to lobby clicked');
+        this.leaveSandboxMode();
+        this.uiController.setView('lobby');
+      });
+    }
+  }
+
+  /**
+   * Create battle grid in sandbox
+   */
+  private createBattleGrid(width: number, height: number): void {
+    if (!this.sandboxApp) return;
+
+    // Calculate cell size to fill the screen
+    const cellSize = Math.floor(window.innerWidth / width); // Fit to screen width
+    
+    const gridGraphics = new PIXI.Graphics();
+
+    // Position grid at EXACT top-left corner (0, 0)
+    const offsetX = 0;
+    const offsetY = 0;
+
+    const actualGridWidth = width * cellSize;
+    const actualGridHeight = height * cellSize;
+
+    console.log(`[MainApp] Creating ${width}x${height} battle grid`);
+    console.log(`Cell size: ${cellSize}px`);
+    console.log(`Grid size: ${actualGridWidth}x${actualGridHeight}px`);
+    console.log(`Screen size: ${window.innerWidth}x${window.innerHeight}px`);
+    console.log(`Grid starts at: (${offsetX}, ${offsetY})`);
+
+    // Begin the stroke style once for better performance
+    gridGraphics.setStrokeStyle({ width: 1, color: 0xff0000, alpha: 1 });
+    
+    // Draw all cells
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const cellX = offsetX + x * cellSize;
+        const cellY = offsetY + y * cellSize;
+
+        // Draw rect and stroke it
+        gridGraphics.rect(cellX, cellY, cellSize, cellSize);
+      }
+    }
+    
+    // Apply the stroke to all paths at once
+    gridGraphics.stroke();
+
+    this.sandboxApp.stage.addChild(gridGraphics);
+    
+    // Add attempt counter text at top center
+    const attemptText = new PIXI.Text('ATTEMPT #3 - Grid: 64x40 | Cell: ' + cellSize + 'px | Total: ' + actualGridWidth + 'x' + actualGridHeight + 'px', {
       fontFamily: 'Courier New',
-      fontSize: 24,
+      fontSize: 16,
       fill: 0x00ff00,
-      align: 'center',
+      stroke: { color: 0x000000, width: 2 },
     });
-    debugText.anchor.set(0.5);
-    debugText.x = window.innerWidth / 2;
-    debugText.y = window.innerHeight / 2;
-    this.sandboxApp.stage.addChild(debugText);
+    attemptText.anchor.set(0.5, 0);
+    attemptText.x = window.innerWidth / 2;
+    attemptText.y = 10;
+    attemptText.zIndex = 1000;
+    this.sandboxApp.stage.addChild(attemptText);
+    
+    this.sandboxApp.stage.sortableChildren = true;
+    gridGraphics.zIndex = 100;
+    
+    console.log('[MainApp] Battle grid created with stroke applied');
   }
 
   /**
@@ -492,45 +606,23 @@ class MainApp {
 // Запуск приложения при загрузке страницы
 console.log('[MainApp] Registering load event listener...');
 
-// Функция для получения версии из Git
-async function getVersion(): Promise<string> {
-  // Пытаемся получить короткий хэш коммита из файла (генерируется при билде)
-  try {
-    const response = await fetch('/version.txt');
-    if (response.ok) {
-      const version = await response.text();
-      return version.trim();
-    }
-  } catch (error) {
-    console.log('[MainApp] Could not get version from version.txt:', error);
-  }
-  
-  // Fallback: версия из package.json
-  try {
-    const pkg = await fetch('/package.json').then(r => r.json());
-    return `v${pkg.version}`;
-  } catch {
-    return 'v1.0.0';
-  }
-}
-
 // Обновляем бейдж с версией
-async function updateVersionBadge() {
-  const version = await getVersion();
+function updateVersionBadge() {
   const badge = document.getElementById('versionBadge');
   if (badge) {
-    badge.textContent = version;
-    console.log('[MainApp] Version:', version);
+    // In dev mode, just show dev version
+    badge.textContent = 'v11-dev';
+    console.log('[MainApp] Version:', 'v11-dev');
   }
 }
 
 window.addEventListener('load', () => {
   console.log('[MainApp] LOAD EVENT FIRED');
   console.log('Creating new MainApp()...');
-  
+
   // Обновляем версию сразу
   updateVersionBadge();
-  
+
   new MainApp();
   console.log('MainApp() created!');
 });

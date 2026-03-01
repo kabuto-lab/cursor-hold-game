@@ -143,8 +143,23 @@
     }
 
     #gameScreen {
-      position: relative;        /* важно! создаёт stacking context */
+      position: fixed;        /* фиксируем, чтобы вырвать из flex */
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       z-index: 10;               /* выше canvas */
+      max-width: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    #gameScreen.hidden {
+      display: none !important;
+    }
+    
+    #sandboxScreen.hidden {
+      display: none !important;
     }
 
     #canvasContainer {
@@ -301,6 +316,26 @@
       flex-grow: 1;
       text-transform: uppercase;
       letter-spacing: 2px;
+    }
+    
+    /* Virus Tabs Styles */
+    .virus-tab {
+      transition: all 0.2s;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      padding: 8px;
+      border: 2px solid;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+    
+    .virus-tab.active {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px currentColor;
+    }
+    
+    .virus-tab:hover {
+      transform: scale(1.02);
     }
 
     .player-info {
@@ -793,14 +828,20 @@
     </div>
 
     <!-- Sandbox Screen -->
-    <div id="sandboxScreen" class="screen hidden">
+    <div id="sandboxScreen" class="screen hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; max-width: none; padding: 0; align-items: stretch; justify-content: stretch;">
       <div id="sandboxCanvasContainer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;"></div>
-      
+
       <!-- Back to lobby button -->
-      <button id="backToLobbyBtn" class="btn" style="position: absolute; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 200;">← Back to Lobby</button>
-      
+      <button id="backToLobbyBtn" class="btn" style="position: fixed !important; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 1000 !important;">← Back to Lobby</button>
+
+      <!-- Left menu button (for sandbox) -->
+      <button id="sandboxLeftMenuBtn" class="btn" style="position: fixed !important; top: 10px; left: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 1000 !important; display: none;">☰</button>
+
+      <!-- Right menu button (for sandbox - virus params) -->
+      <button id="sandboxMenuBtn" class="btn" style="position: fixed !important; top: 10px; right: 10px; padding: 5px 10px; font-size: 0.9rem; z-index: 1000 !important;">☰</button>
+
       <!-- Sandbox info -->
-      <div style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #00ff00; padding: 10px 20px; border-radius: 20px; font-family: 'Courier New', monospace; font-size: 14px; z-index: 200;">
+      <div style="position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); color: #00ff00; padding: 10px 20px; border-radius: 20px; font-family: 'Courier New', monospace; font-size: 14px; z-index: 999;">
         SANDBOX MODE - Empty canvas for testing
       </div>
     </div>
@@ -883,116 +924,123 @@
           </div>
         </div>
       </div>
-      
-      <!-- Right Sidebar -->
-      <div id="sidebar" class="sidebar right-sidebar">
-        <div class="sidebar-header">
-          <div class="sidebar-title-controls">
-            <h3>Virus Parameters</h3>
-            <button id="closeSidebarBtn" class="btn close-btn">✕</button>
-          </div>
+    </div>
+
+    <!-- Right Sidebar (shared between game and sandbox) -->
+    <div id="sidebar" class="sidebar right-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title-controls">
+          <h3>Virus Parameters</h3>
+          <button id="closeSidebarBtn" class="btn close-btn">✕</button>
         </div>
-        <div class="sidebar-content">
-          <!-- Virus Parameter Selection -->
-          <div class="setting-item">
-            <h4>Virus Parameters (12 points total)</h4>
-            <div id="virusParamsContainer">
-              <!-- Row 1 -->
-              <div class="param-row">
-                <div class="param-cell" data-param="aggression">
-                  <div class="param-emoji">⚔️</div>
-                  <div class="param-name">Aggression</div>
-                  <div class="param-value" id="param-aggression">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="mutation">
-                  <div class="param-emoji">🧬</div>
-                  <div class="param-name">Mutation</div>
-                  <div class="param-value" id="param-mutation">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="speed">
-                  <div class="param-emoji">⚡</div>
-                  <div class="param-name">Speed</div>
-                  <div class="param-value" id="param-speed">0</div>
-                  <div class="param-liquid"></div>
-                </div>
+        <!-- Virus Tabs -->
+        <div id="virusTabs" style="display: flex; gap: 5px; margin-top: 10px;">
+          <button class="virus-tab active" data-virus="0" style="flex: 1; padding: 8px; background: #ff0000; color: #fff; border: 2px solid #ff6666; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold;">VIRUS 1</button>
+          <button class="virus-tab" data-virus="1" style="flex: 1; padding: 8px; background: #0000ff; color: #fff; border: 2px solid #6666ff; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold;">VIRUS 2</button>
+          <button class="virus-tab" data-virus="2" style="flex: 1; padding: 8px; background: #00ff00; color: #000; border: 2px solid #66ff66; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold;">VIRUS 3</button>
+          <button class="virus-tab" data-virus="3" style="flex: 1; padding: 8px; background: #ffff00; color: #000; border: 2px solid #ffff66; cursor: pointer; font-family: 'Courier New', monospace; font-weight: bold;">VIRUS 4</button>
+        </div>
+      </div>
+      <div class="sidebar-content">
+        <!-- Virus Parameter Selection -->
+        <div class="setting-item">
+          <h4 id="virusTabTitle">Virus 1 Parameters (12 points)</h4>
+          <div id="virusParamsContainer">
+            <!-- Row 1 -->
+            <div class="param-row">
+              <div class="param-cell" data-param="aggression">
+                <div class="param-emoji">⚔️</div>
+                <div class="param-name">Aggression</div>
+                <div class="param-value" id="param-aggression">0</div>
+                <div class="param-liquid"></div>
               </div>
-
-              <!-- Row 2 -->
-              <div class="param-row">
-                <div class="param-cell" data-param="defense">
-                  <div class="param-emoji">🛡️</div>
-                  <div class="param-name">Defense</div>
-                  <div class="param-value" id="param-defense">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="reproduction">
-                  <div class="param-emoji">🦠</div>
-                  <div class="param-name">Reproduction</div>
-                  <div class="param-value" id="param-reproduction">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="stealth">
-                  <div class="param-emoji">👻</div>
-                  <div class="param-name">Stealth</div>
-                  <div class="param-value" id="param-stealth">0</div>
-                  <div class="param-liquid"></div>
-                </div>
+              <div class="param-cell" data-param="mutation">
+                <div class="param-emoji">🧬</div>
+                <div class="param-name">Mutation</div>
+                <div class="param-value" id="param-mutation">0</div>
+                <div class="param-liquid"></div>
               </div>
-
-              <!-- Row 3 -->
-              <div class="param-row">
-                <div class="param-cell" data-param="virulence">
-                  <div class="param-emoji">☣️</div>
-                  <div class="param-name">Virulence</div>
-                  <div class="param-value" id="param-virulence">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="resilience">
-                  <div class="param-emoji">💪</div>
-                  <div class="param-name">Resilience</div>
-                  <div class="param-value" id="param-resilience">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="mobility">
-                  <div class="param-emoji">🚶</div>
-                  <div class="param-name">Mobility</div>
-                  <div class="param-value" id="param-mobility">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-              </div>
-
-              <!-- Row 4 -->
-              <div class="param-row">
-                <div class="param-cell" data-param="intellect">
-                  <div class="param-emoji">🧠</div>
-                  <div class="param-name">Intellect</div>
-                  <div class="param-value" id="param-intellect">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="contagiousness">
-                  <div class="param-emoji">🫁</div>
-                  <div class="param-name">Contagiousness</div>
-                  <div class="param-value" id="param-contagiousness">0</div>
-                  <div class="param-liquid"></div>
-                </div>
-                <div class="param-cell" data-param="lethality">
-                  <div class="param-emoji">💀</div>
-                  <div class="param-name">Lethality</div>
-                  <div class="param-value" id="param-lethality">0</div>
-                  <div class="param-liquid"></div>
-                </div>
+              <div class="param-cell" data-param="speed">
+                <div class="param-emoji">⚡</div>
+                <div class="param-name">Speed</div>
+                <div class="param-value" id="param-speed">0</div>
+                <div class="param-liquid"></div>
               </div>
             </div>
-            
-            <div class="points-summary">
-              Points remaining: <span id="points-remaining">12</span>
+
+            <!-- Row 2 -->
+            <div class="param-row">
+              <div class="param-cell" data-param="defense">
+                <div class="param-emoji">🛡️</div>
+                <div class="param-name">Defense</div>
+                <div class="param-value" id="param-defense">0</div>
+                <div class="param-liquid"></div>
+              </div>
+              <div class="param-cell" data-param="reproduction">
+                <div class="param-emoji">🦠</div>
+                <div class="param-name">Reproduction</div>
+                <div class="param-value" id="param-reproduction">0</div>
+                <div class="param-liquid"></div>
+              </div>
+              <div class="param-cell" data-param="stealth">
+                <div class="param-emoji">👻</div>
+                <div class="param-name">Stealth</div>
+                <div class="param-value" id="param-stealth">0</div>
+                <div class="param-liquid"></div>
+              </div>
             </div>
 
-            <button id="randomizeBtn" class="btn no-border">RANDOMIZE</button>
-            <button id="readyBtn" class="btn no-border">READY</button>
+            <!-- Row 3 -->
+            <div class="param-row">
+              <div class="param-cell" data-param="virulence">
+                <div class="param-emoji">☣️</div>
+                <div class="param-name">Virulence</div>
+                <div class="param-value" id="param-virulence">0</div>
+                <div class="param-liquid"></div>
+              </div>
+              <div class="param-cell" data-param="resilience">
+                <div class="param-emoji">💪</div>
+                <div class="param-name">Resilience</div>
+                <div class="param-value" id="param-resilience">0</div>
+                <div class="param-liquid"></div>
+              </div>
+              <div class="param-cell" data-param="mobility">
+                <div class="param-emoji">🚶</div>
+                <div class="param-name">Mobility</div>
+                <div class="param-value" id="param-mobility">0</div>
+                <div class="param-liquid"></div>
+              </div>
+            </div>
+
+            <!-- Row 4 -->
+            <div class="param-row">
+              <div class="param-cell" data-param="intellect">
+                <div class="param-emoji">🧠</div>
+                <div class="param-name">Intellect</div>
+                <div class="param-value" id="param-intellect">0</div>
+                <div class="param-liquid"></div>
+              </div>
+              <div class="param-cell" data-param="contagiousness">
+                <div class="param-emoji">🫁</div>
+                <div class="param-name">Contagiousness</div>
+                <div class="param-value" id="param-contagiousness">0</div>
+                <div class="param-liquid"></div>
+              </div>
+              <div class="param-cell" data-param="lethality">
+                <div class="param-emoji">💀</div>
+                <div class="param-name">Lethality</div>
+                <div class="param-value" id="param-lethality">0</div>
+                <div class="param-liquid"></div>
+              </div>
+            </div>
           </div>
+          
+          <div class="points-summary">
+            Points remaining: <span id="points-remaining">12</span>
+          </div>
+
+          <button id="randomizeBtn" class="btn no-border">RANDOMIZE</button>
+          <button id="quickTestBtn" class="btn no-border" style="background-color: #00ffff; color: #0f0f23; box-shadow: 3px 3px 0 #ff00ff;">QUICK TEST (Randomize All)</button>
         </div>
       </div>
     </div>
